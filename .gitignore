@@ -17,3 +17,6 @@ ml/models/*
 # Flutter
 app/build/
 app/.dart_tool/
+
+# Pacote para carregar no Google Drive (gerado)
+ml/para_drive/
