@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Dados e modelos (pesados; não vão para o repositório)
+ml/data/raw/*
+!ml/data/raw/.gitkeep
+ml/models/*
+!ml/models/.gitkeep
+
+# Base de dados de desenvolvimento da API
+*.db
+
+# Flutter
+app/build/
+app/.dart_tool/
