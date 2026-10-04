@@ -65,6 +65,29 @@ def verificar_folhas(df, cultura):
             + "\n  ".join(inconsistentes.index)
         )
 
+def remover_imagens_ilegiveis(df, cultura):
+    """Exclui as fotos que o TensorFlow não consegue descodificar.
+
+    Usa o mesmo método do pipeline de treino (tf.io.decode_image), para que
+    nenhuma imagem incluída na divisão falhe depois no treino ou na avaliação.
+    """
+    import tensorflow as tf  # importado aqui: só é preciso nesta verificação
+
+    def legivel(caminho):
+        try:
+            tf.io.decode_image(tf.io.read_file(str(config.PASTA_RAW / caminho)),
+                               channels=3, expand_animations=False)
+            return True
+        except Exception:
+            return False
+
+    validas = df["caminho"].map(legivel)
+    ilegiveis = df.loc[~validas, "caminho"]
+    if not ilegiveis.empty:
+        print(f"{cultura}: {len(ilegiveis)} imagens ilegíveis excluídas da divisão:")
+        for caminho in ilegiveis:
+            print("   ", caminho)
+    return df[validas].copy()
 
 def resumo(df):
     """Tabela com o número de imagens por classe e subconjunto."""
@@ -96,6 +119,7 @@ def main():
             print(f"AVISO: sem imagens de {cultura}; divisão não gerada.")
             continue
 
+        df = remover_imagens_ilegiveis(df, cultura)   # <- nova linha
         verificar_folhas(df, cultura)
 
         # Estrato = fonte + classe (ex.: "ccmt/mosaico", "campo/mosaico").

@@ -18,8 +18,12 @@ Utilização (a partir da raiz do repositório):
 import re
 import sys
 
+import os
+
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")  # esconde mensagens internas do TensorFlow
+
 import pandas as pd
-from PIL import Image
+import tensorflow as tf
 
 import config
 
@@ -37,10 +41,15 @@ def normalizar_nome(nome):
 
 
 def imagem_valida(caminho):
-    """Devolve True se o ficheiro abrir correctamente como imagem."""
+    """Devolve True se o TensorFlow conseguir descodificar a imagem.
+
+    Usa a mesma função do pipeline de treino (tf.io.decode_image): o Pillow
+    aceita alguns JPEG truncados que o TensorFlow rejeita, e uma única imagem
+    ilegível faz parar o treino a meio.
+    """
     try:
-        with Image.open(caminho) as img:
-            img.verify()
+        tf.io.decode_image(tf.io.read_file(str(caminho)), channels=3,
+                           expand_animations=False)
         return True
     except Exception:
         return False
