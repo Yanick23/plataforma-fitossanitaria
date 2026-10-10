@@ -1,0 +1,82 @@
+{
+  "versao": 1,
+  "validado_por_tecnico": false,
+  "aviso": "Recomendação básica gerada automaticamente. Confirme o diagnóstico e o tratamento com um extensionista ou técnico agrário.",
+  "fontes": "Nomes científicos e sintomas: Tabelas 1 e 2 do relatório (Mensah et al., 2023; Legg & Thresh, 2000; Nsibo & Berger, 2024; Shepherd et al., 2010; Yaninek & Herren, 1988; Chipuluka et al., 2018). Recomendações por validar com técnicos da UEM/IIAM.",
+  "milho": {
+    "besouro_da_folha": {
+      "nome_local": "Besouro-da-folha",
+      "nome_cientifico": "Chrysomelidae (espécie a confirmar)",
+      "tipo": "praga",
+      "recomendacao": "Inspeccione as folhas de manhã cedo e retire à mão os besouros que encontrar. Mantenha a machamba limpa de ervas daninhas. Se os danos forem extensos, peça ao extensionista a indicação de um insecticida autorizado."
+    },
+    "gafanhoto": {
+      "nome_local": "Gafanhoto",
+      "nome_cientifico": "Acrididae (espécie a confirmar)",
+      "tipo": "praga",
+      "recomendacao": "Limpe as ervas daninhas à volta da machamba, onde os gafanhotos se abrigam e põem ovos. Em ataques fortes ou em grupo, informe o extensionista ou os serviços distritais de agricultura."
+    },
+    "lagarta_do_cartucho": {
+      "nome_local": "Lagarta-do-funil (lagarta-do-cartucho)",
+      "nome_cientifico": "Spodoptera frugiperda",
+      "tipo": "praga",
+      "recomendacao": "Observe o funil das plantas novas: serradura e furos nas folhas indicam lagartas. Esmague as lagartas e os ovos que encontrar. Actue cedo, porque os danos crescem em poucos dias; para tratar, use no funil um produto biológico ou o insecticida indicado pelo extensionista."
+    },
+    "listrado_do_milho": {
+      "nome_local": "Listrado do milho",
+      "nome_cientifico": "Maize streak virus (MSV), transmitido por cigarrinhas Cicadulina spp.",
+      "tipo": "doenca",
+      "recomendacao": "Não tem cura com produtos químicos. Arranque e destrua cedo as plantas muito afectadas. Semeie no início das chuvas, use variedades tolerantes e controle as ervas à volta da machamba, onde vivem as cigarrinhas que transmitem o vírus."
+    },
+    "mancha_da_folha": {
+      "nome_local": "Mancha cinzenta da folha",
+      "nome_cientifico": "Cercospora zeina",
+      "tipo": "doenca",
+      "recomendacao": "Faça rotação de culturas e enterre ou retire os restos do milho depois da colheita. Use variedades tolerantes. Se a doença aparecer cedo e se espalhar muito, consulte um técnico sobre o uso de fungicida."
+    },
+    "queima_da_folha": {
+      "nome_local": "Queima da folha",
+      "nome_cientifico": "Exserohilum turcicum",
+      "tipo": "doenca",
+      "recomendacao": "Retire os restos de plantas infectadas, faça rotação de culturas e use variedades resistentes. Consulte um técnico se as manchas alongadas chegarem às folhas acima da espiga antes da floração."
+    },
+    "saudavel": {
+      "nome_local": "Folha saudável",
+      "nome_cientifico": "Zea mays",
+      "tipo": "saudavel",
+      "recomendacao": "Não foram detectados sinais de doença nem de praga nesta folha. Continue a observar a machamba com regularidade."
+    }
+  },
+  "mandioca": {
+    "acaro_verde": {
+      "nome_local": "Ácaro verde",
+      "nome_cientifico": "Mononychellus tanajoa",
+      "tipo": "praga",
+      "recomendacao": "Use manivas de plantas sãs e plante no início das chuvas. O controlo biológico com ácaros predadores é a medida mais eficaz; os acaricidas raramente compensam. Informe o extensionista se o ataque for forte."
+    },
+    "mancha_bacteriana": {
+      "nome_local": "Mancha bacteriana (bacteriose)",
+      "nome_cientifico": "Xanthomonas axonopodis pv. manihotis",
+      "tipo": "doenca",
+      "recomendacao": "Não existe tratamento químico eficaz. Use manivas de plantas sãs, arranque e queime as plantas muito afectadas e desinfecte as ferramentas de corte. Faça rotação de culturas."
+    },
+    "mancha_castanha": {
+      "nome_local": "Mancha castanha",
+      "nome_cientifico": "Cercosporidium henningsii",
+      "tipo": "doenca",
+      "recomendacao": "Retire e destrua as folhas velhas muito manchadas. Evite plantar muito apertado e use variedades tolerantes. Em geral não justifica tratamento químico."
+    },
+    "mosaico": {
+      "nome_local": "Mosaico da mandioca",
+      "nome_cientifico": "Begomovírus (CMD), transmitido pela mosca-branca Bemisia tabaci",
+      "tipo": "doenca",
+      "recomendacao": "Não tem cura e pulverizar não resolve. Arranque e destrua as plantas com mosaico. Use manivas apenas de plantas sãs e variedades resistentes."
+    },
+    "saudavel": {
+      "nome_local": "Folha saudável",
+      "nome_cientifico": "Manihot esculenta",
+      "tipo": "saudavel",
+      "recomendacao": "Não foram detectados sinais de doença nem de praga nesta folha. Continue a observar a machamba com regularidade."
+    }
+  }
+}
