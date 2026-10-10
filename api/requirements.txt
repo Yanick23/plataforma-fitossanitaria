@@ -1,0 +1,28 @@
+# API da plataforma (Python 3.11). Versões fixas para reprodutibilidade.
+
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# Base de dados: PostgreSQL (asyncpg) em produção; SQLite (aiosqlite) nos testes.
+sqlalchemy==2.0.36
+asyncpg==0.30.0
+aiosqlite==0.20.0
+
+# Autenticação: palavra-passe com hash bcrypt e token JWT.
+bcrypt==4.2.1
+PyJWT==2.10.1
+
+# Grad-CAM: as mesmas versões do treino (ml/requirements.txt), para carregar
+# os modelos .keras sem erros.
+tensorflow==2.17.1
+keras==3.15.1
+numpy==1.26.4
+Pillow==10.4.0
+matplotlib==3.9.2
+
+# Testes
+pytest==8.3.4
+httpx==0.28.1

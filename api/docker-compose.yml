@@ -1,0 +1,24 @@
+# Base de dados PostgreSQL da API (secção 4.4.4).
+# Arranque:  docker compose up -d     (a partir da pasta api/)
+# A porta 5433 evita conflito com um PostgreSQL já instalado no Windows (5432).
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: agrodiagnostico-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: agrodiagnostico
+      POSTGRES_USER: agrodiagnostico
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agrodiagnostico}
+    ports:
+      - "5433:5432"
+    volumes:
+      - dados_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agrodiagnostico -d agrodiagnostico"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  dados_postgres:

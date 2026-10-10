@@ -20,3 +20,10 @@ app/.dart_tool/
 
 # Pacote para carregar no Google Drive (gerado)
 ml/para_drive/
+
+# API: configuração local, ficheiros recebidos e modelos (binários grandes)
+api/.env
+api/dados/
+api/modelos/*
+!api/modelos/.gitkeep
+.pytest_cache/
