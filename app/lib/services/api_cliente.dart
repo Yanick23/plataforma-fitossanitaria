@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -53,7 +54,7 @@ class ApiCliente {
   ApiCliente._();
   static final instancia = ApiCliente._();
 
-  static const _tempoLimite = Duration(seconds: 20);
+  static const _tempoLimite = Duration(seconds: 12);
   final _http = http.Client();
 
   Uri _uri(String caminho, [Map<String, String>? query]) =>
@@ -69,10 +70,15 @@ class ApiCliente {
       final r = await pedido().timeout(_tempoLimite);
       if (r.statusCode >= 200 && r.statusCode < 300) return r;
       throw ErroApi(_detalhe(r), codigo: r.statusCode);
+    } on TimeoutException {
+      throw ErroApi('O servidor não respondeu (${Sessao.instancia.urlApi}).\n'
+          'Confirme que a API está a correr no PC e que o endereço em "Servidor" está certo.');
     } on SocketException {
-      throw const ErroApi('Sem ligação ao servidor. Verifique a rede e o endereço da API.');
+      throw ErroApi('Sem ligação ao servidor (${Sessao.instancia.urlApi}).\n'
+          'Confirme que o telemóvel está na mesma rede Wi-Fi do PC e o endereço em "Servidor".');
     } on http.ClientException {
-      throw const ErroApi('Sem ligação ao servidor. Verifique a rede e o endereço da API.');
+      throw ErroApi('Sem ligação ao servidor (${Sessao.instancia.urlApi}).\n'
+          'Confirme que o telemóvel está na mesma rede Wi-Fi do PC e o endereço em "Servidor".');
     } on HttpException catch (e) {
       throw ErroApi('Erro de comunicação: ${e.message}');
     } on FormatException {

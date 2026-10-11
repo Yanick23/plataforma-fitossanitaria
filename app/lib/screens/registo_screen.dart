@@ -51,6 +51,8 @@ class _RegistoScreenState extends State<RegistoScreen> {
       await Sessao.instancia.iniciar(r.token, r.utilizador);
     } on ErroApi catch (e) {
       if (mounted) setState(() => _erro = e.mensagem);
+    } catch (e) {
+      if (mounted) setState(() => _erro = 'Erro inesperado: $e');
     } finally {
       if (mounted) setState(() => _aCriar = false);
     }

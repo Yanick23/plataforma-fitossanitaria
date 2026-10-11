@@ -41,6 +41,8 @@ class _LoginScreenState extends State<LoginScreen> {
       await Sessao.instancia.iniciar(r.token, r.utilizador); // o main.dart muda para o ecrã inicial
     } on ErroApi catch (e) {
       if (mounted) setState(() => _erro = e.mensagem);
+    } catch (e) {
+      if (mounted) setState(() => _erro = 'Erro inesperado: $e');
     } finally {
       if (mounted) setState(() => _aEntrar = false);
     }
