@@ -44,9 +44,9 @@ pip install -r api\requirements.txt
 # 2. Configuração (uma vez): copie e edite as palavras-passe
 copy api\.env.example api\.env
 
-# 3. PostgreSQL (Docker Desktop tem de estar aberto)
+# 3. PostgreSQL: Docker (docker compose up -d, porta 5433) ou o PostgreSQL
+#    instalado no Windows (porta 5432) — ver as duas opções em .env.example
 cd api
-docker compose up -d
 
 # 4. Modelos (uma vez): copie para api\modelos\
 #    modelo_milho.keras, modelo_mandioca.keras                 (Grad-CAM)
@@ -79,3 +79,13 @@ python -m pytest -q
 Em `/docs`, como administrador: `POST /modelos/{cultura}` com o ficheiro
 `.tflite`, a lista `classes` em JSON e, opcionalmente, `acuracia_teste`.
 As apps descarregam-na na próxima sincronização.
+
+## Migrar dados de SQLite para PostgreSQL
+
+Se a API correu algum tempo com SQLite, os dados passam-se para o PostgreSQL
+mantendo os ids (os diagnósticos já sincronizados nos telemóveis continuam válidos):
+
+```powershell
+cd api
+python -m scripts.migrar_sqlite_para_postgres sqlite+aiosqlite:///./dados/agrodiagnostico.db postgresql+asyncpg://agrodiagnostico:SENHA@localhost:5432/agrodiagnostico
+```
