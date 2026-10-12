@@ -19,28 +19,49 @@ class BotaoPrincipal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: aoPremir == null ? 0.5 : 1,
-      child: Container(
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: cores),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: cores.last.withValues(alpha: 0.35), blurRadius: 14, offset: const Offset(0, 6))],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
+    return Semantics(
+      button: true,
+      enabled: aoPremir != null,
+      label: texto,
+      excludeSemantics: true,
+      child: Opacity(
+        opacity: aoPremir == null ? 0.5 : 1,
+        child: Container(
+          height: 56,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: cores),
             borderRadius: BorderRadius.circular(16),
-            onTap: aoPremir,
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icone != null) ...[Icon(icone, color: Colors.white, size: 22), const SizedBox(width: 10)],
-                  Text(texto,
-                      style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
-                ],
+            boxShadow: [
+              BoxShadow(
+                color: cores.last.withValues(alpha: 0.35),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: aoPremir,
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icone != null) ...[
+                      Icon(icone, color: Colors.white, size: 22),
+                      const SizedBox(width: 10),
+                    ],
+                    Text(
+                      texto,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -52,7 +73,11 @@ class BotaoPrincipal extends StatelessWidget {
 
 /// Botão branco secundário ("Ver Historial", "Guardar Mesmo Assim").
 class BotaoSecundario extends StatelessWidget {
-  const BotaoSecundario({super.key, required this.texto, required this.aoPremir});
+  const BotaoSecundario({
+    super.key,
+    required this.texto,
+    required this.aoPremir,
+  });
 
   final String texto;
   final VoidCallback? aoPremir;
@@ -67,7 +92,9 @@ class BotaoSecundario extends StatelessWidget {
         style: TextButton.styleFrom(
           backgroundColor: Cores.cartao,
           foregroundColor: Cores.texto,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
         child: Text(texto),
@@ -93,7 +120,10 @@ class BotaoVoltar extends StatelessWidget {
         child: SizedBox(
           width: 36,
           height: 36,
-          child: Icon(Icons.chevron_left, color: escuro ? Colors.white : Cores.texto),
+          child: Icon(
+            Icons.chevron_left,
+            color: escuro ? Colors.white : Cores.texto,
+          ),
         ),
       ),
     );

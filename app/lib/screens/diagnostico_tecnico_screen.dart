@@ -9,6 +9,7 @@ import '../services/registo_tecnico.dart';
 import '../tema.dart';
 import '../widgets/botoes.dart';
 import '../widgets/formatacao.dart';
+import '../widgets/teste_fotografias.dart';
 
 /// Diagnóstico técnico: tempos de inferência e memória (RNF03, RNF04).
 /// Os mesmos valores são escritos no log ("AgroDiagnostico/...").
@@ -59,6 +60,8 @@ class _DiagnosticoTecnicoScreenState extends State<DiagnosticoTecnicoScreen> {
             ]),
             const SizedBox(height: 12),
             _cartaoTeste(),
+            const SizedBox(height: 12),
+            const TesteFotografias(),
             const SizedBox(height: 12),
             FutureBuilder(
               future: RegistoTecnico.instancia.ficheiroCsv(),
