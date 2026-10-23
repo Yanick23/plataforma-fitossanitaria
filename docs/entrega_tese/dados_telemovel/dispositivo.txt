@@ -1,0 +1,9 @@
+Marca:      SOTEN
+Modelo:     R80
+Android:    13 (API 33)
+RAM total:  5.67 GB (5947140 kB)
+Núcleos:    8
+SoC:        Mediatek MT8788
+Plataforma: mt6771 / mt8788
+ABI:        arm64-v8a
+1

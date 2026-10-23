@@ -5,19 +5,49 @@ A Parte A (Colab) não é tratada aqui.
 
 ---
 
-## B1. Dispositivo de teste — **por recolher**
+## B1. Dispositivo de teste — **feito** (adb, 2026-10-23)
 
-Nenhum telemóvel estava ligado por adb. Com o telemóvel ligado:
+| Campo | Valor |
+|---|---|
+| Marca / modelo | SOTEN R80 (compilação `R80-FK26-T-EN-GMS-O`) |
+| Android | 13 (API 33) |
+| RAM total | 5,67 GB visíveis ao sistema (5 947 140 kB), ou seja, 6 GB nominais |
+| Processador | MediaTek MT8788 (plataforma mt6771), **8 núcleos** até 1,99 GHz, arm64-v8a |
 
-```
-bash docs/entrega_tese/recolher_dados_telemovel.sh dispositivo
-```
+Ficheiro: `docs/entrega_tese/dados_telemovel/dispositivo.txt`.
 
-O script escreve marca, modelo, versão do Android, RAM total, número de núcleos e SoC em
-`docs/entrega_tese/dados_telemovel/dispositivo.txt`. O ecrã «Diagnóstico técnico» também mostra
-o sistema e o número de processadores.
+### Teste de desempenho com imagem sintética (ecrã «Diagnóstico técnico»)
 
-## B2. Tempo total do diagnóstico — **por medir** (a instrumentação já existe)
+Mede só a inferência (`Interpreter.run`), com 1 thread, modelo INT8 v1 e 20 repetições depois
+de uma de aquecimento. Versão release.
+
+| Cultura | Média | Mín. | Máx. | Memória residente após o teste |
+|---|---|---|---|---|
+| Milho | 163,9 ms | 157 ms | 273 ms | 271,1 MB |
+| Mandioca | 174,2 ms | 161 ms | 197 ms | 285,5 MB (pico 288,1 MB) |
+
+Este valor não substitui o B2, que mede o tempo total com fotografias reais
+(descodificação + pré-processamento + inferência).
+
+## B2. Tempo total do diagnóstico — **feito** (SOTEN R80, APK release, 2026-10-23)
+
+10 diagnósticos por cultura, feitos na app como um utilizador: cultura → Galeria → escolher a
+imagem (teste CCMT) → resultado. Tempos em segundos, pela ordem em que foram feitos:
+
+| Cultura | 10 tempos (s) | Média | Mín. | Máx. |
+|---|---|---|---|---|
+| Milho | 0,448 · 0,378 · 0,373 · 0,340 · 0,347 · 0,386 · 0,331 · 0,322 · 0,444 · 0,372 | **0,374** | 0,322 | 0,448 |
+| Mandioca | 0,415 · 0,336 · 0,401 · 0,319 · 0,313 · 0,392 · 0,365 · 0,400 · 0,586 · 0,710 | **0,424** | 0,313 | 0,710 |
+
+- **RNF03 cumprido com folga:** o pior caso (0,710 s) fica muito abaixo dos 3 s. A média dos 20
+  é 0,399 s, igual ao valor que a app calcula no ecrã «Diagnóstico técnico» (398,9 ms).
+- Composição média: inferência 0,223 s, pré-processamento cerca de 0,15 s; o resto é a leitura
+  da imagem. Memória residente entre 303 e 318 MB.
+- O 1.º diagnóstico de cada cultura inclui o carregamento do modelo: 32 ms no milho e 12 ms na
+  mandioca. É pouco, porque o modelo é lido directamente da memória.
+- Os dois últimos de mandioca (0,586 e 0,710 s) foram feitos com a bateria a 18–20% e sem
+  carregador. É provável que o processador estivesse limitado nessa altura.
+- Os valores por diagnóstico estão em `docs/entrega_tese/dados_telemovel/b2_tempos.csv`.
 
 O código já mede o RNF03; não foi preciso acrescentar nada:
 
@@ -31,19 +61,7 @@ Nota para o texto: o tempo vai até ao **resultado pronto**, um frame antes de o
 (da ordem de dezenas de milissegundos). Pode escrever «da confirmação da fotografia até o resultado
 estar pronto a apresentar».
 
-Procedimento:
-
-1. Instalar a versão de **release** (`flutter run --release` ou `flutter build apk --release`).
-   O modo debug é muito mais lento e não serve para o RNF03.
-2. `adb logcat -c` para limpar o log.
-3. Fazer 10 diagnósticos de milho e 10 de mandioca.
-4. `bash docs/entrega_tese/recolher_dados_telemovel.sh tempos` mostra os 10 tempos por cultura,
-   a média, o mínimo e o máximo, em segundos.
-
-O 1.º diagnóstico de cada cultura inclui o carregamento do modelo (campo `carregamento`). Convém
-reportá-lo à parte, ou dizer que está incluído.
-
-## B3. Testes funcionais T01–T13 — **por executar no telemóvel**
+## B3. Testes funcionais T01–T13 — **12 aprovados, 1 bloqueado (T13)**
 
 Preparação da API (uma vez):
 
@@ -78,6 +96,56 @@ Como executar cada caso, segundo o código:
 Para o T11 pode publicar-se o mesmo ficheiro INT8 como v2: a app aceita-o, porque o SHA-256 e a
 interface coincidem.
 
+### Execução (2026-10-23, SOTEN R80, APK release)
+
+**Ligação à API durante os testes:** o PC estava ligado ao hotspot do próprio telemóvel, numa
+rede que o Windows classificou como «Pública». A firewall bloqueava a porta 8000 e o IP do PC
+mudava a cada nova ligação. Por isso a app usou `http://127.0.0.1:8000` através de um túnel
+`adb reverse tcp:8000 tcp:8000`, que também passa pela ligação Wi-Fi. A comunicação continua a
+ser HTTP sem TLS, por isso o C10 mantém-se. Se o texto disser «numa rede local», a
+configuração real da demonstração é esta.
+
+| ID | Estado | O que aconteceu |
+|---|---|---|
+| T01 | **Aprovado** | Conta «Agricultor Teste» (841234567, Boane) criada na app. A app entrou logo no ecrã inicial, com o estado «Online». Na base de dados: perfil AGRICULTOR, hash `$2b$12$…` (bcrypt). Capturas 01b e 02. |
+| T02 | **Aprovado** (variante) | Sem nenhuma rede activa (`dumpsys connectivity`: «Active default network: none»), a app foi fechada à força e reaberta. A sessão manteve-se e a app mostrou «Offline». Usou-se «dados móveis desligados» em vez do modo de voo, porque o modo de voo cortaria o adb sem fios. |
+| T03 | **Aprovado** (pela galeria) | Milho, `milho_0013_mancha_da_folha` (teste CCMT) → «Mancha cinzenta da folha», 96%. Os diagnósticos foram feitos sem acesso ao servidor (túnel da API desligado). A rede móvel ficou ligada porque dá internet ao PC. **A câmara do telemóvel está avariada**: falha mesmo quando aberta directamente (`CamAp_QuickActivity onDestroy`, `Error configuring streams: Broken pipe`). Por isso usou-se a galeria. |
+| T04 | **Aprovado** | Mandioca pela galeria, `mandioca_0010_mosaico` → «Mosaico da mandioca». Guardado como pendente. |
+| T05 | **Aprovado** (pela galeria) | Fotografia de uma chávena de café (Wikimedia Commons, «A small cup of coffee»), no milho → «Possível: Mancha cinzenta da folha», **22%**, com o aviso «Não temos certeza — tente tirar outra foto…» e os botões «Tirar Nova Foto» / «Guardar Mesmo Assim». Captura 07. Neste caso o limiar travou o objecto estranho. O classificador continua fechado: um objecto mais parecido com uma folha pode passar dos 60%. |
+| T06 | **Aprovado** | O resultado mostra o nome local (Mancha cinzenta da folha), o nome científico (*Cercospora zeina*), a confiança (96%) e a recomendação. Captura 06. |
+| T07 | **Aprovado** | O historial mostrou «20 por sincronizar», com o ícone laranja em cada diagnóstico. Prova `provas/T07_historial_20_pendentes.png`. |
+| T08 | **Aprovado** | Com o servidor de novo acessível, «Sincronizar agora» → a API passou de 0 para **20 diagnósticos + 20 imagens** deste utilizador (verificado em PostgreSQL), e o aviso «por sincronizar» desapareceu. |
+| T09 | **Aprovado** | Com 3 pendentes, fechei a app à força 80 ms depois de tocar em «Sincronizar». A API ficou com 25 diagnósticos e **só 23 imagens**: a sincronização foi interrompida a meio. Ao reabrir, a app voltou a enviar o lote (a API respondeu «confirmados» para os UUID que já tinha) e enviou as 2 imagens em falta. Estado final: **25 diagnósticos, 25 UUID distintos, 25 imagens**. Nada perdido, nada duplicado. |
+| T10 | **Aprovado** | O administrador alterou a recomendação da mancha cinzenta (`PUT /patologias/5`). Depois de sincronizar, o detalhe de um diagnóstico mostra o texto novo («[T10] Recomendação alterada pelo administrador…»). Prova `provas/T10_recomendacao_alterada.png`. No fim, a recomendação original foi reposta. |
+| T11 | **Aprovado** | O administrador publicou a v2 do modelo de milho (`POST /modelos/milho`). Na sincronização, a app pediu `ultima-versao`, descarregou `/modelos/milho/2/ficheiro`, verificou o SHA-256 e a interface, e escreveu no log «modelo milho actualizado para a versão 2». O diagnóstico seguinte correu com `[milho v2]` (carregamento 26 ms). Usou-se o mesmo ficheiro INT8; a v2 ficou publicada na base de dados. |
+| T12 | **Aprovado** | Ver B2: 20 tempos entre 0,313 e 0,710 s, todos ≤ 3 s. Fizeram-se mais de 60 inferências seguidas (20 do B2, 7 extra, 36 do teste com fotografias) sem nenhum encerramento inesperado da app. Pico de memória: 327,7 MB. |
+| T13 | **Bloqueado** | «Ver onde o modelo olhou» → a app mostra «Falta o ficheiro modelo_milho.keras em api/modelos/» (a API responde 503). O fluxo está implementado, mas faltam os `.keras` do treino neste PC. Prova `provas/T13_gradcam_sem_keras.png`. |
+
+### Teste com fotografias no telemóvel (36 imagens de teste do CCMT, 3 por classe)
+
+O ecrã «Diagnóstico técnico» → «Executar com fotografias» corre o pipeline completo da app
+(leitura, pré-processamento, TFLite INT8) sobre a pasta de teste.
+
+| Cultura | Acertos | Abaixo de 60% |
+|---|---|---|
+| Milho | 19 / 21 | 1 (`milho_0011_listrado_do_milho` → mancha cinzenta, 57%) |
+| Mandioca | 15 / 15 | 0 |
+| **Total** | **34 / 36** | 1 |
+
+Erros: `milho_0008_lagarta_do_cartucho` → besouro-da-folha (98%, sem aviso) e `milho_0011`
+(acima). Tempo total médio: 0,500 s (0,307–0,643). Inferência média: 0,308 s. Por imagem:
+`dados_telemovel/teste_fotografias_36.csv`. **Isto é só uma verificação de funcionamento**
+(n = 36, 3 por classe). Não substitui a exactidão do teste completo (A2).
+
+Nota: a mesma imagem pode dar confianças um pouco diferentes conforme o caminho. Por exemplo,
+`mandioca_0002` deu 69% pela galeria e 82% no teste com fotografias. O `image_picker` volta a
+gravar a fotografia em JPEG com qualidade 95 antes de a app a ler; o teste lê o ficheiro original.
+
+Imagens usadas: 36 imagens do **conjunto de teste do CCMT** (3 por classe; divisão fixa, semente
+42), descarregadas do Mendeley Data com `ml/src/descarregar_teste_ccmt.py`. Foram copiadas para
+os álbuns `Pictures/Milho_teste` e `Pictures/Mandioca_teste` do telemóvel e escolhidas no
+selector de ficheiros do Android.
+
 ## B4. Testes automáticos da API — **feito**
 
 ```
@@ -88,7 +156,24 @@ api/.venv/Scripts/python -m pytest      (Python 3.11.9, requirements.txt)
 **23 aprovados, 0 falhados.** O número coincide com o texto. Os 16 avisos são de depreciação
 (pyparsing/matplotlib e Keras) e não afectam o resultado.
 
-## B5. Capturas de ecrã — **por recolher**
+## B5. Capturas de ecrã — **12 de 13 feitas** (falta a 09)
+
+Em `docs/entrega_tese/dados_telemovel/capturas/` (SOTEN R80, vertical, PNG, conta de teste):
+
+| Ficheiro | Conteúdo |
+|---|---|
+| `01_inicio_sessao.png`, `01b_criar_conta.png` | Login e criação de conta |
+| `02_ecra_inicial.png` | Ecrã inicial («Diagnóstico de culturas», estado Online) |
+| `03_seleccao_cultura.png` | Escolha entre milho e mandioca |
+| `04_captura.png` | Ecrã de captura (câmara / galeria) |
+| `05_processamento.png` | «A analisar imagem…». O ecrã dura menos de 0,4 s, por isso a captura apanhou-o ainda a aparecer, um pouco esbatido. |
+| `06_resultado_confianca_alta.png` | Mancha cinzenta da folha, *Cercospora zeina*, 96%, recomendação |
+| `07_resultado_confianca_baixa.png` | Chávena (T05), 22%, aviso |
+| `07b_resultado_confianca_baixa_folha.png` | Alternativa: folha real de listrado classificada com 58%, aviso |
+| `08_historial.png` | 2 pendentes (laranja) + sincronizados (verde) |
+| `10_administracao_ou_docs.png` | `/docs` no navegador do telemóvel |
+| `11_diagnostico_tecnico.png` | Ecrã de desempenho com as 20 medições do B2 |
+| **`09_detalhe_gradcam.png`** | **Em falta**: precisa dos `.keras` (ver T13) |
 
 - O nome «AgroDiagnóstico» foi retirado de tudo o que aparece ao utilizador: ecrã de login, ecrã
   inicial, título da app, nome no lançador do Android e título da página `/docs` da API.

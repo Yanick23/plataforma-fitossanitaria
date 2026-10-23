@@ -1,0 +1,37 @@
+ficheiro,cultura,rotulo_real,classe_prevista,confianca,acerto
+mandioca_0001_acaro_verde.jpg,mandioca,acaro_verde,"Ácaro verde",1,1
+mandioca_0002_acaro_verde.jpg,mandioca,acaro_verde,"Ácaro verde",0.82,1
+mandioca_0003_acaro_verde.jpg,mandioca,acaro_verde,"Ácaro verde",0.99,1
+mandioca_0004_mancha_bacteriana.jpg,mandioca,mancha_bacteriana,"Mancha bacteriana (bacteriose)",0.97,1
+mandioca_0005_mancha_bacteriana.jpg,mandioca,mancha_bacteriana,"Mancha bacteriana (bacteriose)",1,1
+mandioca_0006_mancha_bacteriana.jpg,mandioca,mancha_bacteriana,"Mancha bacteriana (bacteriose)",0.98,1
+mandioca_0007_mancha_castanha.jpg,mandioca,mancha_castanha,"Mancha castanha",1,1
+mandioca_0008_mancha_castanha.jpg,mandioca,mancha_castanha,"Mancha castanha",0.72,1
+mandioca_0009_mancha_castanha.jpg,mandioca,mancha_castanha,"Mancha castanha",0.89,1
+mandioca_0010_mosaico.jpg,mandioca,mosaico,"Mosaico da mandioca",0.99,1
+mandioca_0011_mosaico.jpg,mandioca,mosaico,"Mosaico da mandioca",0.88,1
+mandioca_0012_mosaico.jpg,mandioca,mosaico,"Mosaico da mandioca",1,1
+mandioca_0013_saudavel.jpg,mandioca,saudavel,"Folha saudável",1,1
+mandioca_0014_saudavel.jpg,mandioca,saudavel,"Folha saudável",1,1
+mandioca_0015_saudavel.jpg,mandioca,saudavel,"Folha saudável",1,1
+milho_0001_besouro_da_folha.jpg,milho,besouro_da_folha,"Besouro-da-folha",1,1
+milho_0002_besouro_da_folha.jpg,milho,besouro_da_folha,"Besouro-da-folha",1,1
+milho_0003_besouro_da_folha.jpg,milho,besouro_da_folha,"Besouro-da-folha",1,1
+milho_0004_gafanhoto.jpg,milho,gafanhoto,"Gafanhoto",1,1
+milho_0005_gafanhoto.jpg,milho,gafanhoto,"Gafanhoto",1,1
+milho_0006_gafanhoto.jpg,milho,gafanhoto,"Gafanhoto",1,1
+milho_0007_lagarta_do_cartucho.jpg,milho,lagarta_do_cartucho,"Lagarta-do-funil (lagarta-do-cartucho)",0.75,1
+milho_0008_lagarta_do_cartucho.jpg,milho,lagarta_do_cartucho,"Besouro-da-folha",0.98,0
+milho_0009_lagarta_do_cartucho.jpg,milho,lagarta_do_cartucho,"Lagarta-do-funil (lagarta-do-cartucho)",0.85,1
+milho_0010_listrado_do_milho.jpg,milho,listrado_do_milho,"Listrado do milho",0.73,1
+milho_0011_listrado_do_milho.jpg,milho,listrado_do_milho,"Mancha cinzenta da folha",0.57,0
+milho_0012_listrado_do_milho.jpg,milho,listrado_do_milho,"Listrado do milho",1,1
+milho_0013_mancha_da_folha.jpg,milho,mancha_da_folha,"Mancha cinzenta da folha",0.96,1
+milho_0014_mancha_da_folha.jpg,milho,mancha_da_folha,"Mancha cinzenta da folha",0.96,1
+milho_0015_mancha_da_folha.jpg,milho,mancha_da_folha,"Mancha cinzenta da folha",0.96,1
+milho_0016_queima_da_folha.jpg,milho,queima_da_folha,"Queima da folha",0.94,1
+milho_0017_queima_da_folha.jpg,milho,queima_da_folha,"Queima da folha",0.96,1
+milho_0018_queima_da_folha.jpg,milho,queima_da_folha,"Queima da folha",0.83,1
+milho_0019_saudavel.jpg,milho,saudavel,"Folha saudável",0.98,1
+milho_0020_saudavel.jpg,milho,saudavel,"Folha saudável",0.81,1
+milho_0021_saudavel.jpg,milho,saudavel,"Folha saudável",0.95,1
