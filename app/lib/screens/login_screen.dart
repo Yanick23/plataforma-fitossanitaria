@@ -77,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            const Text('AgroDiagnóstico',
+            const Text('Diagnóstico de culturas',
                 textAlign: TextAlign.center, style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
             const SizedBox(height: 6),
             const Text('Entre com o seu número de telefone',

@@ -2,9 +2,15 @@ import 'package:agrodiagnostico/models/cultura.dart';
 import 'package:agrodiagnostico/models/diagnostico.dart';
 import 'package:agrodiagnostico/models/patologia.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
+
+import '../lib/models/cultura.dart';
+import '../lib/models/diagnostico.dart';
 
 void main() {
-  test('o catálogo embutido e a API usam o mesmo tipo de patologia', () {
+  test('test name', () {
+    
+  });('o catálogo embutido e a API usam o mesmo tipo de patologia', () {
     final p = Patologia.doCatalogo(Cultura.mandioca, 'mosaico', {
       'nome_local': 'Mosaico da mandioca',
       'nome_cientifico': 'Begomovírus',

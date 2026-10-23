@@ -47,7 +47,7 @@ class InicioScreen extends StatelessWidget {
             child: const Icon(Icons.eco, color: Colors.white, size: 44),
           ),
           const SizedBox(height: 22),
-          const Text('AgroDiagnóstico', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+          const Text('Diagnóstico de culturas', textAlign: TextAlign.center, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           const Text(
             'Tire uma foto e saiba na hora o que está a afectar a sua plantação',

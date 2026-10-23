@@ -27,7 +27,7 @@ async def ciclo_de_vida(_: FastAPI):
 
 
 app = FastAPI(
-    title="AgroDiagnóstico API",
+    title="API de diagnóstico de culturas",
     version="1.0.0",
     description=(
         "API da plataforma de diagnóstico de doenças e pragas em milho e mandioca. "

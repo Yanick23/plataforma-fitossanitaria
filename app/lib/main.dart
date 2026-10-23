@@ -24,7 +24,7 @@ class AgroDiagnosticoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AgroDiagnóstico',
+      title: 'Diagnóstico de culturas',
       debugShowCheckedModeBanner: false,
       theme: criarTema(),
       // Sem sessão → login (RF10). Com sessão guardada, entra directamente,
