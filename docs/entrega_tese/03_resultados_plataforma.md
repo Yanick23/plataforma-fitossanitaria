@@ -232,3 +232,41 @@ tabelas `fotos_referencia` e `seguimentos`.
   possível (e fica na auditoria).
 - O seguimento já é recebido pela API, mas a app ainda não pergunta ao agricultor (entrega 2c).
 - O boletim é gerado em JSON e CSV; a versão para imprimir em PDF fica no painel (entrega 2b).
+
+---
+
+## Entrega 2b — Painel da fase 2 (em curso)
+
+### Boletim fitossanitário no painel (25/10/2026)
+
+Nova página **Boletim** no menu «Visão geral». Mostra o boletim da zona de quem o abre: o
+administrador vê o país, um técnico de Boane vê «Boane, Maputo». O período escolhe-se com atalhos
+(7, 30 ou 90 dias, mês anterior) ou com datas à escolha.
+
+| Parte do boletim | Conteúdo |
+|---|---|
+| Cabeçalho | Zona, período, data de geração e quem o preparou |
+| 1. Síntese | Parágrafos escritos automaticamente a partir dos números (ex.: «A ocorrência mais frequente foi Mancha cinzenta da folha (Milho), com 6 casos; o distrito com mais casos foi Boane (25).») |
+| 2. Indicadores | Diagnósticos, agricultores activos e novos, confiança abaixo de 60%, exactidão em campo, alertas, sinais de surto, visitas resolvidas e tempo médio até resolver |
+| 3–4. Gráficos | Principais pragas e doenças; distritos mais afectados |
+| 5–8. Tabelas | Sinais de surto; casos de declaração obrigatória (suspeita/confirmado); alertas emitidos com a taxa de leitura; eficácia das recomendações |
+| Notas | Como cada número é calculado (origem dos dados, distrito, classe corrigida, exactidão, regra de surto) |
+
+- **Imprimir ou PDF:** o botão usa a impressão do navegador, com uma folha de estilos própria
+  (A4, sem menu nem botões, sempre em fundo claro, mesmo com o painel no tema escuro). O título do
+  documento dá o nome ao PDF guardado (ex.: «Boletim fitossanitário — Moçambique — 2026-09-26 a 2026-10-25»).
+- **Privacidade:** o telefone do agricultor nos casos de declaração obrigatória aparece no ecrã,
+  mas **não sai na impressão**, porque um boletim impresso circula.
+- **CSV:** descarrega as contagens por distrito, cultura e praga do mesmo período.
+- Ajuste na API: os alertas do boletim passaram a vir completos (destino, nível, praga, leituras),
+  e as pragas aparecem com o nome da cultura («Milho» em vez de «milho»).
+
+**Como foi testado:** 44 testes da API aprovados (o teste do boletim verifica o alerta). No
+navegador (Edge, automatizado), com os dados reais: boletim nacional com os 35 diagnósticos,
+31 com praga ou doença, 5 sinais de surto e 1 alerta urgente lido por 1 de 1 agricultor; boletim
+do técnico de Boane; atalho «Mês anterior» = 01/09 a 30/09/2026; sem erros na consola; sem
+deslocamento horizontal num ecrã de telemóvel (390 px). O PDF gerado tem 3 páginas A4 e sai em
+fundo claro também a partir do tema escuro.
+
+Figuras: `dados_web/2b_01_boletim_admin.png` (boletim nacional), `dados_web/2b_04_boletim_tecnico.png`
+(técnico de Boane), `dados_web/2b_03_boletim_escuro.png` (tema escuro) e `dados_web/2b_boletim_exemplo.pdf` (PDF impresso).
