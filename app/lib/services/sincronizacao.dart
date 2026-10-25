@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../models/cultura.dart';
+import '../models/diagnostico.dart';
+import 'alertas_locais.dart';
 import 'api_cliente.dart';
 import 'catalogo.dart';
 import 'conectividade.dart';
@@ -10,18 +12,25 @@ import 'gestor_modelos.dart';
 import 'historial_db.dart';
 import 'registo_tecnico.dart';
 import 'sessao.dart';
+import 'visitas_locais.dart';
 
 class ResumoSincronizacao {
   const ResumoSincronizacao({
     this.enviados = 0,
     this.rejeitados = 0,
     this.modelosActualizados = const [],
+    this.alertasNovos = 0,
+    this.validacoesNovas = 0,
+    this.visitasActualizadas = 0,
     this.erro,
   });
 
   final int enviados;
   final int rejeitados;
   final List<Cultura> modelosActualizados;
+  final int alertasNovos;
+  final int validacoesNovas;
+  final int visitasActualizadas;
   final String? erro;
 
   String get mensagem {
@@ -29,6 +38,9 @@ class ResumoSincronizacao {
     final partes = <String>[
       if (enviados > 0) '$enviados diagnóstico(s) sincronizado(s)',
       if (rejeitados > 0) '$rejeitados rejeitado(s) pelo servidor',
+      if (alertasNovos > 0) '$alertasNovos alerta(s) novo(s)',
+      if (validacoesNovas > 0) '$validacoesNovas diagnóstico(s) revisto(s) pelo técnico',
+      if (visitasActualizadas > 0) '$visitasActualizadas visita(s) actualizada(s)',
       for (final c in modelosActualizados) 'modelo de ${c.nome.toLowerCase()} actualizado',
     ];
     return partes.isEmpty ? 'Tudo sincronizado' : partes.join(' · ');
@@ -104,7 +116,34 @@ class Sincronizacao extends ChangeNotifier {
         if (await GestorModelos.instancia.actualizar(c)) modelos.add(c);
       }
 
-      return ultimo = ResumoSincronizacao(enviados: enviados, rejeitados: rejeitados, modelosActualizados: modelos);
+      // 5. Validação pelo técnico: «Confirmado» ou «Corrigido» no historial.
+      var validacoes = 0;
+      for (final v in await ApiCliente.instancia.validacoes()) {
+        if (await db.actualizarValidacao(
+            v.diagnosticoId, Validacao.deTexto(v.estado), v.classeConfirmada, v.nota)) {
+          validacoes++;
+        }
+      }
+
+      // 6. Alertas da zona: primeiro as leituras feitas sem rede, depois os activos.
+      final alertas = AlertasLocais.instancia;
+      for (final id in alertas.lidosPorEnviar) {
+        await ApiCliente.instancia.marcarAlertaLido(id);
+        await alertas.leituraConfirmada(id);
+      }
+      final alertasNovos = await alertas.actualizar(await ApiCliente.instancia.alertas());
+
+      // 7. Pedidos de visita (estado, data agendada e notas do técnico).
+      final visitas = await VisitasLocais.instancia.actualizar(await ApiCliente.instancia.visitas());
+
+      return ultimo = ResumoSincronizacao(
+        enviados: enviados,
+        rejeitados: rejeitados,
+        modelosActualizados: modelos,
+        alertasNovos: alertasNovos,
+        validacoesNovas: validacoes,
+        visitasActualizadas: visitas,
+      );
     } on ErroApi catch (e) {
       return ultimo = ResumoSincronizacao(enviados: enviados, erro: e.mensagem);
     } catch (e) {

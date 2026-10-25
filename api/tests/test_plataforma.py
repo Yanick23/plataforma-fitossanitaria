@@ -144,6 +144,7 @@ def test_alertas_por_zona(cliente):
     assert lista[distrital["id"]]["lidos"] == 1
     meu = next(a for a in cliente.get("/alertas/meus", headers=no_distrito).json() if a["id"] == distrital["id"])
     assert meu["lido"] is True
+    assert meu["patologia_codigo"] == "lagarta_do_cartucho" and meu["cultura_id"] == "milho"
     assert cliente.post(f"/alertas/{distrital['id']}/arquivar", headers=tecnico).status_code == 204
     assert distrital["id"] not in ids(no_distrito)
 

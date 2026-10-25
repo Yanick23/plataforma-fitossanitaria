@@ -14,9 +14,23 @@ class HistorialDb {
 
   Database? _db;
 
+  // Versão 2: colunas da validação pelo técnico.
+  static const _colunasValidacao = [
+    "validacao TEXT NOT NULL DEFAULT 'PENDENTE'",
+    'classe_confirmada TEXT',
+    'nota_tecnico TEXT',
+  ];
+
   Future<Database> get _base async => _db ??= await openDatabase(
         p.join(await getDatabasesPath(), 'agrodiagnostico.db'),
-        version: 1,
+        version: 2,
+        onUpgrade: (db, antiga, nova) async {
+          if (antiga < 2) {
+            for (final coluna in _colunasValidacao) {
+              await db.execute('ALTER TABLE diagnosticos ADD COLUMN $coluna');
+            }
+          }
+        },
         onCreate: (db, version) => db.execute('''
           CREATE TABLE diagnosticos (
             id TEXT PRIMARY KEY,               -- UUID gerado no telemóvel
@@ -31,7 +45,8 @@ class HistorialDb {
             tempo_inferencia_ms INTEGER NOT NULL,
             tempo_total_ms INTEGER NOT NULL,
             estado_sinc TEXT NOT NULL DEFAULT '${EstadoSinc.pendente.valor}',
-            imagem_enviada INTEGER NOT NULL DEFAULT 0
+            imagem_enviada INTEGER NOT NULL DEFAULT 0,
+            ${_colunasValidacao.join(',\n            ')}
           )
         '''),
       );
@@ -75,4 +90,15 @@ class HistorialDb {
   Future<void> marcarSincronizado(String id) async => (await _base).update(
       'diagnosticos', {'estado_sinc': EstadoSinc.sincronizado.valor},
       where: 'id = ?', whereArgs: [id]);
+
+  /// Guarda a validação do técnico; devolve true se mudou alguma coisa.
+  Future<bool> actualizarValidacao(String id, Validacao validacao, String? classe, String? nota) async {
+    final n = await (await _base).update(
+      'diagnosticos',
+      {'validacao': validacao.valor, 'classe_confirmada': classe, 'nota_tecnico': nota},
+      where: 'id = ? AND (validacao != ? OR IFNULL(classe_confirmada, \'\') != ? OR IFNULL(nota_tecnico, \'\') != ?)',
+      whereArgs: [id, validacao.valor, classe ?? '', nota ?? ''],
+    );
+    return n > 0;
+  }
 }

@@ -6,8 +6,10 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart' show MediaType;
 
+import '../models/alerta.dart';
 import '../models/cultura.dart';
 import '../models/diagnostico.dart';
+import '../models/visita.dart';
 import '../models/patologia.dart';
 import '../models/utilizador.dart';
 import 'sessao.dart';
@@ -32,6 +34,21 @@ class RespostaSincronizacao {
   const RespostaSincronizacao(this.confirmados, this.rejeitados);
   final Set<String> confirmados;
   final Set<String> rejeitados;
+}
+
+/// Província (código) ou distrito (id em texto) para escolher no registo.
+class Regiao {
+  const Regiao(this.chave, this.nome);
+  final String chave;
+  final String nome;
+}
+
+class ValidacaoApi {
+  const ValidacaoApi(this.diagnosticoId, this.estado, this.classeConfirmada, this.nota);
+  final String diagnosticoId;
+  final String estado;
+  final String? classeConfirmada;
+  final String? nota;
 }
 
 class InfoModelo {
@@ -110,10 +127,69 @@ class ApiCliente {
           headers: _cabecalhos, body: jsonEncode({'telefone': telefone, 'palavra_passe': palavraPasse}))));
 
   Future<RespostaLogin> registar(
-          {required String nome, required String telefone, required String palavraPasse, String? area}) async =>
+          {required String nome,
+          required String telefone,
+          required String palavraPasse,
+          String? area,
+          int? distritoId}) async =>
       _login(await _enviar(() => _http.post(_uri('/auth/registar'),
           headers: _cabecalhos,
-          body: jsonEncode({'nome': nome, 'telefone': telefone, 'palavra_passe': palavraPasse, 'area': area}))));
+          body: jsonEncode({
+            'nome': nome,
+            'telefone': telefone,
+            'palavra_passe': palavraPasse,
+            'area': area,
+            'distrito_id': distritoId,
+          }))));
+
+  // --- Regiões (registo) ------------------------------------------------------
+
+  Future<List<Regiao>> provincias() async => [
+        for (final p in (_json(await _enviar(() => _http.get(_uri('/provincias'), headers: _cabecalhos))) as List)
+            .cast<Map<String, dynamic>>())
+          Regiao(p['codigo'] as String, p['nome'] as String),
+      ];
+
+  Future<List<Regiao>> distritos(String provincia) async => [
+        for (final d in (_json(await _enviar(() =>
+                    _http.get(_uri('/distritos', {'provincia': provincia}), headers: _cabecalhos))) as List)
+            .cast<Map<String, dynamic>>())
+          Regiao('${d['id']}', d['nome'] as String),
+      ];
+
+  // --- Validação, alertas e visitas (o que o técnico fez no painel) ----------
+
+  /// Estado de validação dos diagnósticos deste agricultor que já estão na API.
+  Future<List<ValidacaoApi>> validacoes() async => [
+        for (final d in (_json(await _enviar(() => _http.get(_uri('/diagnosticos'), headers: _cabecalhos))) as List)
+            .cast<Map<String, dynamic>>())
+          ValidacaoApi(d['id'] as String, d['validacao'] as String? ?? 'PENDENTE',
+              d['classe_confirmada'] as String?, d['nota_tecnico'] as String?),
+      ];
+
+  Future<List<Alerta>> alertas() async => [
+        for (final a in (_json(await _enviar(() => _http.get(_uri('/alertas/meus'), headers: _cabecalhos))) as List)
+            .cast<Map<String, dynamic>>())
+          Alerta.fromJson(a),
+      ];
+
+  Future<void> marcarAlertaLido(int id) async {
+    try {
+      await _enviar(() => _http.post(_uri('/alertas/$id/lido'), headers: _cabecalhos));
+    } on ErroApi catch (e) {
+      if (e.codigo != 404) rethrow; // alerta arquivado ou expirado entretanto: nada a enviar
+    }
+  }
+
+  Future<List<Visita>> visitas() async => [
+        for (final v in (_json(await _enviar(() => _http.get(_uri('/visitas/minhas'), headers: _cabecalhos))) as List)
+            .cast<Map<String, dynamic>>())
+          Visita.fromJson(v),
+      ];
+
+  Future<Visita> pedirVisita(String diagnosticoId, String? mensagem) async => Visita.fromJson(_json(await _enviar(
+      () => _http.post(_uri('/visitas'),
+          headers: _cabecalhos, body: jsonEncode({'diagnostico_id': diagnosticoId, 'mensagem': mensagem})))) as Map<String, dynamic>);
 
   Future<RespostaLogin> renovarToken() async =>
       _login(await _enviar(() => _http.post(_uri('/auth/renovar'), headers: _cabecalhos)));

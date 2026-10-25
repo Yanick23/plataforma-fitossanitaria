@@ -132,12 +132,14 @@ def _activos_para(u: Utilizador):
 
 
 async def meus(sessao: AsyncSession, u: Utilizador) -> list[AlertaAgricultorLer]:
-    alertas = list(await sessao.scalars(select(Alerta).where(_activos_para(u)).order_by(Alerta.criado_em.desc())))
+    alertas = list(await sessao.scalars(select(Alerta).where(_activos_para(u)).order_by(Alerta.criado_em.desc())
+                                        .options(selectinload(Alerta.patologia))))
     lidos = set(await sessao.scalars(select(AlertaLeitura.alerta_id).where(
         AlertaLeitura.utilizador_id == u.id, AlertaLeitura.alerta_id.in_([a.id for a in alertas])))) if alertas else set()
     return [AlertaAgricultorLer(
         id=a.id, titulo=a.titulo, mensagem=a.mensagem, nivel=a.nivel, cultura_id=a.cultura_id,
-        patologia_id=a.patologia_id, zona=await nome_zona(sessao, a.provincia_codigo, a.distrito_id),
+        patologia_id=a.patologia_id, patologia_codigo=a.patologia.codigo if a.patologia else None,
+        zona=await nome_zona(sessao, a.provincia_codigo, a.distrito_id),
         criado_em=a.criado_em, expira_em=a.expira_em, lido=a.id in lidos) for a in alertas]
 
 

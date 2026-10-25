@@ -156,3 +156,29 @@ Capturas: `docs/entrega_tese/dados_web/1c_*.png` (16 figuras).
   (todos recentes) todos os sinais são «sem histórico».
 - A exactidão em campo tem, por agora, uma só validação; é um indicador que cresce com o uso.
 - O agricultor ainda não vê na app o alerta, a correcção nem a visita agendada: é a entrega 1d.
+
+---
+
+## Entrega 1d — A app recebe o trabalho do técnico (25/10/2026)
+
+### O que foi implementado (app Flutter)
+
+| Funcionalidade | Como funciona na app |
+|---|---|
+| Alertas da zona | Na sincronização, a app pede `GET /alertas/meus` e guarda os alertas no telemóvel (`alertas.json`), para se lerem sem rede. Ecrã inicial com **sino e número de alertas por ler** e **cartão do último alerta novo**; ecrã «Alertas» com o detalhe e a recomendação da praga associada. Abrir um alerta sem rede marca-o como lido localmente; a leitura é enviada (`POST /alertas/{id}/lido`) na sincronização seguinte |
+| Validação do técnico | A sincronização pede `GET /diagnosticos` e grava no historial (SQLite, versão 2 com migração) o estado: **«Confirmado pelo técnico»** ou **«Corrigido pelo técnico»**, a classe confirmada e a nota. No detalhe, se o técnico corrigiu, o nome e a **recomendação passam a ser os da classe correcta**, com a indicação do que a app tinha previsto |
+| Pedido de visita | Botão **«Pedir visita do técnico»** no detalhe de um diagnóstico sincronizado (com mensagem opcional; precisa de rede). O estado (à espera, agendada com data e técnico, feita) e as notas do técnico chegam na sincronização (`GET /visitas/minhas`) |
+| Distrito no registo | Província e distrito escolhidos em **listas** (11 províncias, 157 distritos, `GET /provincias` e `GET /distritos`), em vez de texto livre; o distrito decide que alertas o agricultor recebe |
+| API | `GET /alertas/meus` passa a devolver também o código da praga (`patologia_codigo`), para a app a encontrar no catálogo local |
+
+A mensagem da sincronização resume as novidades (ex.: «1 alerta(s) novo(s) · 1 diagnóstico(s) revisto(s) pelo técnico · 1 visita(s) actualizada(s)»).
+
+### Como foi testado
+
+- `flutter analyze`: sem problemas; APK de release compilado (46,0 MB) e instalado no SOTEN R80.
+- API: 38 testes aprovados (o teste dos alertas verifica o novo `patologia_codigo`).
+- **Sincronização real no telemóvel:** depois de instalar a nova versão, a API registou os pedidos novos da app — `GET /diagnosticos`, `GET /alertas/meus` e `GET /visitas/minhas`, todos com resposta 200 — logo a seguir aos já existentes (renovar token, catálogo, modelos). Nesse momento havia na base: 1 alerta urgente para Boane, 1 diagnóstico corrigido pelo técnico e 1 visita agendada (criados no teste da entrega 1c).
+
+### Por fazer nesta entrega
+
+- **Confirmação visual no telemóvel** (capturas do ecrã inicial com o alerta, do ecrã de alertas, do historial com «Corrigido pelo técnico», do detalhe com a nota e a visita agendada, e do registo com as listas): adiada porque o telemóvel estava com 6% de bateria e em uso. Fazer quando estiver a carregar.
