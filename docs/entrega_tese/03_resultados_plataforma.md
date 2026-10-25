@@ -310,3 +310,60 @@ Figuras: `dados_web/2b_10_catalogo_lista.png`, `2b_11_catalogo_gaveta.png`, `2b_
   os dados reais actuais (2 semanas) ainda não há tendência.
 - As fotografias de referência ficam no disco do servidor (pasta `dados/imagens/referencia`) e
   entram na cópia de segurança dos ficheiros, não no `pg_dump`.
+
+---
+
+## Entrega 2c — A app recebe a fase 2 (25/10/2026)
+
+### O que foi implementado (app Flutter)
+
+| Funcionalidade | Como funciona na app |
+|---|---|
+| Qualidade da fotografia | Antes de analisar, a app mede a **nitidez** (variância do Laplaciano da luminância, com a foto reduzida a 256 px) e o **brilho** (média da luminância). Se a foto estiver desfocada, escura ou com luz a mais, explica o problema e como o resolver, e deixa escolher entre «Tirar outra foto» e «Usar esta foto». A medição corre noutro isolate e fica no registo técnico |
+| Várias fotografias | Quando o resultado tem confiança abaixo de 60%, o botão principal passa a ser **«Juntar outra foto»** (até 3 fotos da mesma planta). A decisão é a **média das probabilidades** das fotos; o ecrã mostra as miniaturas com a confiança de cada uma, e o diagnóstico guarda a foto que mais mostra a classe final |
+| Como reconhecer e prevenção | O resultado e o detalhe mostram os **sintomas** e as **fotografias de referência** («Compare com a sua planta», ampliáveis), e, com confiança suficiente, a **prevenção** («Para não voltar a acontecer»). As fotos são descarregadas na sincronização e ficam no telemóvel para ver sem rede; as que o painel remove são apagadas |
+| Seguimento do tratamento | **7 dias** depois de um diagnóstico de praga ou doença (até 60 dias), o ecrã inicial mostra «Como está a sua planta?». Duas perguntas: seguiu a recomendação (sim / em parte / não) e como está a planta (melhorou / igual / piorou / não sei). A resposta fica no historial (SQLite, versão 3 com migração) e é enviada na sincronização; também se pode responder ou mudar a resposta no detalhe do diagnóstico |
+| Versão piloto do modelo | A app instala a versão que a API indica para a conta: a piloto, se o distrito do agricultor estiver no piloto, ou a publicada. Se a versão em uso for **retirada**, a app volta à anterior (a v1 é a embutida no APK, sem descarregar nada). As Definições mostram «versão 2 (piloto no seu distrito)» |
+
+### Calibração dos limiares de qualidade
+
+Os limiares foram medidos e não escolhidos ao acaso. Usaram-se as 29 fotografias reais
+sincronizadas pelo SOTEN R80 nos testes T01–T13 e cópias das mesmas desfocadas (desfoque
+gaussiano de raio 3 e 6 px) e escurecidas ou aclaradas:
+
+| Medida | Fotos reais (mín. – mediana – máx.) | Cópias degradadas | Limiar |
+|---|---|---|---|
+| Nitidez | 4,0 – 134,9 – 454,6 | desfocadas r=3: 0,7 – 8,4 | **< 12 = desfocada** |
+| Brilho | 84 – 134 – 189 | escurecidas: 21 – 47; aclaradas: até 247 | **< 55 = escura; > 220 = luz a mais** |
+
+As duas fotografias reais com nitidez 4,0 e 5,2 estavam de facto desfocadas (imagens de teste do
+conjunto de dados). Uma foto suave mas utilizável (gafanhoto, nitidez 23) passa. Um teste
+automático corre a implementação em Dart sobre as mesmas fotos e confirma os mesmos veredictos;
+o brilho difere menos de 3 pontos do cálculo de referência em Python.
+
+### Como foi testado
+
+- `flutter analyze`: sem problemas. `flutter test`: **11 testes aprovados**:
+  - qualidade da foto com as fotos reais;
+  - combinação de fotos: a média decide (55% gafanhoto + 90% lagarta → lagarta 65%), a foto
+    guardada é a melhor e o limite é de 3 fotos;
+  - seguimento: a resposta sobrevive à gravação, linhas antigas sem as colunas novas lêem-se,
+    e a resposta dada noutro telemóvel conta;
+  - catálogo com sintomas, prevenção, validação e fotos.
+- APK de release para arm64 compilado (33,4 MB) e instalado no SOTEN R80 por cima da versão
+  anterior, o que também exercita a migração do historial de v2 para v3.
+
+### Por fazer nesta entrega
+
+- **Confirmação visual no telemóvel:** cartão de seguimento no ecrã inicial, resposta e envio,
+  aviso de qualidade, «Juntar outra foto» e «Como reconhecer» com a foto de referência. Ficou
+  adiada porque o telemóvel estava bloqueado e com 12% de bateria.
+
+### Limitações da entrega 2c
+
+- A média das probabilidades assume que as fotos são da mesma planta; a app pede-o, mas não o
+  verifica.
+- A verificação de qualidade não detecta uma foto nítida de outra coisa (por exemplo, o chão).
+  Esse caso continua a ser apanhado, em parte, pela confiança baixa.
+- O seguimento depende de o agricultor abrir a app; sem notificações (fase 4), a pergunta só
+  aparece quando a usa.
