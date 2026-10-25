@@ -106,3 +106,53 @@ sempre com ícone e texto.
   interface não clica). A verificação manual completa fica para a entrega 1c.
 - Ainda sem os ecrãs de Validação (fila e exactidão em campo), Visitas, Vigilância (surtos) e
   Auditoria: são a entrega 1c.
+
+---
+
+## Entrega 1c — Validação, visitas, vigilância e auditoria no painel (25/10/2026)
+
+### O que foi implementado
+
+Quatro ecrãs novos no painel (mesma arquitectura MVVM), que fecham o ciclo
+**diagnóstico → validação → vigilância → alerta → visita**:
+
+| Ecrã | O que mostra / permite |
+|---|---|
+| Validação | Fila dos diagnósticos por validar (menos certos primeiro; depois de validar abre o seguinte); **exactidão em campo** (concordância modelo × técnico), exactidão por praga, pares que o modelo confunde e exactidão por versão do modelo; **exportação do conjunto de retreino** (ZIP, só administrador) |
+| Visitas | Pedidos dos agricultores por estado (contador de pendentes na navegação); agendar com data e hora, reagendar, resolver ou cancelar, com notas que o agricultor vê |
+| Vigilância | Sinais de surto com janela (7/14 dias) e sensibilidade (sensível, normal, conservador); **«Criar alerta» abre o alerta já preenchido** (título, mensagem com a recomendação do catálogo, nível, praga e distrito); mapa e ranking de ocorrências por cultura, praga e período |
+| Auditoria | Registo de todas as alterações (só administrador), com filtro por tipo e detalhe campo a campo (antes → depois) |
+
+### Como foi testado
+
+Teste ponta-a-ponta automatizado: um navegador real (Microsoft Edge, conduzido com
+`puppeteer-core`) entra no painel e executa as acções como um utilizador, contra a API e a
+base de dados reais. **9 de 9 passos aprovados, sem erros na consola do navegador:**
+
+1. Diagnósticos — abrir o caso de 58% (previsto «mancha cinzenta»), ver a fotografia e o
+   Grad-CAM, corrigir para «listrado do milho» com nota → «Correcção registada».
+2. Validação — exactidão em campo passa a 1 validado, 1 corrigido, 34 por validar; o par
+   «mancha cinzenta → listrado do milho» aparece em «O modelo confunde».
+3. Alertas — compor um alerta urgente de gafanhoto para Boane; o rodapé mostra «Vai chegar a
+   1 agricultor(es) · Distrito de Boane» antes do envio → «Alerta enviado a 1 agricultor(es)».
+4. Vigilância — «Criar alerta» num surto abre o alerta preenchido («Mancha cinzenta da folha
+   em Boane»).
+5. Visitas — agendar o pedido de visita do agricultor (gafanhoto) → «Visita agendada».
+6. Utilizadores — criar a conta «Técnica de Boane» (técnico, distrito de Boane) → «Conta criada».
+7. Catálogo — editor de recomendação com a pré-visualização do ecrã da app.
+8. Modelos — gaveta de publicação com as 5 classes da versão actual pré-preenchidas.
+9. Auditoria — lista e detalhe (antes → depois) das acções anteriores.
+
+Teste da vista do **técnico** (conta criada no passo 6): zona «Boane, Maputo»; a Auditoria não
+aparece; no alerta, a província e o distrito ficam fixos em Maputo/Boane (1 destinatário); em
+Utilizadores vê apenas o agricultor da sua zona.
+
+TypeScript estrito sem erros; build de produção 375 KB (120 KB comprimido).
+Capturas: `docs/entrega_tese/dados_web/1c_*.png` (16 figuras).
+
+### Limitações da entrega 1c
+
+- A detecção de surtos só ganha significado com semanas de dados; com os dados de teste
+  (todos recentes) todos os sinais são «sem histórico».
+- A exactidão em campo tem, por agora, uma só validação; é um indicador que cresce com o uso.
+- O agricultor ainda não vê na app o alerta, a correcção nem a visita agendada: é a entrega 1d.
