@@ -514,7 +514,7 @@ class Boletim(Esquema):
     dias_medios_resolucao: float | None
     principais_pragas: list[LinhaBoletim]
     distritos_mais_afectados: list[LinhaBoletim]
-    alertas: list[LinhaBoletim]
+    alertas: list[AlertaLer]
     surtos: list[Surto]
     declaracoes: list[Declaracao]
     eficacia: list[EficaciaPatologia]

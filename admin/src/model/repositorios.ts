@@ -2,7 +2,7 @@
 
 import { http } from './http'
 import type {
-  Alcance, Alerta, Cultura, Diagnostico, Distrito, EstadoValidacao, EstadoVisita, ExactidaoCampo, Modelo,
+  Alcance, Alerta, Boletim, Cultura, Diagnostico, Distrito, EstadoValidacao, EstadoVisita, ExactidaoCampo, Modelo,
   NovoAlerta, Ocorrencia, Pagina, Patologia, Perfil, Provincia, RegistoAuditoria, Resumo, Surto, TipoPatologia,
   Utilizador, UtilizadorAdmin, Visita,
 } from './tipos'
@@ -137,4 +137,15 @@ export const visitasRepo = {
 export const auditoriaRepo = {
   listar: (f: { accao?: string; entidade?: string; limite?: number; deslocamento?: number }) =>
     dados(http.get<Pagina<RegistoAuditoria>>('/gestao/auditoria', { params: limpar(f) })),
+}
+
+/** Período do boletim: dias inteiros no formato AAAA-MM-DD. */
+export interface PeriodoBoletim {
+  inicio: string
+  fim: string
+}
+
+export const boletimRepo = {
+  obter: (p: PeriodoBoletim) => dados(http.get<Boletim>('/gestao/boletim', { params: p })),
+  caminhoCsv: (p: PeriodoBoletim) => `/gestao/boletim.csv?inicio=${p.inicio}&fim=${p.fim}`,
 }

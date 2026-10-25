@@ -7,13 +7,15 @@ from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ..esquemas import Boletim, Declaracao, EficaciaPatologia, LinhaBoletim
 from ..regioes import condicao_utilizador_na_zona, filtro_zona, zona_de
 from ..repositorios import diagnosticos as repo
 from ..repositorios.diagnosticos import FiltrosDiagnostico
-from ..tabelas import (Alerta, Diagnostico, Distrito, EstadoVisita, Patologia, PedidoVisita, Perfil, ResultadoTratamento,
+from ..tabelas import (Alerta, Cultura, Diagnostico, Distrito, EstadoVisita, Patologia, PedidoVisita, Perfil, ResultadoTratamento,
                        Seguiu, Seguimento, TipoPatologia, Utilizador)
+from . import alertas as servico_alertas
 from .painel import descricao_zona
 from .vigilancia import surtos
 
@@ -80,13 +82,14 @@ async def boletim(sessao: AsyncSession, u: Utilizador, inicio: datetime, fim: da
     por_classe = Counter((d.cultura_id, classe_final(d)) for d in pragas_doencas)
     por_distrito = Counter(d.distrito.nome for d in pragas_doencas if d.distrito)
     validados = [d for d in diags if d.validacao]
+    culturas = {c.id: c.nome for c in await sessao.scalars(select(Cultura))}
     novos = await sessao.scalar(select(func.count(Utilizador.id)).where(
         Utilizador.perfil == Perfil.AGRICULTOR, condicao_utilizador_na_zona(zona),
         Utilizador.criado_em >= inicio, Utilizador.criado_em <= fim)) or 0
 
-    alertas = list(await sessao.scalars(select(Alerta).where(
-        Alerta.criado_em >= inicio, Alerta.criado_em <= fim,
-        filtro_zona(zona, Alerta.distrito_id, Alerta.provincia_codigo)).order_by(Alerta.criado_em)))
+    alertas = list(await sessao.scalars(select(Alerta).options(selectinload(Alerta.autor), selectinload(Alerta.patologia))
+        .where(Alerta.criado_em >= inicio, Alerta.criado_em <= fim,
+               filtro_zona(zona, Alerta.distrito_id, Alerta.provincia_codigo)).order_by(Alerta.criado_em)))
     visitas = list(await sessao.scalars(
         select(PedidoVisita).outerjoin(Distrito, Distrito.id == PedidoVisita.distrito_id)
         .join(Utilizador, Utilizador.id == PedidoVisita.agricultor_id)
@@ -104,10 +107,10 @@ async def boletim(sessao: AsyncSession, u: Utilizador, inicio: datetime, fim: da
         exactidao_campo=round(sum(d.validacao.correcto for d in validados) / len(validados), 4) if validados else None,
         alertas_enviados=len(alertas), visitas_pedidas=len(visitas), visitas_resolvidas=len(resolvidas),
         dias_medios_resolucao=round(sum(dias) / len(dias), 1) if dias else None,
-        principais_pragas=[LinhaBoletim(nome=f"{pats[k].nome_local} ({k[0]})" if k in pats else k[1], valor=n)
+        principais_pragas=[LinhaBoletim(nome=f"{pats[k].nome_local} ({culturas.get(k[0], k[0])})" if k in pats else k[1], valor=n)
                            for k, n in por_classe.most_common(8)],
         distritos_mais_afectados=[LinhaBoletim(nome=n, valor=v) for n, v in por_distrito.most_common(8)],
-        alertas=[LinhaBoletim(nome=a.titulo, valor=0, detalhe=f"{a.nivel.value} · {a.criado_em:%d/%m/%Y}") for a in alertas],
+        alertas=await servico_alertas.para_ler(sessao, alertas),
         surtos=await surtos(sessao, u, agora=fim),
         declaracoes=_declaracoes(diags, pats),
         eficacia=_eficacia(diags, pats),

@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { useSessao } from '@/nucleo/sessao'
 import { Esqueleto } from '@/ui/componentes'
 import { AlertasView } from '@/views/AlertasView'
+import { BoletimView } from '@/views/BoletimView'
 import { CatalogoView } from '@/views/CatalogoView'
 import { DiagnosticosView } from '@/views/DiagnosticosView'
 import { EntradaView } from '@/views/EntradaView'
@@ -31,6 +32,7 @@ export function App() {
           <Route path="modelos" element={<ModelosView />} />
           <Route path="utilizadores" element={<UtilizadoresView />} />
           <Route path="vigilancia" element={<VigilanciaView />} />
+          <Route path="boletim" element={<BoletimView />} />
           <Route path="validacao" element={<ValidacaoView />} />
           <Route path="visitas" element={<VisitasView />} />
           {eAdministrador && <Route path="auditoria" element={<AuditoriaView />} />}

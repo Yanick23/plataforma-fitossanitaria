@@ -187,7 +187,13 @@ def test_declaracoes_e_boletim(cliente):
     estados = {d["diagnostico_id"]: d["estado"] for d in cliente.get("/vigilancia/declaracoes", headers=tecnico).json()}
     assert estados == {suspeita["id"]: "SUSPEITA", confirmada["id"]: "CONFIRMADO"}
 
+    cliente.post("/alertas", headers=tecnico, json={
+        "titulo": "Ferrugem em Magude", "mensagem": "Retire as folhas afectadas.", "nivel": "AVISO",
+        "patologia_id": p["id"], "distrito_id": distrito(cliente, "Magude")["id"]})
+
     b = cliente.get("/gestao/boletim", headers=tecnico).json()
+    assert [(a["titulo"], a["nivel"], a["zona"], a["patologia_nome"]) for a in b["alertas"]] == [
+        ("Ferrugem em Magude", "AVISO", "Distrito de Magude", "Ferrugem")]
     assert "Magude" in b["zona"] and b["diagnosticos"] == 3 and b["diagnosticos_pragas_doencas"] == 2
     assert b["validados"] == 1 and b["exactidao_campo"] == 1 and b["taxa_confianca_baixa"] == round(1 / 3, 4)
     assert b["agricultores_novos"] >= 1 and b["distritos_mais_afectados"] == [{"nome": "Magude", "valor": 2, "detalhe": None}]
