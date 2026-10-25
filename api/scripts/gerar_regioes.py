@@ -62,6 +62,13 @@ def dentro(ponto, anel):
     return resultado
 
 
+def horario(anel):
+    """O d3-geo (geometria esférica) quer o anel exterior no sentido horário; senão desenha o
+    complemento (o mundo menos o distrito). Área com sinal > 0 = anti-horário -> inverter."""
+    area = sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in zip(anel, anel[1:]))
+    return anel[::-1] if area > 0 else anel
+
+
 def simplificar(anel, tolerancia):
     """Douglas-Peucker; mantém pelo menos 4 pontos para o anel continuar fechado."""
     if len(anel) < 5:
@@ -108,7 +115,7 @@ def main(adm1: Path, adm2: Path) -> None:
         assert provincia in PROVINCIAS, (nome, provincia)
         distritos.append({"nome": bonito(nome), "provincia": PROVINCIAS[provincia]})
 
-        coords = [[[[round(x, 3), round(y, 3)] for x, y in simplificar(anel, 0.008)] for anel in p[:1]]
+        coords = [[horario([[round(x, 3), round(y, 3)] for x, y in simplificar(anel, 0.008)]) for anel in p[:1]]
                   for p in partes]
         coords = [p for p in coords if len(p[0]) >= 4]
         mapa.append({"type": "Feature",
