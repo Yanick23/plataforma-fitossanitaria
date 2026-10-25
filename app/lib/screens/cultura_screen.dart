@@ -48,7 +48,8 @@ class _CartaoCultura extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: () => Navigator.of(context)
-            .push(MaterialPageRoute(builder: (_) => CapturaScreen(cultura: cultura))),
+            .push(MaterialPageRoute(
+                settings: const RouteSettings(name: CapturaScreen.rota), builder: (_) => CapturaScreen(cultura: cultura))),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 22),

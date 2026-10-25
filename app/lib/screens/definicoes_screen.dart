@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/cultura.dart';
 import '../models/modelo_ml.dart';
+import '../services/acompanhamento.dart';
 import '../services/alertas_locais.dart';
 import '../services/visitas_locais.dart';
 import '../services/gestor_modelos.dart';
@@ -93,7 +94,7 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
               future: _modelos,
               builder: (context, s) => Column(children: [
                 for (final m in s.data ?? const <ModeloML>[])
-                  _linha(m.cultura.nome, 'versão ${m.versao}${m.embutido ? ' (embutida)' : ''}'),
+                  _linha(m.cultura.nome, 'versão ${m.versao}${m.embutido ? ' (embutida)' : m.piloto ? ' (piloto no seu distrito)' : ''}'),
               ]),
             ),
           ]),
@@ -122,6 +123,7 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
               // Alertas e visitas pertencem à conta (e à zona) que saiu.
               await AlertasLocais.instancia.limpar();
               await VisitasLocais.instancia.limpar();
+              Acompanhamento.instancia.limpar();
             },
           ),
         ],

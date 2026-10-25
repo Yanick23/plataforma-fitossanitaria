@@ -44,11 +44,12 @@ class Regiao {
 }
 
 class ValidacaoApi {
-  const ValidacaoApi(this.diagnosticoId, this.estado, this.classeConfirmada, this.nota);
+  const ValidacaoApi(this.diagnosticoId, this.estado, this.classeConfirmada, this.nota, this.seguimentoRespondido);
   final String diagnosticoId;
   final String estado;
   final String? classeConfirmada;
   final String? nota;
+  final bool seguimentoRespondido;
 }
 
 class InfoModelo {
@@ -58,12 +59,16 @@ class InfoModelo {
     required this.urlFicheiro,
     required this.sha256,
     this.acuraciaTeste,
+    this.piloto = false,
   });
   final int versao;
   final List<String> classes;
   final String urlFicheiro;
   final String sha256;
   final double? acuraciaTeste;
+
+  /// Versão em teste no distrito deste agricultor (ainda não publicada para todos).
+  final bool piloto;
 }
 
 /// Cliente HTTP da API FastAPI (REST + JSON).
@@ -164,8 +169,14 @@ class ApiCliente {
         for (final d in (_json(await _enviar(() => _http.get(_uri('/diagnosticos'), headers: _cabecalhos))) as List)
             .cast<Map<String, dynamic>>())
           ValidacaoApi(d['id'] as String, d['validacao'] as String? ?? 'PENDENTE',
-              d['classe_confirmada'] as String?, d['nota_tecnico'] as String?),
+              d['classe_confirmada'] as String?, d['nota_tecnico'] as String?, d['seguimento_respondido'] == true),
       ];
+
+  /// Resposta ao seguimento do tratamento (responder outra vez substitui; é idempotente).
+  Future<void> enviarSeguimento(String diagnosticoId, Seguiu seguiu, ResultadoTratamento resultado) async {
+    await _enviar(() => _http.post(_uri('/diagnosticos/$diagnosticoId/seguimento'),
+        headers: _cabecalhos, body: jsonEncode({'seguiu': seguiu.valor, 'resultado': resultado.valor})));
+  }
 
   Future<List<Alerta>> alertas() async => [
         for (final a in (_json(await _enviar(() => _http.get(_uri('/alertas/meus'), headers: _cabecalhos))) as List)
@@ -243,6 +254,7 @@ class ApiCliente {
         urlFicheiro: j['url_ficheiro'] as String,
         sha256: j['sha256'] as String,
         acuraciaTeste: (j['acuracia_teste'] as num?)?.toDouble(),
+        piloto: j['estado'] == 'PILOTO',
       );
     } on ErroApi catch (e) {
       if (e.codigo == 404) return null;

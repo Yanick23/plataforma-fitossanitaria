@@ -1,16 +1,28 @@
+import 'dart:isolate';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/cultura.dart';
+import '../models/resultado_classificacao.dart';
+import '../services/pre_processamento.dart';
+import '../services/registo_tecnico.dart';
 import '../tema.dart';
 import '../widgets/botoes.dart';
 import 'processamento_screen.dart';
 
 /// Ecrã 3 — Captura: fotografia com a câmara ou imagem da galeria (RF01).
+///
+/// Antes de analisar, confirma se a foto está nítida e com luz suficiente. Com [anterior],
+/// a nova fotografia junta-se ao resultado anterior (outra vista da mesma planta).
 class CapturaScreen extends StatefulWidget {
-  const CapturaScreen({super.key, required this.cultura});
+  const CapturaScreen({super.key, required this.cultura, this.anterior});
+
+  /// Nome da rota da primeira captura (para «Recomeçar» voltar aqui).
+  static const rota = '/captura';
 
   final Cultura cultura;
+  final ResultadoClassificacao? anterior;
 
   @override
   State<CapturaScreen> createState() => _CapturaScreenState();
@@ -28,6 +40,7 @@ class _CapturaScreenState extends State<CapturaScreen> {
       // descodificação é muito mais rápida em telemóveis de gama baixa.
       final foto = await _picker.pickImage(source: origem, maxWidth: 1024, maxHeight: 1024, imageQuality: 95);
       if (foto == null || !mounted) return;
+      if (!await _qualidadeAceite(foto.path) || !mounted) return;
       // RNF03: mede-se desde a confirmação da imagem até o resultado estar pronto.
       final cronometro = Stopwatch()..start();
       await Navigator.of(context).push(MaterialPageRoute(
@@ -36,6 +49,7 @@ class _CapturaScreenState extends State<CapturaScreen> {
           caminhoImagem: foto.path,
           cronometro: cronometro,
           dataCaptura: DateTime.now(),
+          anterior: widget.anterior,
         ),
       ));
     } catch (e) {
@@ -47,8 +61,30 @@ class _CapturaScreenState extends State<CapturaScreen> {
     }
   }
 
+  /// Mede a nitidez e o brilho; se houver problema, pergunta se quer tirar outra.
+  Future<bool> _qualidadeAceite(String caminho) async {
+    final QualidadeFoto q;
+    final cronometro = Stopwatch()..start();
+    try {
+      q = await Isolate.run(() => avaliarQualidade(caminho));
+    } on FormatException {
+      return true; // a análise mostrará o erro de leitura
+    }
+    RegistoTecnico.instancia.escrever('qualidade da foto: nitidez ${q.nitidez.toStringAsFixed(1)}, '
+        'brilho ${q.brilho.toStringAsFixed(1)}, ${cronometro.elapsedMilliseconds} ms'
+        '${q.boa ? '' : ' — ${q.problemas.map((p) => p.name).join(', ')}'}');
+    if (q.boa || !mounted) return true;
+    final usar = await showModalBottomSheet<bool>(
+      context: context,
+      isDismissible: false,
+      builder: (_) => _AvisoQualidade(problemas: q.problemas),
+    );
+    return usar ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final anterior = widget.anterior;
     return Scaffold(
       backgroundColor: Cores.captura,
       body: SafeArea(
@@ -67,10 +103,13 @@ class _CapturaScreenState extends State<CapturaScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(14)),
-              child: const Text(
-                'Aponte a câmara para a folha afectada.\nUse luz natural e encha o enquadramento com a folha.',
+              child: Text(
+                anterior != null
+                    ? 'Fotografe outra folha da mesma planta, ou a mesma folha de outro ângulo.\n'
+                        'Foto ${anterior.fotos.length + 1} de $maximoFotos.'
+                    : 'Aponte a câmara para a folha afectada.\nUse luz natural e encha o enquadramento com a folha.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, height: 1.35),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, height: 1.35),
               ),
             ),
             const SizedBox(height: 24),
@@ -116,6 +155,53 @@ class _CapturaScreenState extends State<CapturaScreen> {
       ),
     );
   }
+}
+
+/// Explica o problema da foto e deixa escolher: tirar outra (recomendado) ou usar esta.
+class _AvisoQualidade extends StatelessWidget {
+  const _AvisoQualidade({required this.problemas});
+
+  final List<ProblemaFoto> problemas;
+
+  static const _textos = {
+    ProblemaFoto.desfocada: (
+      'A foto está desfocada',
+      'Segure o telemóvel parado e toque no ecrã sobre a folha para focar antes de fotografar.'
+    ),
+    ProblemaFoto.escura: ('A foto está escura', 'Fotografe com luz do dia, sem a sombra do corpo sobre a folha.'),
+    ProblemaFoto.clara: (
+      'A foto tem luz a mais',
+      'Evite o sol directo na folha: faça sombra com a mão ou mude de posição.'
+    ),
+  };
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Row(children: [
+              Icon(Icons.warning_amber_rounded, color: Cores.laranjaEscuro),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text('Esta foto pode dar um resultado errado',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              ),
+            ]),
+            const SizedBox(height: 12),
+            for (final p in problemas) ...[
+              Text(_textos[p]!.$1, style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text(_textos[p]!.$2, style: const TextStyle(color: Cores.textoSecundario, height: 1.35)),
+              const SizedBox(height: 10),
+            ],
+            const SizedBox(height: 8),
+            BotaoPrincipal(
+                texto: 'Tirar Outra Foto', icone: Icons.photo_camera, aoPremir: () => Navigator.of(context).pop(false)),
+            const SizedBox(height: 10),
+            BotaoSecundario(texto: 'Usar Esta Foto', aoPremir: () => Navigator.of(context).pop(true)),
+          ]),
+        ),
+      );
 }
 
 /// Os quatro cantos verdes do guia de enquadramento.
