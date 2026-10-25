@@ -48,10 +48,61 @@ Novas tabelas: `provincias`, `distritos`, `alertas`, `alertas_leituras`, `valida
   (1 com confiança abaixo de 60%), Boane com 29 diagnósticos (25 de pragas/doenças) e Cidade de
   Maputo com 6. A fila de validação ordena os menos certos primeiro (58%, 66%, 69%).
 
-### Limitações desta entrega
+### Limitações da entrega 1a
 
 - Sem histórico (todos os diagnósticos de teste são recentes), a detecção de surtos assinala
   qualquer praga com 3 ou mais casos; com semanas de dados, a comparação com a média passa a pesar.
 - As 2 unidades «Ilha Licom» e «Ilha Risunodo» do ADM2 (ilhas Likoma e Chizumulu, do Malawi) foram
   excluídas; os nomes dos distritos seguem a fonte, sem acentos em alguns casos (ex.: «Chokwe»).
 - Os alertas chegam à app na sincronização (sem notificações push nesta fase).
+
+---
+
+## Entrega 1b — Painel web de gestão (25/10/2026)
+
+### O que foi implementado
+
+Painel web para técnicos e administradores, em **React 18 + Vite 5 + TypeScript**, organizado
+segundo a arquitectura **MVVM**:
+
+- **Model** (`src/model/`): tipos do domínio iguais aos esquemas da API, cliente HTTP (Axios)
+  com o token JWT e mensagens de erro da API, e repositórios (uma função por rota).
+- **ViewModel** (`src/viewmodels/`): um hook por ecrã, com o estado, os filtros, os pedidos
+  (TanStack Query, com cache e invalidação depois de cada alteração) e as acções.
+- **View** (`src/views/`): componentes de apresentação, sem pedidos à API nem regras de negócio.
+
+| Ecrã | O que mostra / permite |
+|---|---|
+| Entrada | Login por telefone e palavra-passe; recusa contas de agricultor (usam a app) |
+| Painel | Indicadores da zona (diagnósticos e variação face ao período anterior, agricultores, distritos afectados, confiança baixa), colunas diárias de doenças e pragas, pragas mais frequentes, **mapa de Moçambique por distrito**, sinais de surto e casos menos certos por validar; períodos de 7, 30 e 90 dias |
+| Diagnósticos | Lista paginada com filtros (cultura, praga, província, distrito, período, estado da validação, confiança abaixo de 60%, ordem); detalhe com fotografia, **Grad-CAM** e **validação** (confirmar ou corrigir, com nota para o agricultor) |
+| Alertas | Histórico com alcance e taxa de leitura; composição com nível, praga associada, zona de destino (limitada ao perfil), validade, **número de destinatários calculado antes do envio** e **pré-visualização no telemóvel**; arquivar |
+| Culturas e pragas | Catálogo por cultura com pesquisa; editor de nome local, nome científico, tipo e recomendação com **pré-visualização do ecrã de resultado da app**; criar cultura e praga/doença; só o administrador altera |
+| Modelos | Versão em uso, exactidão, tamanho e classes; histórico de versões; publicação de um `.tflite` com **SHA-256 calculado no navegador** e comparado com o guardado pela API |
+| Utilizadores | Pesquisa e filtros (perfil, província, distrito, estado); criar contas de técnico/administrador, atribuir zona (distrito ou província), mudar perfil, desactivar e repor palavra-passe |
+
+Interface em português de Moçambique, tipografia IBM Plex, verde da app como cor de marca,
+**modo claro e escuro**. Os gráficos seguem regras de visualização acessível: paleta categórica
+validada para daltonismo (azul/laranja, todas as verificações aprovadas nos dois modos),
+escala sequencial de uma só cor no mapa, legenda, dicas ao passar o rato e níveis de alerta
+sempre com ícone e texto.
+
+### Como foi testado
+
+- `tsc --noEmit` em modo estrito sem erros; `vite build` de produção concluído (349 KB de
+  JavaScript, 114 KB comprimido).
+- Execução contra a API real (PostgreSQL com os dados dos testes T01–T13) e captura de todos
+  os ecrãs (figuras em `docs/entrega_tese/dados_web/1b_*.png`): o painel nacional mostra
+  35 diagnósticos, 2 distritos com casos (Boane e Cidade de Maputo), 5 sinais de surto e a fila
+  dos menos certos (58%, 66%, 69%…), e o mapa colore Boane.
+- Durante a verificação foram encontrados e corrigidos dois defeitos: o mapa desenhava-se
+  como um rectângulo (orientação dos polígonos invertida para o d3-geo; corrigido no gerador
+  do mapa) e as barras de confiança não mostravam o preenchimento (elemento inline sem largura).
+
+### Limitações da entrega 1b
+
+- As gavetas (validar, compor alerta, editar recomendação, publicar modelo) foram verificadas
+  no código e na compilação, mas as capturas automáticas só cobrem as listas (o navegador sem
+  interface não clica). A verificação manual completa fica para a entrega 1c.
+- Ainda sem os ecrãs de Validação (fila e exactidão em campo), Visitas, Vigilância (surtos) e
+  Auditoria: são a entrega 1c.
