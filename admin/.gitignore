@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.env
+*.tsbuildinfo
+# Página só para capturas de verificação locais
+public/_verificar.html
