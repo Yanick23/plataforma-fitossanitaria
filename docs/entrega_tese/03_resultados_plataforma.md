@@ -270,3 +270,43 @@ fundo claro também a partir do tema escuro.
 
 Figuras: `dados_web/2b_01_boletim_admin.png` (boletim nacional), `dados_web/2b_04_boletim_tecnico.png`
 (técnico de Boane), `dados_web/2b_03_boletim_escuro.png` (tema escuro) e `dados_web/2b_boletim_exemplo.pdf` (PDF impresso).
+
+### Catálogo, modelos e vigilância no painel (25/10/2026)
+
+Com estas três páginas, todas as funções da API da fase 2 (entrega 2a) passam a ter ecrã no painel.
+
+| Página | O que mudou |
+|---|---|
+| Culturas e pragas | A tabela mostra o que **falta** a cada praga (recomendação, sintomas, prevenção, fotografias), o estado da **revisão** (validado / por validar, com a versão do texto) e a marca de **declaração obrigatória**; filtros «Por validar» e «Declaração obrigatória». Na edição: campos de sintomas e prevenção, caixa de declaração obrigatória, **fotografias de referência** (acrescentar com legenda, remover) e a caixa **Revisão do texto**: quem validou e quando; aviso de que guardar texto novo retira a validação; botão «Validar este texto». A pré-visualização do ecrã da app mostra a fotografia, os sintomas, a recomendação e a prevenção. O técnico vê os campos bloqueados mas pode validar |
+| Modelos | Indicadores «Em uso por todos», «Em piloto» (versões e distritos), exactidão no teste e **sinais de deriva**, com um aviso explicativo quando há deriva. Gráfico **semanal da proporção de confiança abaixo de 60%**, uma linha por versão (cor fixa por versão, dica ao passar o rato). Ao abrir uma versão piloto: a **porta de qualidade** (validações em campo contra o mínimo de 10, exactidão do piloto contra a da versão publicada), os **distritos do piloto** (editáveis) e as notas; «Publicar para todos» passa pela porta e, se a API recusar, mostra o motivo e oferece «Publicar mesmo assim» (fica na auditoria); «Retirar versão» e «Voltar a publicar». Ao publicar: escolha entre **piloto em alguns distritos** (por omissão, quando já há uma versão em uso) e todos os agricultores |
+| Vigilância | Aviso no topo quando há casos de **declaração obrigatória**; tabela com estado (suspeita / confirmado), confiança, agricultor e ligação para validar as suspeitas; tabela de **eficácia das recomendações** por praga (respostas, seguiram, melhoraram, eficácia), marcada «poucas respostas» abaixo de 5 |
+
+**Como foi testado:** para não alterar os dados reais (e não pôr um modelo falso em piloto nos
+telemóveis de Boane), o teste correu numa API à parte, com base SQLite temporária, e num painel
+ligado a ela. Os dados de teste foram criados pela API: 2 versões do milho (v1 publicada; v2 em
+piloto em Boane e Namaacha), 54 diagnósticos ao longo de 6 semanas, com a confiança da v1 a cair
+nas últimas 2 semanas, 8 validações da v2 e 4 respostas de seguimento. O teste automático no Edge
+fez 11 passos, todos aprovados e sem erros na consola:
+
+- **catálogo:** editar os sintomas sobe o texto à versão 2 por validar; acrescentar uma
+  fotografia mostra-a na pré-visualização; validar mostra «Validado por Administrador
+  (versão 2)»; o técnico tem o formulário bloqueado mas pode validar;
+- **modelos:** deriva detectada na v1 («confiança baixa passou de 0% para 50%»); porta fechada
+  com 8 validações (exactidão do piloto 87,5%); a API recusa «Publicar para todos» e o painel
+  oferece forçar; Moamba acrescentada ao piloto; v3 publicada em piloto em Manhiça, com o
+  SHA-256 verificado;
+- **vigilância:** 37 casos de declaração obrigatória (7 confirmados) e eficácia de 67% (3
+  seguiram, 2 melhoraram).
+
+O teste encontrou um problema de interface: as notificações apareciam em baixo à direita, por
+cima do botão principal das gavetas. Passaram para baixo à esquerda.
+
+Figuras: `dados_web/2b_10_catalogo_lista.png`, `2b_11_catalogo_gaveta.png`, `2b_12_modelos.png`,
+`2b_13_modelo_piloto.png`, `2b_14_publicar_piloto.png`, `2b_15_vigilancia.png`, `2b_16_v3_piloto.png`.
+
+### Limitações da entrega 2b
+
+- O gráfico de monitorização só fica fiável com várias semanas de diagnósticos por versão; com
+  os dados reais actuais (2 semanas) ainda não há tendência.
+- As fotografias de referência ficam no disco do servidor (pasta `dados/imagens/referencia`) e
+  entram na cópia de segurança dos ficheiros, não no `pg_dump`.

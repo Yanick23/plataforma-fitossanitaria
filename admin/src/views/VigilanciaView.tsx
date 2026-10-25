@@ -1,5 +1,6 @@
-import { Megaphone, Siren, TriangleAlert } from 'lucide-react'
-import { numero } from '@/nucleo/formatos'
+import { Link } from 'react-router-dom'
+import { CircleAlert, Megaphone, MessageSquareReply, ShieldAlert, ShieldCheck, Siren, TriangleAlert } from 'lucide-react'
+import { data, numero, percentagem } from '@/nucleo/formatos'
 import { NIVEL } from '@/nucleo/rotulos'
 import { Botao, CabecalhoPagina, Campo, Cartao, Esqueleto, Etiqueta, Segmentos, Seleccao, Vazio } from '@/ui/componentes'
 import { BarrasHorizontais, MapaDistritos } from '@/ui/graficos'
@@ -16,6 +17,14 @@ export function VigilanciaView() {
         titulo="Vigilância"
         descricao="Onde estão as pragas e doenças, e onde estão a subir acima do habitual. Um sinal de surto é uma sugestão: o técnico decide se envia alerta."
       />
+      {vm.declaracoes.length > 0 && (
+        <div className="aviso-caixa critico">
+          <ShieldAlert size={16} style={{ flex: 'none', marginTop: 2 }} />
+          <span><b>{vm.declaracoes.length === 1 ? '1 caso' : `${numero(vm.declaracoes.length)} casos`} de declaração obrigatória</b> nos
+            últimos {vm.periodo} dias ({vm.confirmadas === 1 ? '1 confirmado' : `${numero(vm.confirmadas)} confirmados`} pelo
+            técnico). <a href="#declaracoes">Ver a lista</a>.</span>
+        </div>
+      )}
       <Cartao
         titulo="Sinais de surto"
         subtitulo={`Casos nos últimos ${vm.janela} dias comparados com a média das 4 semanas anteriores (mínimo ${vm.parametros.min_casos} casos, subida de ${String(vm.parametros.factor).replace('.', ',')}×)`}
@@ -30,7 +39,7 @@ export function VigilanciaView() {
       >
         {vm.aCarregarSurtos ? <div style={{ padding: 20 }}><Esqueleto altura={120} /></div>
           : vm.surtos.length === 0 ? <Vazio titulo="Nenhum sinal de surto" texto="Nenhuma praga ou doença subiu acima do habitual com estes parâmetros." icone={<Siren size={28} />} /> : (
-            <table className="tabela">
+            <div className="tabela-envolvente"><table className="tabela">
               <thead><tr><th>Praga ou doença</th><th>Distrito</th><th className="numero">Casos recentes</th><th className="numero">Média habitual</th><th className="numero">Subida</th><th>Nível</th><th /></tr></thead>
               <tbody>
                 {vm.surtos.map((s) => (
@@ -45,7 +54,7 @@ export function VigilanciaView() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
       </Cartao>
 
@@ -70,6 +79,66 @@ export function VigilanciaView() {
           {vm.ranking.length ? <BarrasHorizontais itens={vm.ranking} /> : <Vazio titulo="Sem ocorrências" />}
         </Cartao>
       </div>
+
+      <div id="declaracoes">
+        <Cartao titulo="Pragas e doenças de declaração obrigatória"
+          subtitulo={`Últimos ${vm.periodo} dias. Confirmado: validado pelo técnico. Suspeita: só identificado pela app, precisa de verificação no campo.`} semMargem>
+          {vm.aCarregarDeclaracoes ? <div style={{ padding: 20 }}><Esqueleto altura={100} /></div>
+            : vm.declaracoes.length === 0 ? <Vazio titulo="Nenhum caso" texto="As pragas marcadas como de declaração obrigatória no catálogo aparecem aqui quando forem diagnosticadas." icone={<ShieldCheck size={28} />} /> : (
+              <div className="tabela-envolvente">
+                <table className="tabela">
+                  <thead><tr><th>Data</th><th>Praga ou doença</th><th>Distrito</th><th>Estado</th><th className="numero">Confiança</th><th>Agricultor</th><th /></tr></thead>
+                  <tbody>
+                    {vm.declaracoes.map((d) => (
+                      <tr key={d.diagnostico_id}>
+                        <td className="secundario">{data(d.data)}</td>
+                        <td className="celula-principal"><strong>{d.patologia_nome}</strong><span>{catalogo.nomeCultura(d.cultura_id)}</span></td>
+                        <td>{d.distrito_nome ?? '—'}</td>
+                        <td>{d.estado === 'CONFIRMADO'
+                          ? <Etiqueta tom="critico" icone={<ShieldAlert size={12} />}>Confirmado</Etiqueta>
+                          : <Etiqueta tom="aviso" icone={<CircleAlert size={12} />}>Suspeita</Etiqueta>}</td>
+                        <td className="numero">{percentagem(d.confianca)}</td>
+                        <td className="celula-principal"><strong style={{ fontWeight: 400 }}>{d.agricultor_nome}</strong><span className="mono">{d.agricultor_telefone}</span></td>
+                        <td style={{ width: 1 }}>{d.estado === 'SUSPEITA' && <Link to="/validacao" className="pequeno">Validar</Link>}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+        </Cartao>
+      </div>
+
+      <Cartao titulo="Eficácia das recomendações"
+        subtitulo={`Respostas dos agricultores dias depois do diagnóstico (últimos ${vm.periodo} dias). Eficácia = melhoraram ÷ seguiram a recomendação, total ou parcialmente.`} semMargem>
+        {vm.aCarregarEficacia ? <div style={{ padding: 20 }}><Esqueleto altura={100} /></div>
+          : vm.eficacia.length === 0 ? <Vazio titulo="Ainda sem respostas" texto="A app pergunta ao agricultor, alguns dias depois, se seguiu a recomendação e se a planta melhorou." icone={<MessageSquareReply size={28} />} /> : (
+            <div className="tabela-envolvente">
+              <table className="tabela">
+                <thead><tr><th>Praga ou doença</th><th className="numero">Respostas</th><th className="numero">Seguiram</th><th className="numero">Melhoraram</th><th style={{ width: '30%' }}>Eficácia</th></tr></thead>
+                <tbody>
+                  {vm.eficacia.map((e) => (
+                    <tr key={`${e.cultura_id}-${e.classe}`}>
+                      <td className="celula-principal"><strong>{e.nome}</strong><span>{catalogo.nomeCultura(e.cultura_id)}</span></td>
+                      <td className="numero">{numero(e.respostas)}</td>
+                      <td className="numero">{numero(e.seguiram)}</td>
+                      <td className="numero">{numero(e.melhoraram)}</td>
+                      <td>
+                        {e.eficacia === null ? <span className="suave">ninguém seguiu</span> : (
+                          <div className="barra-item">
+                            <span className="nome">{e.seguiram < 5 ? 'poucas respostas' : ''}</span>
+                            <span className="valor">{percentagem(e.eficacia)}</span>
+                            <div className="trilho"><div className="enchimento" style={{ width: `${e.eficacia * 100}%` }} /></div>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+      </Cartao>
     </>
   )
 }

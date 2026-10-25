@@ -1,4 +1,4 @@
-import type { EstadoValidacao, EstadoVisita, NivelAlerta, Perfil, TipoPatologia } from '@/model/tipos'
+import type { EstadoModelo, EstadoValidacao, EstadoVisita, NivelAlerta, Perfil, TipoPatologia } from '@/model/tipos'
 
 export type Tom = 'neutro' | 'marca' | 'bom' | 'aviso' | 'critico' | 'info'
 
@@ -31,6 +31,12 @@ export const VISITA: Record<EstadoVisita, { nome: string; tom: Tom }> = {
   AGENDADA: { nome: 'Agendada', tom: 'info' },
   RESOLVIDA: { nome: 'Resolvida', tom: 'bom' },
   CANCELADA: { nome: 'Cancelada', tom: 'neutro' },
+}
+
+export const ESTADO_MODELO: Record<EstadoModelo, { nome: string; tom: Tom }> = {
+  PUBLICADO: { nome: 'Publicado', tom: 'bom' },
+  PILOTO: { nome: 'Piloto', tom: 'info' },
+  RETIRADO: { nome: 'Retirado', tom: 'neutro' },
 }
 
 export const LIMIAR_CONFIANCA = 0.6 // o mesmo da app (RF05)

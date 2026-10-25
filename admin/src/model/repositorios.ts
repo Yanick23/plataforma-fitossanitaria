@@ -2,8 +2,9 @@
 
 import { http } from './http'
 import type {
-  Alcance, Alerta, Boletim, Cultura, Diagnostico, Distrito, EstadoValidacao, EstadoVisita, ExactidaoCampo, Modelo,
-  NovoAlerta, Ocorrencia, Pagina, Patologia, Perfil, Provincia, RegistoAuditoria, Resumo, Surto, TipoPatologia,
+  Alcance, Alerta, Boletim, Cultura, Declaracao, EficaciaPatologia, Diagnostico, Distrito, EstadoModelo, EstadoValidacao, EstadoVisita, ExactidaoCampo, Modelo,
+  Monitorizacao, PortaQualidade,
+  NovoAlerta, Ocorrencia, Pagina, Patologia, PatologiaEscrita, Perfil, Provincia, RegistoAuditoria, Resumo, Surto, TipoPatologia,
   Utilizador, UtilizadorAdmin, Visita,
 } from './tipos'
 
@@ -59,23 +60,41 @@ export const catalogoRepo = {
   criarCultura: (c: Cultura) => dados(http.post<Cultura>('/culturas', c)),
   actualizarCultura: (c: Cultura) =>
     dados(http.put<Cultura>(`/culturas/${c.id}`, { nome: c.nome, nome_cientifico: c.nome_cientifico })),
-  criarPatologia: (p: Omit<Patologia, 'id'>) => dados(http.post<Patologia>('/patologias', p)),
-  actualizarPatologia: (p: Patologia) =>
-    dados(http.put<Patologia>(`/patologias/${p.id}`, {
+  criarPatologia: (p: PatologiaEscrita) => dados(http.post<Patologia>('/patologias', p)),
+  actualizarPatologia: (id: number, p: PatologiaEscrita) =>
+    dados(http.put<Patologia>(`/patologias/${id}`, {
       nome_local: p.nome_local, nome_cientifico: p.nome_cientifico, tipo: p.tipo, recomendacao: p.recomendacao,
+      sintomas: p.sintomas, prevencao: p.prevencao, declaracao_obrigatoria: p.declaracao_obrigatoria,
     })),
   apagarPatologia: (id: number) => http.delete(`/patologias/${id}`),
+  validarConteudo: (id: number) => dados(http.post<Patologia>(`/patologias/${id}/validar`)),
+  enviarFoto: (id: number, ficheiro: File, legenda: string) => {
+    const form = new FormData()
+    form.append('ficheiro', ficheiro)
+    if (legenda.trim()) form.append('legenda', legenda.trim())
+    return dados(http.post<Patologia>(`/patologias/${id}/fotos`, form, { timeout: 60_000 }))
+  },
+  apagarFoto: (fotoId: number) => http.delete(`/fotos-referencia/${fotoId}`),
 }
 
 export const modelosRepo = {
   historico: (cultura: string) => dados(http.get<Modelo[]>(`/modelos/${cultura}`)),
-  publicar: (cultura: string, ficheiro: File, classes: string[], acuracia: number | null) => {
+  /** Sem distritos: publicada para todos. Com distritos: piloto só nesses distritos. */
+  publicar: (cultura: string, ficheiro: File, classes: string[], acuracia: number | null, distritosPiloto: number[], notas: string) => {
     const form = new FormData()
     form.append('ficheiro', ficheiro)
     form.append('classes', JSON.stringify(classes))
     if (acuracia !== null) form.append('acuracia_teste', String(acuracia))
+    if (distritosPiloto.length) form.append('distritos_piloto', JSON.stringify(distritosPiloto))
+    if (notas.trim()) form.append('notas', notas.trim())
     return dados(http.post<Modelo>(`/modelos/${cultura}`, form, { timeout: 120_000 }))
   },
+  actualizar: (cultura: string, versao: number,
+    alteracoes: { estado?: EstadoModelo; distritos_piloto?: number[]; notas?: string | null; forcar?: boolean }) =>
+    dados(http.patch<Modelo>(`/modelos/${cultura}/${versao}`, alteracoes)),
+  portaQualidade: (cultura: string, versao: number) =>
+    dados(http.get<PortaQualidade>(`/modelos/${cultura}/${versao}/porta-qualidade`)),
+  monitorizacao: (cultura: string) => dados(http.get<Monitorizacao>(`/modelos/${cultura}/monitorizacao`)),
 }
 
 export interface FiltrosUtilizadores {
@@ -120,6 +139,8 @@ export const vigilanciaRepo = {
     dados(http.get<Ocorrencia[]>('/vigilancia/ocorrencias', { params: limpar(f) })),
   surtos: (p: { janela_dias?: number; semanas_base?: number; min_casos?: number; factor?: number } = {}) =>
     dados(http.get<Surto[]>('/vigilancia/surtos', { params: limpar(p) })),
+  declaracoes: (desde?: string) => dados(http.get<Declaracao[]>('/vigilancia/declaracoes', { params: limpar({ desde }) })),
+  eficacia: (desde?: string) => dados(http.get<EficaciaPatologia[]>('/gestao/eficacia', { params: limpar({ desde }) })),
 }
 
 export const validacoesRepo = {

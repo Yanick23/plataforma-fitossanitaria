@@ -46,6 +46,12 @@ export interface Cultura {
   nome_cientifico: string
 }
 
+export interface FotoReferencia {
+  id: number
+  legenda: string | null
+  url: string // relativo à API, ex.: /fotos-referencia/3 (público)
+}
+
 export interface Patologia {
   id: number
   cultura_id: string
@@ -54,7 +60,18 @@ export interface Patologia {
   nome_cientifico: string
   tipo: TipoPatologia
   recomendacao: string
+  sintomas: string | null
+  prevencao: string | null
+  declaracao_obrigatoria: boolean
+  versao_conteudo: number
+  validado_por_nome: string | null
+  validado_em: string | null
+  fotos: FotoReferencia[]
 }
+
+/** Campos do catálogo que o administrador escreve (o resto é calculado pela API). */
+export type PatologiaEscrita = Pick<Patologia, 'cultura_id' | 'codigo' | 'nome_local' | 'nome_cientifico' | 'tipo'
+  | 'recomendacao' | 'sintomas' | 'prevencao' | 'declaracao_obrigatoria'>
 
 export interface Diagnostico {
   id: string
@@ -152,6 +169,8 @@ export interface Alcance {
   destinatarios: number
 }
 
+export type EstadoModelo = 'PILOTO' | 'PUBLICADO' | 'RETIRADO'
+
 export interface Modelo {
   cultura_id: string
   versao: number
@@ -161,6 +180,45 @@ export interface Modelo {
   sha256: string
   url_ficheiro: string
   criado_em: string
+  estado: EstadoModelo
+  distritos_piloto: number[]
+  notas: string | null
+}
+
+/** Pode a versão piloto passar a publicada? (validações em campo vs. a versão publicada) */
+export interface PortaQualidade {
+  versao: number
+  validados: number
+  exactidao: number | null
+  referencia_versao: number | null
+  referencia_exactidao: number | null
+  aprovado: boolean
+  motivo: string
+}
+
+export interface SemanaModelo {
+  semana: string // segunda-feira, AAAA-MM-DD
+  versao: number | null
+  diagnosticos: number
+  confianca_media: number
+  taxa_baixa: number
+  validados: number
+  exactidao: number | null
+}
+
+export interface SinalDeriva {
+  versao: number
+  taxa_baixa_inicial: number
+  taxa_baixa_recente: number
+  diagnosticos_recentes: number
+  deriva: boolean
+  explicacao: string
+}
+
+export interface Monitorizacao {
+  cultura_id: string
+  semanas: SemanaModelo[]
+  sinais: SinalDeriva[]
 }
 
 export interface Ocorrencia {

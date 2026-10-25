@@ -246,3 +246,94 @@ export function MapaDistritos({ valores, altura = 460, rotuloValor = 'Diagnósti
     </div>
   )
 }
+
+// ---------------------------------------------------------------------------------------------
+// Linhas por semana (uma série por entidade, ex.: versão do modelo), com mira e dica.
+
+export interface SerieSemanal {
+  chave: string
+  nome: string
+  cor: string
+  valores: Record<string, number | undefined> // semana -> valor
+  detalhe?: Record<string, string> // semana -> texto extra na dica
+}
+
+export function LinhasSemanais({ semanas, series, formatar, altura = 220, rotulo }:
+  { semanas: string[]; series: SerieSemanal[]; formatar: (n: number) => string; altura?: number; rotulo: string }) {
+  const [ref, largura] = useLargura<HTMLDivElement>()
+  const [foco, setFoco] = useState<number | null>(null)
+  const margem = { cima: 10, baixo: 24, esquerda: 40, direita: 12 }
+  const todos = series.flatMap((s) => Object.values(s.valores).filter((v): v is number => v !== undefined))
+  const maximo = Math.max(...todos, 0.0001)
+  const passo = passoLimpo(maximo)
+  const topo = Math.ceil(maximo / passo) * passo
+  const internoL = Math.max(largura - margem.esquerda - margem.direita, 0)
+  const internoA = altura - margem.cima - margem.baixo
+  const x = (i: number) => margem.esquerda + (semanas.length > 1 ? (i / (semanas.length - 1)) * internoL : internoL / 2)
+  const y = (v: number) => margem.cima + internoA - (v / topo) * internoA
+  const marcas = Array.from({ length: Math.round(topo / passo) + 1 }, (_, i) => i * passo)
+  const cadaRotulo = Math.max(1, Math.ceil(semanas.length / 6))
+  const banda = semanas.length > 1 ? internoL / (semanas.length - 1) : internoL
+
+  /** Segmentos contínuos (uma semana sem dados interrompe a linha). */
+  const caminho = (s: SerieSemanal) => {
+    let d = ''
+    let aberto = false
+    semanas.forEach((sem, i) => {
+      const v = s.valores[sem]
+      if (v === undefined) { aberto = false; return }
+      d += `${aberto ? 'L' : 'M'}${x(i)},${y(v)}`
+      aberto = true
+    })
+    return d
+  }
+
+  return (
+    <div className="grafico" ref={ref}>
+      {series.length > 1 && (
+        <div className="legenda" style={{ marginBottom: 8 }}>
+          {series.map((s) => <span key={s.chave}><i className="amostra" style={{ background: s.cor }} />{s.nome}</span>)}
+        </div>
+      )}
+      {largura > 0 && (
+        <svg height={altura} role="img" aria-label={rotulo} onMouseLeave={() => setFoco(null)}>
+          {marcas.map((m) => (
+            <g key={m}>
+              <line className={m === 0 ? 'base' : 'grelha-linha'} x1={margem.esquerda} x2={largura - margem.direita} y1={y(m)} y2={y(m)} />
+              <text className="eixo-texto" x={margem.esquerda - 8} y={y(m)} dy="0.32em" textAnchor="end">{formatar(m)}</text>
+            </g>
+          ))}
+          {semanas.map((sem, i) => i % cadaRotulo === 0 && (
+            <text key={sem} className="eixo-texto" x={x(i)} y={altura - 6} textAnchor="middle">{diaCurto(sem)}</text>
+          ))}
+          {foco !== null && <line x1={x(foco)} x2={x(foco)} y1={margem.cima} y2={y(0)} stroke="var(--eixo)" strokeDasharray="3 3" />}
+          {series.map((s) => (
+            <g key={s.chave}>
+              <path d={caminho(s)} fill="none" stroke={s.cor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+              {semanas.map((sem, i) => {
+                const v = s.valores[sem]
+                return v === undefined ? null : (
+                  <circle key={sem} cx={x(i)} cy={y(v)} r={foco === i ? 5 : 4} fill={s.cor} stroke="var(--superficie)" strokeWidth={2} />
+                )
+              })}
+            </g>
+          ))}
+          {semanas.map((sem, i) => (
+            <rect key={sem} x={x(i) - banda / 2} y={margem.cima} width={Math.max(banda, 8)} height={internoA} fill="transparent" onMouseEnter={() => setFoco(i)} />
+          ))}
+        </svg>
+      )}
+      {foco !== null && semanas[foco] && (
+        <Dica
+          x={x(foco)}
+          y={margem.cima}
+          titulo={`Semana de ${diaCurto(semanas[foco])}`}
+          linhas={series.filter((s) => s.valores[semanas[foco]] !== undefined).map((s) => ({
+            cor: s.cor, nome: s.detalhe?.[semanas[foco]] ? `${s.nome} · ${s.detalhe[semanas[foco]]}` : s.nome,
+            valor: formatar(s.valores[semanas[foco]]!),
+          }))}
+        />
+      )}
+    </div>
+  )
+}
