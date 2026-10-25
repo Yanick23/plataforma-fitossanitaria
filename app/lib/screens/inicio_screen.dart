@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../main.dart';
+import '../services/alertas_locais.dart';
 import '../tema.dart';
 import '../widgets/botoes.dart';
+import '../widgets/cartao_alerta.dart';
 import '../widgets/estado_ligacao.dart';
+import 'alertas_screen.dart';
 import 'cultura_screen.dart';
 import 'definicoes_screen.dart';
 import 'diagnostico_tecnico_screen.dart';
@@ -11,6 +14,9 @@ import 'diagnostico_tecnico_screen.dart';
 /// Ecrã 1 — Ecrã inicial: estado da ligação e acesso ao diagnóstico e ao historial.
 class InicioScreen extends StatelessWidget {
   const InicioScreen({super.key});
+
+  void _abrirAlertas(BuildContext context) =>
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AlertasScreen()));
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +36,21 @@ class InicioScreen extends StatelessWidget {
               icon: const Icon(Icons.settings_outlined, color: Cores.textoSecundario),
               onPressed: () => Navigator.of(context)
                   .push(MaterialPageRoute(builder: (_) => const DefinicoesScreen())),
+            ),
+            ListenableBuilder(
+              listenable: AlertasLocais.instancia,
+              builder: (context, _) {
+                final n = AlertasLocais.instancia.naoLidos;
+                return IconButton(
+                  tooltip: n == 0 ? 'Alertas' : 'Alertas: $n por ler',
+                  icon: Badge(
+                    isLabelVisible: n > 0,
+                    label: Text('$n'),
+                    child: const Icon(Icons.notifications_outlined, color: Cores.textoSecundario),
+                  ),
+                  onPressed: () => _abrirAlertas(context),
+                );
+              },
             ),
             const Spacer(),
             const EstadoLigacao(),
@@ -55,6 +76,18 @@ class InicioScreen extends StatelessWidget {
             style: TextStyle(fontSize: 14, color: Cores.textoSecundario, height: 1.4),
           ),
           const Spacer(flex: 3),
+          // Último alerta por ler da zona do agricultor (chega na sincronização).
+          ListenableBuilder(
+            listenable: AlertasLocais.instancia,
+            builder: (context, _) {
+              final alerta = AlertasLocais.instancia.ultimoNaoLido;
+              if (alerta == null) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: CartaoAlerta(alerta: alerta, aoTocar: () => _abrirAlertas(context)),
+              );
+            },
+          ),
           BotaoPrincipal(
             texto: 'Diagnosticar Planta',
             icone: Icons.photo_camera,

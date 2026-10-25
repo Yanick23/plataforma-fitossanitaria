@@ -5,9 +5,11 @@ import 'models/utilizador.dart';
 import 'screens/historial_screen.dart';
 import 'screens/inicio_screen.dart';
 import 'screens/login_screen.dart';
+import 'services/alertas_locais.dart';
 import 'services/catalogo.dart';
 import 'services/sessao.dart';
 import 'services/sincronizacao.dart';
+import 'services/visitas_locais.dart';
 import 'tema.dart';
 
 Future<void> main() async {
@@ -15,6 +17,8 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await Sessao.instancia.carregar();
   await Catalogo.instancia.carregar();
+  await AlertasLocais.instancia.carregar();
+  await VisitasLocais.instancia.carregar();
   runApp(const AgroDiagnosticoApp());
 }
 

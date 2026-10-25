@@ -101,7 +101,7 @@ class _ItemHistorial extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pat = Catalogo.instancia.patologia(d.cultura, d.classePrevista);
+    final pat = Catalogo.instancia.patologia(d.cultura, d.classeFinal);
     final pendente = d.estadoSinc == EstadoSinc.pendente;
     return Material(
       color: Cores.cartao,
@@ -132,6 +132,10 @@ class _ItemHistorial extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text('${d.cultura.nome} · ${formatarDataHora(d.data)} · ${(d.confianca * 100).round()}%',
                     style: const TextStyle(fontSize: 12, color: Cores.textoSecundario)),
+                if (d.validacao != Validacao.pendente) ...[
+                  const SizedBox(height: 4),
+                  _MarcaValidacao(d.validacao),
+                ],
               ]),
             ),
             Tooltip(
@@ -153,6 +157,25 @@ class _ItemHistorial extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// «Confirmado pelo técnico» (verde) ou «Corrigido pelo técnico» (laranja).
+class _MarcaValidacao extends StatelessWidget {
+  const _MarcaValidacao(this.v);
+
+  final Validacao v;
+
+  @override
+  Widget build(BuildContext context) {
+    final confirmado = v == Validacao.confirmado;
+    final cor = confirmado ? Cores.verdeEscuro : Cores.avisoTexto;
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(confirmado ? Icons.verified_outlined : Icons.edit_note, size: 14, color: cor),
+      const SizedBox(width: 4),
+      Text(confirmado ? 'Confirmado pelo técnico' : 'Corrigido pelo técnico',
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: cor)),
+    ]);
   }
 }
 

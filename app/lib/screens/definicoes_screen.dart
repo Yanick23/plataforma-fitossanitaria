@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../models/cultura.dart';
 import '../models/modelo_ml.dart';
+import '../services/alertas_locais.dart';
+import '../services/visitas_locais.dart';
 import '../services/gestor_modelos.dart';
 import '../services/sessao.dart';
 import '../services/sincronizacao.dart';
@@ -117,6 +119,9 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
             aoPremir: () async {
               Navigator.of(context).popUntil((r) => r.isFirst);
               await Sessao.instancia.terminar();
+              // Alertas e visitas pertencem à conta (e à zona) que saiu.
+              await AlertasLocais.instancia.limpar();
+              await VisitasLocais.instancia.limpar();
             },
           ),
         ],

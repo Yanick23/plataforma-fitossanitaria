@@ -11,6 +11,18 @@ enum EstadoSinc {
   static EstadoSinc deTexto(String t) => values.firstWhere((e) => e.valor == t);
 }
 
+/// Validação do diagnóstico por um técnico (feita no painel web).
+enum Validacao {
+  pendente('PENDENTE'),
+  confirmado('CONFIRMADO'),
+  corrigido('CORRIGIDO');
+
+  const Validacao(this.valor);
+  final String valor;
+
+  static Validacao deTexto(String t) => values.firstWhere((e) => e.valor == t, orElse: () => pendente);
+}
+
 /// Fotografia associada a um diagnóstico (entidade Imagem).
 class Imagem {
   const Imagem({required this.caminhoFicheiro, required this.dataCaptura});
@@ -34,6 +46,9 @@ class Diagnostico {
     required this.tempoTotalMs,
     this.estadoSinc = EstadoSinc.pendente,
     this.imagemEnviada = false,
+    this.validacao = Validacao.pendente,
+    this.classeConfirmada,
+    this.notaTecnico,
   });
 
   /// UUID gerado no telemóvel: a API usa-o para não criar duplicados (RNF07).
@@ -52,6 +67,14 @@ class Diagnostico {
   /// A imagem já foi aceite pela API (passo intermédio da sincronização).
   final bool imagemEnviada;
 
+  /// Validação pelo técnico, recebida na sincronização.
+  final Validacao validacao;
+  final String? classeConfirmada;
+  final String? notaTecnico;
+
+  /// A classe a mostrar: a do técnico, se a corrigiu; senão a do modelo.
+  String get classeFinal => classeConfirmada ?? classePrevista;
+
   Map<String, Object?> toMap() => {
         'id': id,
         'utilizador_id': utilizadorId,
@@ -66,6 +89,9 @@ class Diagnostico {
         'tempo_total_ms': tempoTotalMs,
         'estado_sinc': estadoSinc.valor,
         'imagem_enviada': imagemEnviada ? 1 : 0,
+        'validacao': validacao.valor,
+        'classe_confirmada': classeConfirmada,
+        'nota_tecnico': notaTecnico,
       };
 
   factory Diagnostico.fromMap(Map<String, Object?> m) => Diagnostico(
@@ -84,6 +110,9 @@ class Diagnostico {
         tempoTotalMs: m['tempo_total_ms'] as int,
         estadoSinc: EstadoSinc.deTexto(m['estado_sinc'] as String),
         imagemEnviada: (m['imagem_enviada'] as int) == 1,
+        validacao: Validacao.deTexto(m['validacao'] as String? ?? 'PENDENTE'),
+        classeConfirmada: m['classe_confirmada'] as String?,
+        notaTecnico: m['nota_tecnico'] as String?,
       );
 
   /// Corpo JSON para POST /diagnosticos.
