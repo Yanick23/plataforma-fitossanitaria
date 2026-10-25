@@ -319,7 +319,7 @@ def test_migracao_de_base_antiga(tmp_path):
         assert {"distrito_id", "provincia_codigo", "activo"} <= colunas
         assert {"alertas", "validacoes", "pedidos_visita", "auditoria"} <= set(inspect(ligacao).get_table_names())
         assert ligacao.execute(text("SELECT nome, activo FROM utilizadores")).one() == ("Antigo", 1)
-        assert ligacao.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0002"
+        assert ligacao.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0003"
     motor.dispose()
 
 

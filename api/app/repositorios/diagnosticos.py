@@ -44,7 +44,8 @@ def consulta_base() -> Select:
                                            PatologiaPrevista.codigo == Diagnostico.classe_prevista))
         .outerjoin(Validacao, Validacao.diagnostico_id == Diagnostico.id)
         .options(selectinload(Diagnostico.utilizador), selectinload(Diagnostico.imagem),
-                 selectinload(Diagnostico.distrito), selectinload(Diagnostico.validacao).selectinload(Validacao.tecnico))
+                 selectinload(Diagnostico.distrito), selectinload(Diagnostico.validacao).selectinload(Validacao.tecnico),
+                 selectinload(Diagnostico.seguimento))
     )
 
 

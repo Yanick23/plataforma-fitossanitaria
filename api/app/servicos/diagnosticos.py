@@ -21,6 +21,7 @@ def para_ler(d: Diagnostico) -> DiagnosticoLer:
         versao_modelo=d.versao_modelo, tempo_inferencia_ms=d.tempo_inferencia_ms,
         tem_imagem=d.imagem is not None, validacao=estado_validacao(d).value,
         classe_confirmada=v.classe_confirmada if v else None, nota_tecnico=v.nota if v else None,
+        seguimento_respondido=d.seguimento is not None,
     )
 
 

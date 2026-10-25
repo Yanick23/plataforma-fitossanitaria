@@ -7,10 +7,10 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import obter_sessao
-from ..esquemas import Ocorrencia, Surto
+from ..esquemas import Declaracao, Ocorrencia, Surto
 from ..repositorios.diagnosticos import FiltrosDiagnostico
 from ..seguranca import Pessoal
-from ..servicos import vigilancia as servico
+from ..servicos import relatorios, vigilancia as servico
 from ..tabelas import TipoPatologia
 
 router = APIRouter(prefix="/vigilancia", tags=["Vigilância"])
@@ -34,3 +34,9 @@ async def surtos(utilizador: Pessoal, sessao: Sessao,
                  factor: Annotated[float, Query(ge=1, le=20)] = 2.0) -> list[Surto]:
     """Subidas anormais de uma praga/doença num distrito (sinal para o técnico decidir se envia alerta)."""
     return await servico.surtos(sessao, utilizador, janela_dias, semanas_base, min_casos, factor)
+
+
+@router.get("/declaracoes", response_model=list[Declaracao])
+async def declaracoes(utilizador: Pessoal, sessao: Sessao, desde: datetime | None = None) -> list[Declaracao]:
+    """Casos de pragas/doenças de declaração obrigatória na zona: confirmados pelo técnico ou suspeitos."""
+    return await relatorios.declaracoes(sessao, utilizador, desde)

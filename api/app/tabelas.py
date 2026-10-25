@@ -100,8 +100,38 @@ class Patologia(Base):
     nome_cientifico: Mapped[str] = mapped_column(String(200))
     tipo: Mapped[TipoPatologia] = mapped_column(Enum(TipoPatologia, name="tipo_patologia"))
     recomendacao: Mapped[str] = mapped_column(Text)
+    # Fase 2: catálogo enriquecido e controlo do conteúdo.
+    sintomas: Mapped[str | None] = mapped_column(Text)
+    prevencao: Mapped[str | None] = mapped_column(Text)
+    declaracao_obrigatoria: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    versao_conteudo: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    validado_por_id: Mapped[int | None] = mapped_column(ForeignKey("utilizadores.id"))
+    validado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     cultura: Mapped[Cultura] = relationship(back_populates="patologias")
+    validado_por: Mapped["Utilizador | None"] = relationship()
+    fotos: Mapped[list["FotoReferencia"]] = relationship(back_populates="patologia", cascade="all, delete-orphan",
+                                                         passive_deletes=True, order_by="FotoReferencia.id")
+
+
+class FotoReferencia(Base):
+    """Fotografia de referência de uma praga/doença (ajuda o agricultor a comparar)."""
+
+    __tablename__ = "fotos_referencia"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patologia_id: Mapped[int] = mapped_column(ForeignKey("patologias.id", ondelete="CASCADE"), index=True)
+    caminho_ficheiro: Mapped[str] = mapped_column(String(300))
+    legenda: Mapped[str | None] = mapped_column(String(200))
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+
+    patologia: Mapped[Patologia] = relationship(back_populates="fotos")
+
+
+class EstadoModelo(str, enum.Enum):
+    PILOTO = "PILOTO"        # só os agricultores dos distritos piloto o recebem
+    PUBLICADO = "PUBLICADO"  # todos o recebem
+    RETIRADO = "RETIRADO"    # ninguém o recebe (volta-se à versão publicada anterior)
 
 
 class ModeloML(Base):
@@ -117,6 +147,10 @@ class ModeloML(Base):
     tamanho_bytes: Mapped[int] = mapped_column(Integer)
     sha256: Mapped[str] = mapped_column(String(64))
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+    estado: Mapped[EstadoModelo] = mapped_column(Enum(EstadoModelo, name="estado_modelo"),
+                                                 default=EstadoModelo.PUBLICADO, server_default="PUBLICADO")
+    distritos_piloto: Mapped[str | None] = mapped_column(Text)  # JSON: lista de ids de distritos
+    notas: Mapped[str | None] = mapped_column(Text)
 
 
 class Diagnostico(Base):
@@ -139,6 +173,7 @@ class Diagnostico(Base):
     imagem: Mapped["Imagem | None"] = relationship(back_populates="diagnostico", uselist=False)
     distrito: Mapped[Distrito | None] = relationship()
     validacao: Mapped["Validacao | None"] = relationship(uselist=False, viewonly=True)
+    seguimento: Mapped["Seguimento | None"] = relationship(uselist=False, viewonly=True)
 
 
 class Imagem(Base):
@@ -247,3 +282,28 @@ class RegistoAuditoria(Base):
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora, index=True)
 
     utilizador: Mapped[Utilizador | None] = relationship()
+
+
+class Seguiu(str, enum.Enum):
+    SIM = "SIM"
+    PARCIAL = "PARCIAL"
+    NAO = "NAO"
+
+
+class ResultadoTratamento(str, enum.Enum):
+    MELHOROU = "MELHOROU"
+    IGUAL = "IGUAL"
+    PIOROU = "PIOROU"
+    NAO_SEI = "NAO_SEI"
+
+
+class Seguimento(Base):
+    """Resposta do agricultor, dias depois: seguiu a recomendação? A planta melhorou?"""
+
+    __tablename__ = "seguimentos"
+
+    diagnostico_id: Mapped[str] = mapped_column(ForeignKey("diagnosticos.id", ondelete="CASCADE"), primary_key=True)
+    seguiu: Mapped[Seguiu] = mapped_column(Enum(Seguiu, name="seguiu"))
+    resultado: Mapped[ResultadoTratamento] = mapped_column(Enum(ResultadoTratamento, name="resultado_tratamento"))
+    comentario: Mapped[str | None] = mapped_column(Text)
+    respondido_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)

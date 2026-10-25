@@ -16,12 +16,12 @@ from sqlalchemy.orm import selectinload
 from .. import gradcam
 from ..config import definicoes
 from ..database import obter_sessao
-from ..esquemas import DiagnosticoEnviar, DiagnosticoLer, ResultadoSincronizacao
+from ..esquemas import DiagnosticoEnviar, DiagnosticoLer, ResultadoSincronizacao, SeguimentoEscrever
 from ..regioes import filtro_zona, zona_de
 from ..repositorios import diagnosticos as repo
 from ..seguranca import UtilizadorActual
 from ..servicos.diagnosticos import para_ler, pode_ver
-from ..tabelas import Diagnostico, Distrito, Imagem, ModeloML, Patologia, Perfil, Utilizador, Validacao
+from ..tabelas import Diagnostico, Distrito, Imagem, ModeloML, Patologia, Perfil, Seguimento, Utilizador, Validacao
 
 router = APIRouter(tags=["Diagnósticos"])
 Sessao = Annotated[AsyncSession, Depends(obter_sessao)]
@@ -72,7 +72,7 @@ async def _obter(sessao: AsyncSession, diagnostico_id: UUID) -> Diagnostico:
     d = await sessao.scalar(
         select(Diagnostico).where(Diagnostico.id == str(diagnostico_id))
         .options(selectinload(Diagnostico.imagem), selectinload(Diagnostico.utilizador),
-                 selectinload(Diagnostico.distrito),
+                 selectinload(Diagnostico.distrito), selectinload(Diagnostico.seguimento),
                  selectinload(Diagnostico.validacao).selectinload(Validacao.tecnico)))
     if d is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Diagnóstico não encontrado")
@@ -161,3 +161,19 @@ async def obter_gradcam(diagnostico_id: UUID, utilizador: UtilizadorActual, sess
     except gradcam.ModeloIndisponivel as e:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(e)) from None
     return Response(content=png, media_type="image/png")
+
+
+@router.post("/diagnosticos/{diagnostico_id}/seguimento", status_code=status.HTTP_204_NO_CONTENT)
+async def responder_seguimento(diagnostico_id: UUID, dados: SeguimentoEscrever, utilizador: UtilizadorActual,
+                               sessao: Sessao) -> None:
+    """Dias depois do diagnóstico, o agricultor diz se seguiu a recomendação e se a planta melhorou."""
+    d = await _obter(sessao, diagnostico_id)
+    if d.utilizador_id != utilizador.id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "O diagnóstico pertence a outro utilizador")
+    s = await sessao.get(Seguimento, d.id)
+    if s is None:
+        sessao.add(Seguimento(diagnostico_id=d.id, seguiu=dados.seguiu, resultado=dados.resultado,
+                              comentario=(dados.comentario or "").strip() or None))
+    else:  # responder outra vez substitui a resposta (também é idempotente)
+        s.seguiu, s.resultado, s.comentario = dados.seguiu, dados.resultado, (dados.comentario or "").strip() or None
+    await sessao.commit()

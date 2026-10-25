@@ -1,21 +1,21 @@
 """Gestão (painel web): resumo, diagnósticos, utilizadores e auditoria."""
 
-from datetime import datetime
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..database import obter_sessao
-from ..esquemas import (AuditoriaLer, NovaPalavraPasse, PaginaAuditoria, PaginaDiagnosticos, PaginaUtilizadores,
+from ..esquemas import (AuditoriaLer, Boletim, EficaciaPatologia, NovaPalavraPasse, PaginaAuditoria, PaginaDiagnosticos, PaginaUtilizadores,
                         Resumo, UtilizadorActualizar, UtilizadorAdminLer)
 from ..regioes import zona_de
 from ..repositorios import diagnosticos as repo
 from ..repositorios.diagnosticos import EstadoValidacao, FiltrosDiagnostico
 from ..seguranca import Administrador, Pessoal
-from ..servicos import painel, utilizadores
+from ..servicos import painel, relatorios, utilizadores
 from ..servicos.diagnosticos import mapa_patologias, para_admin
 from ..tabelas import Diagnostico, Perfil, RegistoAuditoria, TipoPatologia
 
@@ -95,3 +95,35 @@ async def auditoria(_: Administrador, sessao: Sessao, accao: str | None = None, 
         id=r.id, utilizador_nome=r.utilizador.nome if r.utilizador else None, accao=r.accao,
         entidade=r.entidade, entidade_id=r.entidade_id, detalhes=r.detalhes, criado_em=r.criado_em)
         for r in linhas])
+
+
+def _periodo(inicio: date | None, fim: date | None) -> tuple[datetime, datetime]:
+    """Por omissão, os últimos 30 dias. As datas são dias inteiros (do início do 1.º ao fim do último)."""
+    hoje = datetime.now(timezone.utc).date()
+    fim = fim or hoje
+    inicio = inicio or fim - timedelta(days=29)
+    if inicio > fim:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "A data de início é posterior à de fim")
+    return (datetime.combine(inicio, time.min, tzinfo=timezone.utc),
+            datetime.combine(fim, time.max, tzinfo=timezone.utc))
+
+
+@router.get("/boletim", response_model=Boletim)
+async def boletim(utilizador: Pessoal, sessao: Sessao, inicio: date | None = None, fim: date | None = None) -> Boletim:
+    """Boletim fitossanitário da zona no período (o painel imprime-o em PDF)."""
+    return await relatorios.boletim(sessao, utilizador, *_periodo(inicio, fim))
+
+
+@router.get("/boletim.csv", response_class=Response, responses={200: {"content": {"text/csv": {}}}})
+async def boletim_csv(utilizador: Pessoal, sessao: Sessao, inicio: date | None = None,
+                      fim: date | None = None) -> Response:
+    a, b = _periodo(inicio, fim)
+    nome = f"boletim_{a:%Y%m%d}_{b:%Y%m%d}.csv"
+    return Response(await relatorios.boletim_csv(sessao, utilizador, a, b), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{nome}"'})
+
+
+@router.get("/eficacia", response_model=list[EficaciaPatologia])
+async def eficacia(utilizador: Pessoal, sessao: Sessao, desde: datetime | None = None) -> list[EficaciaPatologia]:
+    """Das respostas dos agricultores: quem seguiu a recomendação e a planta melhorou, por praga."""
+    return await relatorios.eficacia(sessao, utilizador, desde)
