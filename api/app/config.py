@@ -21,7 +21,7 @@ class Definicoes(BaseSettings):
     admin_nome: str = "Administrador"
 
     # Origens do painel web autorizadas (CORS). No .env: CORS_ORIGENS=["http://localhost:5173"]
-    cors_origens: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    cors_origens: list[str] = [f"http://{h}:{p}" for h in ("localhost", "127.0.0.1") for p in (5173, 5174, 4173)]
 
     # Ficheiros guardados pela API (fora do Git).
     pasta_modelos: Path = PASTA_API / "modelos"
