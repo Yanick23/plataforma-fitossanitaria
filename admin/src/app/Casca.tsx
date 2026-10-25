@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { BellRing, Boxes, LayoutDashboard, LogOut, MapPin, Moon, ScanSearch, Sprout, Sun, SunMoon, Users } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import {
+  BellRing, Boxes, CalendarCheck, LayoutDashboard, ListChecks, LogOut, MapPin, Moon, Radar, ScanSearch, ScrollText, Sprout, Sun,
+  SunMoon, Users,
+} from 'lucide-react'
+import { visitasRepo } from '@/model/repositorios'
 import { useSessao } from '@/nucleo/sessao'
 import { PERFIL } from '@/nucleo/rotulos'
 import { Botao, Etiqueta } from '@/ui/componentes'
@@ -22,12 +27,21 @@ function useTema() {
   return { tema, seguinte }
 }
 
-const NAVEGACAO = [
-  { grupo: 'Visão geral', itens: [{ para: '/', nome: 'Painel', icone: LayoutDashboard }] },
+interface ItemNav { para: string; nome: string; icone: typeof LayoutDashboard; soAdmin?: boolean; contador?: 'visitas' }
+
+const NAVEGACAO: { grupo: string; itens: ItemNav[] }[] = [
+  {
+    grupo: 'Visão geral', itens: [
+      { para: '/', nome: 'Painel', icone: LayoutDashboard },
+      { para: '/vigilancia', nome: 'Vigilância', icone: Radar },
+    ],
+  },
   {
     grupo: 'Operação', itens: [
       { para: '/diagnosticos', nome: 'Diagnósticos', icone: ScanSearch },
+      { para: '/validacao', nome: 'Validação', icone: ListChecks },
       { para: '/alertas', nome: 'Alertas', icone: BellRing },
+      { para: '/visitas', nome: 'Visitas', icone: CalendarCheck, contador: 'visitas' },
     ],
   },
   {
@@ -36,13 +50,20 @@ const NAVEGACAO = [
       { para: '/modelos', nome: 'Modelos', icone: Boxes },
     ],
   },
-  { grupo: 'Pessoas', itens: [{ para: '/utilizadores', nome: 'Utilizadores', icone: Users }] },
+  {
+    grupo: 'Administração', itens: [
+      { para: '/utilizadores', nome: 'Utilizadores', icone: Users },
+      { para: '/auditoria', nome: 'Auditoria', icone: ScrollText, soAdmin: true },
+    ],
+  },
 ]
 
 export function Casca() {
-  const { utilizador, sair } = useSessao()
+  const { utilizador, sair, eAdministrador } = useSessao()
   const regioes = useRegioes()
   const { tema, seguinte } = useTema()
+  const pendentes = useQuery({ queryKey: ['visitas', 'PENDENTE'], queryFn: () => visitasRepo.listar('PENDENTE'), refetchInterval: 60_000 })
+  const visitasPendentes = pendentes.data?.length ?? 0
   if (!utilizador) return null
 
   const distrito = regioes.distrito(utilizador.distrito_id)
@@ -69,10 +90,11 @@ export function Casca() {
           {NAVEGACAO.map((g) => (
             <div key={g.grupo} className="nav-grupo">
               <p>{g.grupo}</p>
-              {g.itens.map(({ para, nome, icone: Icone }) => (
+              {g.itens.filter((i) => !i.soAdmin || eAdministrador).map(({ para, nome, icone: Icone, contador }) => (
                 <NavLink key={para} to={para} end={para === '/'} className={({ isActive }) => `nav-ligacao${isActive ? ' activa' : ''}`}>
                   <Icone size={17} strokeWidth={1.8} />
                   {nome}
+                  {contador === 'visitas' && visitasPendentes > 0 && <span className="contador" aria-label={`${visitasPendentes} pendentes`}>{visitasPendentes}</span>}
                 </NavLink>
               ))}
             </div>
