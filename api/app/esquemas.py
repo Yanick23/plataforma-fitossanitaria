@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .tabelas import EstadoVisita, NivelAlerta, Perfil, TipoPatologia
+from .tabelas import EstadoModelo, EstadoVisita, NivelAlerta, Perfil, ResultadoTratamento, Seguiu, TipoPatologia
 
 
 class Esquema(BaseModel):
@@ -95,6 +95,10 @@ class PatologiaEscrever(Esquema):
     nome_cientifico: str
     tipo: TipoPatologia
     recomendacao: str
+    # Opcionais: se não forem enviados, ficam como estão.
+    sintomas: str | None = None
+    prevencao: str | None = None
+    declaracao_obrigatoria: bool = False
 
 
 class PatologiaCriar(PatologiaEscrever):
@@ -102,8 +106,18 @@ class PatologiaCriar(PatologiaEscrever):
     codigo: str = Field(pattern=r"^[a-z_]+$", examples=["mosaico"])
 
 
+class FotoLer(Esquema):
+    id: int
+    legenda: str | None
+    url: str  # caminho relativo à API, ex.: /fotos-referencia/3
+
+
 class PatologiaLer(PatologiaCriar):
     id: int
+    versao_conteudo: int = 1
+    validado_por_nome: str | None = None
+    validado_em: datetime | None = None
+    fotos: list[FotoLer] = []
 
 
 # --- Diagnósticos e sincronização -------------------------------------------
@@ -139,6 +153,7 @@ class DiagnosticoLer(Esquema):
     validacao: str = "PENDENTE"  # PENDENTE | CONFIRMADO | CORRIGIDO
     classe_confirmada: str | None = None
     nota_tecnico: str | None = None
+    seguimento_respondido: bool = False  # a app só pergunta «a planta melhorou?» uma vez
 
 
 class DiagnosticoAdminLer(DiagnosticoLer):
@@ -392,3 +407,114 @@ class ModeloLer(Esquema):
     sha256: str
     url_ficheiro: str
     criado_em: datetime
+    estado: EstadoModelo = EstadoModelo.PUBLICADO
+    distritos_piloto: list[int] = []
+    notas: str | None = None
+
+
+class ModeloActualizar(Esquema):
+    estado: EstadoModelo | None = None
+    distritos_piloto: list[int] | None = None
+    notas: str | None = None
+    forcar: bool = False  # passar à frente da porta de qualidade (fica na auditoria)
+
+
+class SemanaModelo(Esquema):
+    semana: str  # segunda-feira da semana, AAAA-MM-DD
+    versao: int | None
+    diagnosticos: int
+    confianca_media: float
+    taxa_baixa: float  # proporção com confiança < 60%
+    validados: int
+    exactidao: float | None
+
+
+class SinalDeriva(Esquema):
+    versao: int
+    taxa_baixa_inicial: float
+    taxa_baixa_recente: float
+    diagnosticos_recentes: int
+    deriva: bool
+    explicacao: str
+
+
+class Monitorizacao(Esquema):
+    cultura_id: str
+    semanas: list[SemanaModelo]
+    sinais: list[SinalDeriva]
+
+
+class PortaQualidade(Esquema):
+    versao: int
+    validados: int
+    exactidao: float | None
+    referencia_versao: int | None
+    referencia_exactidao: float | None
+    aprovado: bool
+    motivo: str
+
+
+# --- Seguimento do tratamento --------------------------------------------------
+
+class SeguimentoEscrever(Esquema):
+    seguiu: Seguiu
+    resultado: ResultadoTratamento
+    comentario: str | None = Field(default=None, max_length=500)
+
+
+class EficaciaPatologia(Esquema):
+    cultura_id: str
+    classe: str
+    nome: str
+    respostas: int
+    seguiram: int        # SIM ou PARCIAL
+    melhoraram: int      # dos que seguiram
+    eficacia: float | None  # melhoraram / seguiram
+
+
+# --- Declaração obrigatória ------------------------------------------------------
+
+class Declaracao(Esquema):
+    diagnostico_id: UUID
+    cultura_id: str
+    classe: str
+    patologia_nome: str
+    estado: str  # CONFIRMADO (validado pelo técnico) ou SUSPEITA (só previsto pelo modelo)
+    confianca: float
+    data: datetime
+    distrito_nome: str | None
+    provincia_codigo: str | None
+    agricultor_nome: str
+    agricultor_telefone: str
+
+
+# --- Boletim ------------------------------------------------------------------
+
+class LinhaBoletim(Esquema):
+    nome: str
+    valor: int
+    detalhe: str | None = None
+
+
+class Boletim(Esquema):
+    zona: str
+    inicio: datetime
+    fim: datetime
+    gerado_em: datetime
+    diagnosticos: int
+    diagnosticos_pragas_doencas: int
+    agricultores_activos: int
+    agricultores_novos: int
+    taxa_confianca_baixa: float | None
+    validados: int
+    exactidao_campo: float | None
+    alertas_enviados: int
+    visitas_pedidas: int
+    visitas_resolvidas: int
+    dias_medios_resolucao: float | None
+    principais_pragas: list[LinhaBoletim]
+    distritos_mais_afectados: list[LinhaBoletim]
+    alertas: list[LinhaBoletim]
+    surtos: list[Surto]
+    declaracoes: list[Declaracao]
+    eficacia: list[EficaciaPatologia]

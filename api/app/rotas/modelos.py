@@ -1,4 +1,4 @@
-"""Versões do modelo TFLite por cultura (RF12)."""
+"""Versões do modelo TFLite por cultura (RF12): piloto por distrito, porta de qualidade e monitorização."""
 
 import hashlib
 import json
@@ -11,10 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import definicoes
 from ..database import obter_sessao
-from ..esquemas import ModeloLer
+from ..esquemas import ModeloActualizar, ModeloLer, Monitorizacao, PortaQualidade
 from ..seguranca import Administrador, Pessoal, UtilizadorActual
+from ..servicos import modelos as servico
 from ..servicos.auditoria import auditar
-from ..tabelas import Cultura, ModeloML
+from ..tabelas import Cultura, Distrito, EstadoModelo, ModeloML
 
 router = APIRouter(tags=["Modelos"])
 Sessao = Annotated[AsyncSession, Depends(obter_sessao)]
@@ -25,25 +26,50 @@ def _para_ler(m: ModeloML, pedido: Request) -> ModeloLer:
         cultura_id=m.cultura_id, versao=m.versao, classes=json.loads(m.classes),
         acuracia_teste=m.acuracia_teste, tamanho_bytes=m.tamanho_bytes, sha256=m.sha256,
         url_ficheiro=str(pedido.url_for("descarregar_modelo", cultura=m.cultura_id, versao=m.versao)),
-        criado_em=m.criado_em,
+        criado_em=m.criado_em, estado=m.estado, distritos_piloto=servico.distritos(m), notas=m.notas,
     )
+
+
+async def _obter(sessao: AsyncSession, cultura: str, versao: int) -> ModeloML:
+    m = await sessao.scalar(select(ModeloML).where(ModeloML.cultura_id == cultura, ModeloML.versao == versao))
+    if m is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Modelo não encontrado")
+    return m
+
+
+async def _validar_distritos(sessao: AsyncSession, ids: list[int]) -> list[int]:
+    ids = sorted(set(ids))
+    if ids and await sessao.scalar(select(func.count(Distrito.id)).where(Distrito.id.in_(ids))) != len(ids):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Há distritos inexistentes na lista do piloto")
+    return ids
 
 
 @router.get("/modelos/{cultura}", response_model=list[ModeloLer])
 async def historico(cultura: str, pedido: Request, _: Pessoal, sessao: Sessao) -> list[ModeloLer]:
-    """Todas as versões publicadas de uma cultura (a mais recente primeiro)."""
+    """Todas as versões de uma cultura (a mais recente primeiro), com o estado de cada uma."""
     modelos = await sessao.scalars(select(ModeloML).where(ModeloML.cultura_id == cultura)
                                    .order_by(ModeloML.versao.desc()))
     return [_para_ler(m, pedido) for m in modelos]
 
 
 @router.get("/modelos/{cultura}/ultima-versao", response_model=ModeloLer)
-async def ultima_versao(cultura: str, pedido: Request, _: UtilizadorActual, sessao: Sessao) -> ModeloLer:
-    modelo = await sessao.scalar(select(ModeloML).where(ModeloML.cultura_id == cultura)
-                                 .order_by(ModeloML.versao.desc()))
+async def ultima_versao(cultura: str, pedido: Request, utilizador: UtilizadorActual, sessao: Sessao) -> ModeloLer:
+    """A versão que esta conta deve usar: a piloto, se o seu distrito estiver no piloto; senão a publicada."""
+    modelo = await servico.para_utilizador(sessao, cultura, utilizador)
     if modelo is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ainda não há modelos para esta cultura")
     return _para_ler(modelo, pedido)
+
+
+@router.get("/modelos/{cultura}/monitorizacao", response_model=Monitorizacao)
+async def monitorizacao(cultura: str, _: Pessoal, sessao: Sessao) -> Monitorizacao:
+    """Por semana e versão: diagnósticos, confiança média, proporção abaixo de 60% e exactidão em campo."""
+    return await servico.monitorizacao(sessao, cultura)
+
+
+@router.get("/modelos/{cultura}/{versao}/porta-qualidade", response_model=PortaQualidade)
+async def porta_qualidade(cultura: str, versao: int, _: Pessoal, sessao: Sessao) -> PortaQualidade:
+    return await servico.porta_qualidade(sessao, await _obter(sessao, cultura, versao))
 
 
 @router.get("/modelos/{cultura}/{versao}/ficheiro", name="descarregar_modelo", response_class=FileResponse)
@@ -62,15 +88,21 @@ async def publicar_modelo(
     ficheiro: Annotated[UploadFile, File(description="Modelo .tflite (entrada float32 [1,224,224,3])")],
     classes: Annotated[str, Form(description='Lista JSON pela ordem das saídas, ex.: ["acaro_verde", ...]')],
     acuracia_teste: Annotated[float | None, Form(ge=0, le=1)] = None,
+    distritos_piloto: Annotated[str | None, Form(description="Lista JSON de ids de distritos: publica em PILOTO")] = None,
+    notas: Annotated[str | None, Form(max_length=2000)] = None,
 ) -> ModeloLer:
-    """O administrador publica uma nova versão; as apps descarregam-na na próxima sincronização."""
+    """Publica uma versão nova. Com `distritos_piloto`, só esses distritos a recebem (piloto)."""
     if await sessao.get(Cultura, cultura) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Cultura inexistente")
     try:
         lista = json.loads(classes)
         assert isinstance(lista, list) and lista and all(isinstance(c, str) for c in lista)
+        piloto = json.loads(distritos_piloto) if distritos_piloto else []
+        assert isinstance(piloto, list) and all(isinstance(d, int) for d in piloto)
     except (ValueError, AssertionError):
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "classes tem de ser uma lista JSON de textos") from None
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            "classes e distritos_piloto têm de ser listas JSON (textos e números)") from None
+    piloto = await _validar_distritos(sessao, piloto)
 
     conteudo = await ficheiro.read()
     if not conteudo:
@@ -82,10 +114,39 @@ async def publicar_modelo(
 
     modelo = ModeloML(cultura_id=cultura, versao=versao, caminho_tflite=nome, classes=json.dumps(lista),
                       acuracia_teste=acuracia_teste, tamanho_bytes=len(conteudo),
-                      sha256=hashlib.sha256(conteudo).hexdigest())
+                      sha256=hashlib.sha256(conteudo).hexdigest(),
+                      estado=EstadoModelo.PILOTO if piloto else EstadoModelo.PUBLICADO,
+                      distritos_piloto=json.dumps(piloto) if piloto else None, notas=(notas or "").strip() or None)
     sessao.add(modelo)
     auditar(sessao, admin, "modelo.publicar", "modelo", f"{cultura} v{versao}",
             depois={"sha256": modelo.sha256, "tamanho_bytes": modelo.tamanho_bytes, "classes": lista,
-                    "acuracia_teste": acuracia_teste})
+                    "acuracia_teste": acuracia_teste, "estado": modelo.estado.value, "distritos_piloto": piloto})
     await sessao.commit()
     return _para_ler(modelo, pedido)
+
+
+@router.patch("/modelos/{cultura}/{versao}", response_model=ModeloLer)
+async def actualizar_modelo(cultura: str, versao: int, dados: ModeloActualizar, pedido: Request,
+                            admin: Administrador, sessao: Sessao) -> ModeloLer:
+    """Mudar os distritos do piloto, promover a publicado (passa pela porta de qualidade) ou retirar."""
+    m = await _obter(sessao, cultura, versao)
+    antes = {"estado": m.estado.value, "distritos_piloto": servico.distritos(m), "notas": m.notas}
+    campos = dados.model_fields_set
+    if "distritos_piloto" in campos and dados.distritos_piloto is not None:
+        ids = await _validar_distritos(sessao, dados.distritos_piloto)
+        m.distritos_piloto = json.dumps(ids) if ids else None
+    if "notas" in campos:
+        m.notas = (dados.notas or "").strip() or None
+    if dados.estado is not None and dados.estado != m.estado:
+        if dados.estado == EstadoModelo.PUBLICADO and m.estado == EstadoModelo.PILOTO:
+            porta = await servico.porta_qualidade(sessao, m)
+            if not porta.aprovado and not dados.forcar:
+                raise HTTPException(status.HTTP_409_CONFLICT, f"Porta de qualidade: {porta.motivo}")
+        if dados.estado == EstadoModelo.PILOTO and not servico.distritos(m):
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Um piloto precisa de pelo menos um distrito")
+        m.estado = dados.estado
+    auditar(sessao, admin, "modelo.actualizar", "modelo", f"{cultura} v{versao}", antes=antes,
+            depois={"estado": m.estado.value, "distritos_piloto": servico.distritos(m), "notas": m.notas,
+                    "forcado": dados.forcar or None})
+    await sessao.commit()
+    return _para_ler(m, pedido)

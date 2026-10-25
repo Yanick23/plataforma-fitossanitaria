@@ -38,15 +38,19 @@ async def semear(sessao: AsyncSession) -> None:
     await sessao.flush()
 
     for cultura_id in CULTURAS:
-        existentes = set(await sessao.scalars(
-            select(Patologia.codigo).where(Patologia.cultura_id == cultura_id)))
+        existentes = {p.codigo: p for p in await sessao.scalars(
+            select(Patologia).where(Patologia.cultura_id == cultura_id))}
         for codigo, p in catalogo[cultura_id].items():
             if codigo not in existentes:
                 sessao.add(Patologia(
                     cultura_id=cultura_id, codigo=codigo, nome_local=p["nome_local"],
                     nome_cientifico=p["nome_cientifico"], tipo=TipoPatologia(p["tipo"].upper()),
-                    recomendacao=p["recomendacao"],
+                    recomendacao=p["recomendacao"], sintomas=p.get("sintomas"), prevencao=p.get("prevencao"),
                 ))
+            else:  # fase 2: preenche sintomas/prevenção que ainda não existiam (não apaga edições)
+                actual = existentes[codigo]
+                actual.sintomas = actual.sintomas or p.get("sintomas")
+                actual.prevencao = actual.prevencao or p.get("prevencao")
 
         # Versão 1 do modelo = a que vem dentro da app, se o ficheiro estiver em api/modelos/.
         tflite = definicoes.pasta_modelos / f"modelo_{cultura_id}_int8_dinamica.tflite"
