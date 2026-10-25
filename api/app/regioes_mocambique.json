@@ -1,0 +1,679 @@
+{
+ "fonte": "geoBoundaries gbOpen MOZ: ADM2 (INE/OCHA ROSEA, 2019, CC BY 3.0 IGO); ADM1 (OpenStreetMap, ODbL) para atribuir a província.",
+ "provincias": [
+  {
+   "codigo": "MZ-A",
+   "nome": "Niassa"
+  },
+  {
+   "codigo": "MZ-P",
+   "nome": "Cabo Delgado"
+  },
+  {
+   "codigo": "MZ-N",
+   "nome": "Nampula"
+  },
+  {
+   "codigo": "MZ-Q",
+   "nome": "Zambézia"
+  },
+  {
+   "codigo": "MZ-T",
+   "nome": "Tete"
+  },
+  {
+   "codigo": "MZ-B",
+   "nome": "Manica"
+  },
+  {
+   "codigo": "MZ-S",
+   "nome": "Sofala"
+  },
+  {
+   "codigo": "MZ-I",
+   "nome": "Inhambane"
+  },
+  {
+   "codigo": "MZ-G",
+   "nome": "Gaza"
+  },
+  {
+   "codigo": "MZ-L",
+   "nome": "Maputo"
+  },
+  {
+   "codigo": "MZ-MPM",
+   "nome": "Cidade de Maputo"
+  }
+ ],
+ "distritos": [
+  {
+   "nome": "Chimbonila",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Cidade de Lichinga",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Cuamba",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Lago",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Lago Niassa",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Majune",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Mandimba",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Marrupa",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Maua",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Mavago",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Mecanhelas",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Mecula",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Metarica",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Muembe",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Ngauma",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Nipepe",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Sanga",
+   "provincia": "MZ-A"
+  },
+  {
+   "nome": "Barue",
+   "provincia": "MZ-B"
+  },
+  {
+   "nome": "Cidade de Chimoio",
+   "provincia": "MZ-B"
+  },
+  {
+   "nome": "Gondola",
+   "provincia": "MZ-B"
+  },
+  {
+   "nome": "Guro",
+   "provincia": "MZ-B"
+  },
+  {
+   "nome": "Macate",
+   "provincia": "MZ-B"
+  },
+  {
+   "nome": "Machaze",
+   "provincia": "MZ-B"
+  },
+  {
+   "nome": "Macossa",
+   "provincia": "MZ-B"
+  },
+  {
+   "nome": "Manica",
+   "provincia": "MZ-B"
+  },
+  {
+   "nome": "Mossurize",
+   "provincia": "MZ-B"
+  },
+  {
+   "nome": "Sussundenga",
+   "provincia": "MZ-B"
+  },
+  {
+   "nome": "Tambara",
+   "provincia": "MZ-B"
+  },
+  {
+   "nome": "Vanduzi",
+   "provincia": "MZ-B"
+  },
+  {
+   "nome": "Bilene",
+   "provincia": "MZ-G"
+  },
+  {
+   "nome": "Chibuto",
+   "provincia": "MZ-G"
+  },
+  {
+   "nome": "Chicualacuala",
+   "provincia": "MZ-G"
+  },
+  {
+   "nome": "Chigubo",
+   "provincia": "MZ-G"
+  },
+  {
+   "nome": "Chokwe",
+   "provincia": "MZ-G"
+  },
+  {
+   "nome": "Chongoene",
+   "provincia": "MZ-G"
+  },
+  {
+   "nome": "Cidade de Xai-Xai",
+   "provincia": "MZ-G"
+  },
+  {
+   "nome": "Guija",
+   "provincia": "MZ-G"
+  },
+  {
+   "nome": "Limpopo",
+   "provincia": "MZ-G"
+  },
+  {
+   "nome": "Mabalane",
+   "provincia": "MZ-G"
+  },
+  {
+   "nome": "Mandlakaze",
+   "provincia": "MZ-G"
+  },
+  {
+   "nome": "Mapai",
+   "provincia": "MZ-G"
+  },
+  {
+   "nome": "Massangena",
+   "provincia": "MZ-G"
+  },
+  {
+   "nome": "Massingir",
+   "provincia": "MZ-G"
+  },
+  {
+   "nome": "Cidade de Inhambane",
+   "provincia": "MZ-I"
+  },
+  {
+   "nome": "Funhalouro",
+   "provincia": "MZ-I"
+  },
+  {
+   "nome": "Govuro",
+   "provincia": "MZ-I"
+  },
+  {
+   "nome": "Homoine",
+   "provincia": "MZ-I"
+  },
+  {
+   "nome": "Inharrime",
+   "provincia": "MZ-I"
+  },
+  {
+   "nome": "Inhassoro",
+   "provincia": "MZ-I"
+  },
+  {
+   "nome": "Jangamo",
+   "provincia": "MZ-I"
+  },
+  {
+   "nome": "Mabote",
+   "provincia": "MZ-I"
+  },
+  {
+   "nome": "Massinga",
+   "provincia": "MZ-I"
+  },
+  {
+   "nome": "Maxixe",
+   "provincia": "MZ-I"
+  },
+  {
+   "nome": "Morrumbene",
+   "provincia": "MZ-I"
+  },
+  {
+   "nome": "Panda",
+   "provincia": "MZ-I"
+  },
+  {
+   "nome": "Vilankulo",
+   "provincia": "MZ-I"
+  },
+  {
+   "nome": "Zavala",
+   "provincia": "MZ-I"
+  },
+  {
+   "nome": "Boane",
+   "provincia": "MZ-L"
+  },
+  {
+   "nome": "Cidade da Matola",
+   "provincia": "MZ-L"
+  },
+  {
+   "nome": "Magude",
+   "provincia": "MZ-L"
+  },
+  {
+   "nome": "Manhiça",
+   "provincia": "MZ-L"
+  },
+  {
+   "nome": "Marracuene",
+   "provincia": "MZ-L"
+  },
+  {
+   "nome": "Matutuine",
+   "provincia": "MZ-L"
+  },
+  {
+   "nome": "Moamba",
+   "provincia": "MZ-L"
+  },
+  {
+   "nome": "Namaacha",
+   "provincia": "MZ-L"
+  },
+  {
+   "nome": "Cidade de Maputo",
+   "provincia": "MZ-MPM"
+  },
+  {
+   "nome": "Angoche",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Cidade de Nampula",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Erati",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Ilha de Moçambique",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Lalaua",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Larde",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Liúpo",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Malema",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Meconta",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Mecuburi",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Memba",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Mogincual",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Mogovolas",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Moma",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Monapo",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Mossuril",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Muecate",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Murrupula",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Nacala",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Nacala-a-Velha",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Nacaroa",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Rapale",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Ribaue",
+   "provincia": "MZ-N"
+  },
+  {
+   "nome": "Ancuabe",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Balama",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Chiure",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Cidade de Pemba",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Ibo",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Macomia",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Mecufi",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Meluco",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Metuge",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Mocimboa da Praia",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Montepuez",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Mueda",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Muidumbe",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Namuno",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Nangade",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Palma",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Quissanga",
+   "provincia": "MZ-P"
+  },
+  {
+   "nome": "Alto Molocue",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Chinde",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Cidade de Quelimane",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Derre",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Gile",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Gurue",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Ile",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Inhassunge",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Luabo",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Lugela",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Maganja da Costa",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Maquival",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Milange",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Mocuba",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Mocubela",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Molumbo",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Mopeia",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Morrumbala",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Mulevala",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Namacurra",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Namarroi",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Nicoadala",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Pebane",
+   "provincia": "MZ-Q"
+  },
+  {
+   "nome": "Buzi",
+   "provincia": "MZ-S"
+  },
+  {
+   "nome": "Caia",
+   "provincia": "MZ-S"
+  },
+  {
+   "nome": "Chemba",
+   "provincia": "MZ-S"
+  },
+  {
+   "nome": "Cheringoma",
+   "provincia": "MZ-S"
+  },
+  {
+   "nome": "Chibabava",
+   "provincia": "MZ-S"
+  },
+  {
+   "nome": "Cidade da Beira",
+   "provincia": "MZ-S"
+  },
+  {
+   "nome": "Dondo",
+   "provincia": "MZ-S"
+  },
+  {
+   "nome": "Gorongosa",
+   "provincia": "MZ-S"
+  },
+  {
+   "nome": "Machanga",
+   "provincia": "MZ-S"
+  },
+  {
+   "nome": "Maringue",
+   "provincia": "MZ-S"
+  },
+  {
+   "nome": "Marromeu",
+   "provincia": "MZ-S"
+  },
+  {
+   "nome": "Muanza",
+   "provincia": "MZ-S"
+  },
+  {
+   "nome": "Nhamatanda",
+   "provincia": "MZ-S"
+  },
+  {
+   "nome": "Angonia",
+   "provincia": "MZ-T"
+  },
+  {
+   "nome": "Cahora Bassa",
+   "provincia": "MZ-T"
+  },
+  {
+   "nome": "Changara",
+   "provincia": "MZ-T"
+  },
+  {
+   "nome": "Chifunde",
+   "provincia": "MZ-T"
+  },
+  {
+   "nome": "Chiuta",
+   "provincia": "MZ-T"
+  },
+  {
+   "nome": "Cidade de Tete",
+   "provincia": "MZ-T"
+  },
+  {
+   "nome": "Doa",
+   "provincia": "MZ-T"
+  },
+  {
+   "nome": "Macanga",
+   "provincia": "MZ-T"
+  },
+  {
+   "nome": "Magoe",
+   "provincia": "MZ-T"
+  },
+  {
+   "nome": "Marara",
+   "provincia": "MZ-T"
+  },
+  {
+   "nome": "Maravia",
+   "provincia": "MZ-T"
+  },
+  {
+   "nome": "Moatize",
+   "provincia": "MZ-T"
+  },
+  {
+   "nome": "Mutarara",
+   "provincia": "MZ-T"
+  },
+  {
+   "nome": "Tsangano",
+   "provincia": "MZ-T"
+  },
+  {
+   "nome": "Zumbu",
+   "provincia": "MZ-T"
+  }
+ ]
+}

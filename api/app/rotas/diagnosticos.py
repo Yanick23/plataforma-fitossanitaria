@@ -8,7 +8,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
-from sqlalchemy import select
+from fastapi.responses import FileResponse
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -16,30 +17,17 @@ from .. import gradcam
 from ..config import definicoes
 from ..database import obter_sessao
 from ..esquemas import DiagnosticoEnviar, DiagnosticoLer, ResultadoSincronizacao
+from ..regioes import filtro_zona, zona_de
+from ..repositorios import diagnosticos as repo
 from ..seguranca import UtilizadorActual
-from ..tabelas import Diagnostico, Imagem, ModeloML, Patologia, Perfil, Utilizador
+from ..servicos.diagnosticos import para_ler, pode_ver
+from ..tabelas import Diagnostico, Distrito, Imagem, ModeloML, Patologia, Perfil, Utilizador, Validacao
 
 router = APIRouter(tags=["Diagnósticos"])
 Sessao = Annotated[AsyncSession, Depends(obter_sessao)]
 
 TIPOS_IMAGEM = {"image/jpeg": ".jpg", "image/png": ".png"}
 TAMANHO_MAXIMO_IMAGEM = 10 * 1024 * 1024
-
-
-def _para_ler(d: Diagnostico) -> DiagnosticoLer:
-    return DiagnosticoLer(
-        id=d.id, utilizador_id=d.utilizador_id, cultura_id=d.cultura_id,
-        classe_prevista=d.classe_prevista, confianca=d.confianca, data=d.data,
-        versao_modelo=d.versao_modelo, tempo_inferencia_ms=d.tempo_inferencia_ms,
-        tem_imagem=d.imagem is not None,
-    )
-
-
-def _pode_ver(utilizador: Utilizador, d: Diagnostico) -> bool:
-    if utilizador.perfil == Perfil.ADMINISTRADOR or d.utilizador_id == utilizador.id:
-        return True
-    return (utilizador.perfil == Perfil.TECNICO and utilizador.area is not None
-            and d.utilizador.area == utilizador.area)
 
 
 @router.post("/diagnosticos", response_model=ResultadoSincronizacao)
@@ -73,6 +61,7 @@ async def enviar_diagnosticos(lote: list[DiagnosticoEnviar], utilizador: Utiliza
             id=chave, utilizador_id=utilizador.id, cultura_id=d.cultura_id,
             classe_prevista=d.classe_prevista, confianca=d.confianca, data=d.data,
             versao_modelo=d.versao_modelo, tempo_inferencia_ms=d.tempo_inferencia_ms,
+            distrito_id=utilizador.distrito_id,  # fica fixo, mesmo que o agricultor mude de distrito
         ))
         confirmados.append(d.id)
     await sessao.commit()
@@ -82,7 +71,9 @@ async def enviar_diagnosticos(lote: list[DiagnosticoEnviar], utilizador: Utiliza
 async def _obter(sessao: AsyncSession, diagnostico_id: UUID) -> Diagnostico:
     d = await sessao.scalar(
         select(Diagnostico).where(Diagnostico.id == str(diagnostico_id))
-        .options(selectinload(Diagnostico.imagem), selectinload(Diagnostico.utilizador)))
+        .options(selectinload(Diagnostico.imagem), selectinload(Diagnostico.utilizador),
+                 selectinload(Diagnostico.distrito),
+                 selectinload(Diagnostico.validacao).selectinload(Validacao.tecnico)))
     if d is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Diagnóstico não encontrado")
     return d
@@ -116,17 +107,33 @@ async def enviar_imagem(diagnostico_id: UUID, utilizador: UtilizadorActual, sess
 @router.get("/diagnosticos", response_model=list[DiagnosticoLer])
 async def listar_diagnosticos(utilizador: UtilizadorActual, sessao: Sessao,
                               cultura: str | None = None) -> list[DiagnosticoLer]:
-    """Agricultor: os seus. Técnico: os dos agricultores da sua área. Administrador: todos."""
-    consulta = (select(Diagnostico).join(Diagnostico.utilizador)
-                .options(selectinload(Diagnostico.imagem)).order_by(Diagnostico.data.desc()))
+    """Agricultor: os seus (com a validação do técnico). Técnico: os da sua zona. Administrador: todos.
+
+    O painel usa GET /gestao/diagnosticos, com filtros e paginação.
+    """
+    consulta = repo.consulta_base().order_by(Diagnostico.data.desc())
     if utilizador.perfil == Perfil.AGRICULTOR:
         consulta = consulta.where(Diagnostico.utilizador_id == utilizador.id)
     elif utilizador.perfil == Perfil.TECNICO:
-        consulta = consulta.where((Utilizador.area == utilizador.area) & (Utilizador.area.is_not(None))
-                                  | (Diagnostico.utilizador_id == utilizador.id))
+        consulta = consulta.where(or_(
+            filtro_zona(zona_de(utilizador), Diagnostico.distrito_id, Distrito.provincia_codigo, Utilizador.area),
+            Diagnostico.utilizador_id == utilizador.id))
     if cultura:
         consulta = consulta.where(Diagnostico.cultura_id == cultura)
-    return [_para_ler(d) for d in await sessao.scalars(consulta)]
+    return [para_ler(d) for d in await sessao.scalars(consulta)]
+
+
+@router.get("/diagnosticos/{diagnostico_id}/imagem", response_class=FileResponse,
+            responses={200: {"content": {"image/jpeg": {}, "image/png": {}}}})
+async def obter_imagem(diagnostico_id: UUID, utilizador: UtilizadorActual, sessao: Sessao) -> FileResponse:
+    """A fotografia original (para o painel e para a validação pelo técnico)."""
+    d = await _obter(sessao, diagnostico_id)
+    if not pode_ver(utilizador, d):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Sem acesso a este diagnóstico")
+    caminho = Path(definicoes.pasta_imagens) / d.imagem.caminho_ficheiro if d.imagem else None
+    if caminho is None or not caminho.exists():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "A imagem deste diagnóstico não está no servidor")
+    return FileResponse(caminho)
 
 
 @router.get("/diagnosticos/{diagnostico_id}/gradcam", response_class=Response,
@@ -134,7 +141,7 @@ async def listar_diagnosticos(utilizador: UtilizadorActual, sessao: Sessao,
 async def obter_gradcam(diagnostico_id: UUID, utilizador: UtilizadorActual, sessao: Sessao) -> Response:
     """Mapa de calor Grad-CAM da classe prevista, sobreposto à fotografia (secção 4.6.6)."""
     d = await _obter(sessao, diagnostico_id)
-    if not _pode_ver(utilizador, d):
+    if not pode_ver(utilizador, d):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Sem acesso a este diagnóstico")
     if d.imagem is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "A imagem deste diagnóstico ainda não foi enviada")

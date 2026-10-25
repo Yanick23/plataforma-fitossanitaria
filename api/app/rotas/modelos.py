@@ -12,7 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..config import definicoes
 from ..database import obter_sessao
 from ..esquemas import ModeloLer
-from ..seguranca import Administrador, UtilizadorActual
+from ..seguranca import Administrador, Pessoal, UtilizadorActual
+from ..servicos.auditoria import auditar
 from ..tabelas import Cultura, ModeloML
 
 router = APIRouter(tags=["Modelos"])
@@ -26,6 +27,14 @@ def _para_ler(m: ModeloML, pedido: Request) -> ModeloLer:
         url_ficheiro=str(pedido.url_for("descarregar_modelo", cultura=m.cultura_id, versao=m.versao)),
         criado_em=m.criado_em,
     )
+
+
+@router.get("/modelos/{cultura}", response_model=list[ModeloLer])
+async def historico(cultura: str, pedido: Request, _: Pessoal, sessao: Sessao) -> list[ModeloLer]:
+    """Todas as versões publicadas de uma cultura (a mais recente primeiro)."""
+    modelos = await sessao.scalars(select(ModeloML).where(ModeloML.cultura_id == cultura)
+                                   .order_by(ModeloML.versao.desc()))
+    return [_para_ler(m, pedido) for m in modelos]
 
 
 @router.get("/modelos/{cultura}/ultima-versao", response_model=ModeloLer)
@@ -49,7 +58,7 @@ async def descarregar(cultura: str, versao: int, _: UtilizadorActual, sessao: Se
 
 @router.post("/modelos/{cultura}", response_model=ModeloLer, status_code=status.HTTP_201_CREATED)
 async def publicar_modelo(
-    cultura: str, pedido: Request, _: Administrador, sessao: Sessao,
+    cultura: str, pedido: Request, admin: Administrador, sessao: Sessao,
     ficheiro: Annotated[UploadFile, File(description="Modelo .tflite (entrada float32 [1,224,224,3])")],
     classes: Annotated[str, Form(description='Lista JSON pela ordem das saídas, ex.: ["acaro_verde", ...]')],
     acuracia_teste: Annotated[float | None, Form(ge=0, le=1)] = None,
@@ -75,5 +84,8 @@ async def publicar_modelo(
                       acuracia_teste=acuracia_teste, tamanho_bytes=len(conteudo),
                       sha256=hashlib.sha256(conteudo).hexdigest())
     sessao.add(modelo)
+    auditar(sessao, admin, "modelo.publicar", "modelo", f"{cultura} v{versao}",
+            depois={"sha256": modelo.sha256, "tamanho_bytes": modelo.tamanho_bytes, "classes": lista,
+                    "acuracia_teste": acuracia_teste})
     await sessao.commit()
     return _para_ler(modelo, pedido)

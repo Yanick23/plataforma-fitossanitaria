@@ -10,6 +10,7 @@ pydantic-settings==2.7.1
 sqlalchemy==2.0.36
 asyncpg==0.30.0
 aiosqlite==0.20.0
+alembic==1.14.0      # migrações da base de dados (aplicadas no arranque)
 
 # Autenticação: palavra-passe com hash bcrypt e token JWT.
 bcrypt==4.2.1
