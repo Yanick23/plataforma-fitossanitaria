@@ -550,10 +550,12 @@ select.entrada {
 
 /* ----- Notificações ----- */
 
+/* Em baixo à esquerda: à direita tapariam os botões do rodapé das gavetas. */
 .notificacoes {
   position: fixed;
-  right: var(--e-6);
+  left: var(--e-6);
   bottom: var(--e-6);
+  max-width: min(420px, calc(100vw - 2 * var(--e-6)));
   z-index: 60;
   display: flex;
   flex-direction: column;
@@ -886,4 +888,133 @@ select.entrada {
   .entrada-ilustracao {
     display: none;
   }
+}
+
+/* ----- Secções dentro de uma gaveta (revisão, fotografias) ----- */
+
+.caixa-seccao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  padding-top: var(--e-4);
+  border-top: 1px solid var(--linha);
+}
+
+.caixa-seccao h3 {
+  font-size: var(--t-14);
+  font-weight: 600;
+}
+
+.fotos-grelha {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: var(--e-3);
+}
+
+.fotos-grelha figure {
+  position: relative;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fotos-grelha img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--raio);
+  background: var(--superficie-2);
+}
+
+.fotos-grelha figcaption {
+  font-size: var(--t-12);
+  color: var(--tinta-2);
+  line-height: 1.35;
+}
+
+.foto-remover {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(11, 11, 11, 0.62);
+  color: #fff;
+  cursor: pointer;
+}
+
+.foto-remover:hover {
+  background: var(--critico);
+}
+
+.telemovel-ecra .t-foto {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.telemovel-ecra .t-bloco {
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.telemovel-ecra .t-bloco b {
+  display: block;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+/* ----- Escolha de distritos (piloto do modelo) ----- */
+
+.escolha-distritos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+
+.escolha-distritos .escolhidos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.escolha-distritos .escolhidos button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  margin-right: -2px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.lista-distritos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 4px var(--e-3);
+  max-height: 200px;
+  overflow-y: auto;
+  padding: var(--e-2) var(--e-3);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  font-size: var(--t-13);
+}
+
+.lista-distritos label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
 }

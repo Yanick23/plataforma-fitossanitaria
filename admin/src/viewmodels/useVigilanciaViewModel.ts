@@ -32,6 +32,9 @@ export function useVigilanciaViewModel() {
   })
   const filtro = { cultura: cultura || undefined, classe: classe || undefined, desde: diasAtras(periodo) }
   const ocorrencias = useQuery({ queryKey: ['ocorrencias', filtro], queryFn: () => vigilanciaRepo.ocorrencias(filtro) })
+  // Declaração obrigatória e eficácia seguem o período, mas não a cultura/praga (são listas curtas).
+  const declaracoes = useQuery({ queryKey: ['declaracoes', periodo], queryFn: () => vigilanciaRepo.declaracoes(diasAtras(periodo)) })
+  const eficacia = useQuery({ queryKey: ['eficacia', periodo], queryFn: () => vigilanciaRepo.eficacia(diasAtras(periodo)) })
 
   const mapa: ValorDistrito[] = useMemo(() => (ocorrencias.data ?? []).map((o) => ({
     distrito: o.distrito, provincia_codigo: o.provincia_codigo, valor: o.total,
@@ -58,5 +61,8 @@ export function useVigilanciaViewModel() {
     mapa, totalOcorrencias: mapa.reduce((s, v) => s + v.valor, 0), aCarregarMapa: ocorrencias.isLoading,
     ranking: (ocorrencias.data ?? []).slice(0, 10).map((o) => ({ chave: String(o.distrito_id), nome: o.distrito, valor: o.total })),
     criarAlerta, parametros: PARAMETROS[sensibilidade],
+    declaracoes: declaracoes.data ?? [], aCarregarDeclaracoes: declaracoes.isLoading,
+    confirmadas: (declaracoes.data ?? []).filter((d) => d.estado === 'CONFIRMADO').length,
+    eficacia: eficacia.data ?? [], aCarregarEficacia: eficacia.isLoading,
   }
 }
