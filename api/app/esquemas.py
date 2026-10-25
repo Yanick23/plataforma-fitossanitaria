@@ -255,6 +255,7 @@ class AlertaAgricultorLer(Esquema):
     nivel: NivelAlerta
     cultura_id: str | None
     patologia_id: int | None
+    patologia_codigo: str | None = None  # a app procura a praga no catálogo local por cultura + código
     zona: str
     criado_em: datetime
     expira_em: datetime | None
