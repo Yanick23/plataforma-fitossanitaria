@@ -182,3 +182,53 @@ A mensagem da sincronização resume as novidades (ex.: «1 alerta(s) novo(s) ·
 ### Por fazer nesta entrega
 
 - **Confirmação visual no telemóvel** (capturas do ecrã inicial com o alerta, do ecrã de alertas, do historial com «Corrigido pelo técnico», do detalhe com a nota e a visita agendada, e do registo com as listas): adiada porque o telemóvel estava com 6% de bateria e em uso. Fazer quando estiver a carregar.
+
+---
+
+## Entrega 2a — API da fase 2: conteúdo, modelos, seguimento e boletim (25/10/2026)
+
+### O que foi implementado
+
+| Área | Funcionalidade | Rotas principais |
+|---|---|---|
+| Catálogo enriquecido | Cada praga/doença passa a ter **sintomas**, **prevenção** e a indicação de **declaração obrigatória**, além da recomendação. Os textos iniciais das 12 classes foram escritos e entram na base no arranque | `GET/PUT /patologias/{id}` |
+| Revisão do conteúdo | O texto que o agricultor lê tem **versão**. Um técnico (ou o administrador) **valida** o conteúdo; se o texto mudar depois, a versão sobe e a validação é retirada, porque o texto novo ainda não foi revisto | `POST /patologias/{id}/validar` |
+| Fotografias de referência | O administrador junta fotografias de exemplo (JPEG/PNG, até 5 MB, com legenda) a cada praga/doença; são públicas para a app as poder guardar e mostrar sem rede | `POST /patologias/{id}/fotos`, `GET/DELETE /fotos-referencia/{id}` |
+| Versões piloto do modelo | Uma versão nova pode ser publicada só para alguns distritos (**piloto**). A app de um agricultor desses distritos recebe a versão piloto; os restantes continuam na versão **publicada**. Uma versão pode ser **retirada**, e todos voltam à anterior | `POST /modelos/{cultura}`, `PATCH /modelos/{cultura}/{versao}`, `GET /modelos/{cultura}/ultima-versao` |
+| Porta de qualidade | Para passar de piloto a publicado, a versão precisa de **pelo menos 10 diagnósticos validados em campo** e de uma exactidão **não inferior** à da versão publicada. O administrador pode forçar a promoção; fica registado na auditoria | `GET /modelos/{cultura}/{versao}/porta-qualidade` |
+| Monitorização do modelo | Por semana e versão: número de diagnósticos, confiança média, proporção abaixo de 60% e exactidão em campo. **Sinal de deriva** quando a proporção de confiança baixa nas últimas 2 semanas sobe 10 pontos ou mais face às primeiras semanas da versão (com pelo menos 20 diagnósticos recentes) | `GET /modelos/{cultura}/monitorizacao` |
+| Seguimento do tratamento | Dias depois do diagnóstico, o agricultor responde se seguiu a recomendação (sim/em parte/não) e se a planta melhorou. Responder outra vez substitui a resposta | `POST /diagnosticos/{id}/seguimento` |
+| Eficácia das recomendações | Por praga/doença: respostas, quantos seguiram a recomendação e, desses, quantos viram melhoria | `GET /gestao/eficacia` |
+| Declaração obrigatória | Casos de pragas/doenças de declaração obrigatória na zona, marcados como **suspeita** (só o modelo) ou **confirmado** (validado pelo técnico), com o contacto do agricultor | `GET /vigilancia/declaracoes` |
+| Boletim fitossanitário | Resumo da zona num período (por omissão, 30 dias): diagnósticos, agricultores activos e novos, confiança baixa, exactidão em campo, principais pragas, distritos mais afectados, alertas, surtos, visitas, declarações e eficácia. Exportação **CSV** por distrito, cultura e praga (abre directamente no Excel) | `GET /gestao/boletim`, `GET /gestao/boletim.csv` |
+
+Migração `0003`: novas colunas em `patologias` (sintomas, prevenção, declaração obrigatória,
+versão do conteúdo, validação) e em `modelos_ml` (estado, distritos do piloto, notas); novas
+tabelas `fotos_referencia` e `seguimentos`.
+
+### Como foi testado
+
+- **Testes automáticos:** `pytest` passou de 38 para **44 testes, todos aprovados**. Os 6 novos
+  usam uma cultura criada só para o teste, e cobrem:
+  - versão e validação do conteúdo, incluindo o caso em que mudar só a declaração obrigatória
+    mantém a validação;
+  - fotografias de referência: permissões, tipo de ficheiro, acesso público e remoção;
+  - piloto por distrito: um agricultor de Boane recebe a v2, um de Moamba a v1;
+  - porta de qualidade: fechada com 0 validações e aberta com 10 validações e 90% de exactidão;
+    depois a promoção e a retirada da versão;
+  - sinal de deriva numa versão cuja confiança caiu nas últimas semanas;
+  - seguimento: substituição da resposta e eficácia de 50% (2 seguiram, 1 melhorou);
+  - declarações suspeitas e confirmadas, boletim, CSV e intervalo de datas inválido.
+- **Migração da base real (PostgreSQL 18.1):** depois de uma cópia de segurança (`pg_dump`), a
+  API migrou a base para a revisão `0003` no arranque, sem erros. As 12 classes ficaram com
+  sintomas e prevenção, as 2 versões do modelo do milho ficaram como «publicado», e o boletim
+  nacional devolveu os 35 diagnósticos, 1 validado e as 8 principais pragas.
+
+### Limitações da entrega 2a
+
+- Os sintomas e a prevenção iniciais foram escritos a partir da literatura usada no PFC e ainda
+  **não foram revistos por um técnico**: na base aparecem como conteúdo por validar.
+- A porta de qualidade depende das validações dos técnicos; sem elas, só a promoção forçada é
+  possível (e fica na auditoria).
+- O seguimento já é recebido pela API, mas a app ainda não pergunta ao agricultor (entrega 2c).
+- O boletim é gerado em JSON e CSV; a versão para imprimir em PDF fica no painel (entrega 2b).
