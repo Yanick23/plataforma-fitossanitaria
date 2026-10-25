@@ -14,6 +14,8 @@ import '../services/sincronizacao.dart';
 import '../tema.dart';
 import '../widgets/anel_confianca.dart';
 import '../widgets/botoes.dart';
+import '../widgets/informacao_patologia.dart';
+import 'captura_screen.dart';
 
 /// Ecrãs 5 e 6 — Resultado do diagnóstico.
 /// Mostra a classe, a confiança, o nome local e científico (RF06) e a
@@ -31,6 +33,14 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
   bool _aGuardar = false;
 
   ResultadoClassificacao get _r => widget.resultado;
+
+  void _juntarFoto() => Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => CapturaScreen(cultura: _r.cultura, anterior: _r),
+      ));
+
+  /// Volta à primeira captura e descarta as fotos analisadas.
+  void _recomecar() =>
+      Navigator.of(context).popUntil((rota) => rota.settings.name == CapturaScreen.rota || rota.isFirst);
 
   Future<void> _guardar() async {
     setState(() => _aGuardar = true);
@@ -58,7 +68,10 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
       NavegacaoPrincipal.abaActual.value = 1;
       final mensageiro = ScaffoldMessenger.of(context);
       Navigator.of(context).popUntil((rota) => rota.isFirst);
-      mensageiro.showSnackBar(const SnackBar(content: Text('Diagnóstico guardado no historial')));
+      mensageiro.showSnackBar(SnackBar(
+          content: Text(_r.fotos.length > 1
+              ? 'Diagnóstico guardado no historial (${_r.fotos.length} fotos combinadas)'
+              : 'Diagnóstico guardado no historial')));
     } catch (e) {
       if (!mounted) return;
       setState(() => _aGuardar = false);
@@ -89,6 +102,7 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
               child: Image.file(File(_r.caminhoImagem), fit: BoxFit.cover),
             ),
           ),
+          if (_r.fotos.length > 1) ...[const SizedBox(height: 10), _fotosCombinadas()],
           const SizedBox(height: 16),
           Row(children: [
             _etiqueta(_r.cultura.nome),
@@ -109,16 +123,26 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
           const SizedBox(height: 18),
           Center(child: AnelConfianca(confianca: _r.confianca, baixa: baixa)),
           const SizedBox(height: 18),
-          if (!baixa) ...[_cartaoRecomendacao(entrada), const SizedBox(height: 18)],
+          if (!baixa) ...[_cartaoRecomendacao(entrada), const SizedBox(height: 12)],
+          // Com dúvida, os sintomas e as fotos ajudam a comparar; a recomendação só com confiança.
+          if (entrada.tipo != TipoPatologia.saudavel) ...[ComoReconhecer(patologia: entrada), const SizedBox(height: 12)],
+          if (!baixa) ...[Prevencao(patologia: entrada), const SizedBox(height: 6)],
+          const SizedBox(height: 12),
           if (baixa) ...[
-            BotaoPrincipal(
-              texto: 'Tirar Nova Foto',
-              icone: Icons.photo_camera,
-              cores: const [Cores.laranja, Cores.laranjaEscuro],
-              aoPremir: _aGuardar ? null : () => Navigator.of(context).pop(),
-            ),
-            const SizedBox(height: 12),
+            if (_r.podeJuntarFoto) ...[
+              BotaoPrincipal(
+                texto: 'Juntar Outra Foto',
+                icone: Icons.add_a_photo,
+                cores: const [Cores.laranja, Cores.laranjaEscuro],
+                aoPremir: _aGuardar ? null : _juntarFoto,
+              ),
+              const SizedBox(height: 6),
+              const Text('Outra foto da mesma planta ajuda a app a decidir.',
+                  textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Cores.textoSecundario)),
+              const SizedBox(height: 12),
+            ],
             BotaoSecundario(texto: 'Guardar Mesmo Assim', aoPremir: _aGuardar ? null : _guardar),
+            TextButton(onPressed: _aGuardar ? null : _recomecar, child: const Text('Recomeçar com outra foto')),
           ] else
             BotaoPrincipal(texto: 'Guardar no Historial', aoPremir: _aGuardar ? null : _guardar),
           const SizedBox(height: 14),
@@ -130,6 +154,34 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
         ]),
       ),
     );
+  }
+
+  /// Miniaturas das fotografias combinadas, com a confiança de cada uma na classe final.
+  Widget _fotosCombinadas() {
+    final k = _r.indicePrevisto;
+    return Row(children: [
+      for (final f in _r.fotos) ...[
+        Column(children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: f.caminho == _r.caminhoImagem ? Cores.verdeEscuro : Colors.transparent, width: 2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Image.file(File(f.caminho), width: 56, height: 42, fit: BoxFit.cover, cacheWidth: 112),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text('${(f.probabilidades[k] * 100).round()}%', style: const TextStyle(fontSize: 11, color: Cores.textoSecundario)),
+        ]),
+        const SizedBox(width: 8),
+      ],
+      Expanded(
+        child: Text('Resultado combinado de ${_r.fotos.length} fotos (média das probabilidades).',
+            style: const TextStyle(fontSize: 12, color: Cores.textoSecundario, height: 1.3)),
+      ),
+    ]);
   }
 
   Widget _etiqueta(String texto) => Container(

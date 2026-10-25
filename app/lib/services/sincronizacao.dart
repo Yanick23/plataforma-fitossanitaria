@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/cultura.dart';
 import '../models/diagnostico.dart';
+import 'acompanhamento.dart';
 import 'alertas_locais.dart';
 import 'api_cliente.dart';
 import 'catalogo.dart';
@@ -22,6 +23,7 @@ class ResumoSincronizacao {
     this.alertasNovos = 0,
     this.validacoesNovas = 0,
     this.visitasActualizadas = 0,
+    this.seguimentosEnviados = 0,
     this.erro,
   });
 
@@ -31,6 +33,7 @@ class ResumoSincronizacao {
   final int alertasNovos;
   final int validacoesNovas;
   final int visitasActualizadas;
+  final int seguimentosEnviados;
   final String? erro;
 
   String get mensagem {
@@ -41,6 +44,7 @@ class ResumoSincronizacao {
       if (alertasNovos > 0) '$alertasNovos alerta(s) novo(s)',
       if (validacoesNovas > 0) '$validacoesNovas diagnóstico(s) revisto(s) pelo técnico',
       if (visitasActualizadas > 0) '$visitasActualizadas visita(s) actualizada(s)',
+      if (seguimentosEnviados > 0) '$seguimentosEnviados resposta(s) de seguimento enviada(s)',
       for (final c in modelosActualizados) 'modelo de ${c.nome.toLowerCase()} actualizado',
     ];
     return partes.isEmpty ? 'Tudo sincronizado' : partes.join(' · ');
@@ -108,8 +112,9 @@ class Sincronizacao extends ChangeNotifier {
         }
       }
 
-      // 3. Catálogo actualizável a partir da API (RF06/RF07, RF11).
+      // 3. Catálogo actualizável a partir da API (RF06/RF07, RF11) e as fotografias de referência.
       await Catalogo.instancia.actualizar(await ApiCliente.instancia.patologias());
+      await Catalogo.instancia.sincronizarFotos();
 
       // 4. Novas versões do modelo (RF12).
       for (final c in Cultura.values) {
@@ -123,6 +128,7 @@ class Sincronizacao extends ChangeNotifier {
             v.diagnosticoId, Validacao.deTexto(v.estado), v.classeConfirmada, v.nota)) {
           validacoes++;
         }
+        if (v.seguimentoRespondido) await db.seguimentoRespondidoNoServidor(v.diagnosticoId);
       }
 
       // 6. Alertas da zona: primeiro as leituras feitas sem rede, depois os activos.
@@ -136,6 +142,14 @@ class Sincronizacao extends ChangeNotifier {
       // 7. Pedidos de visita (estado, data agendada e notas do técnico).
       final visitas = await VisitasLocais.instancia.actualizar(await ApiCliente.instancia.visitas());
 
+      // 8. Respostas ao seguimento do tratamento dadas sem rede.
+      var seguimentos = 0;
+      for (final d in await db.seguimentosPorEnviar(utilizador.id)) {
+        await ApiCliente.instancia.enviarSeguimento(d.id, d.seguiu!, d.resultadoTratamento!);
+        await db.marcarSeguimentoEnviado(d.id);
+        seguimentos++;
+      }
+
       return ultimo = ResumoSincronizacao(
         enviados: enviados,
         rejeitados: rejeitados,
@@ -143,6 +157,7 @@ class Sincronizacao extends ChangeNotifier {
         alertasNovos: alertasNovos,
         validacoesNovas: validacoes,
         visitasActualizadas: visitas,
+        seguimentosEnviados: seguimentos,
       );
     } on ErroApi catch (e) {
       return ultimo = ResumoSincronizacao(enviados: enviados, erro: e.mensagem);
@@ -150,6 +165,7 @@ class Sincronizacao extends ChangeNotifier {
       return ultimo = ResumoSincronizacao(enviados: enviados, erro: 'Erro na sincronização: $e');
     } finally {
       emCurso = false;
+      await Acompanhamento.instancia.actualizar(); // diagnósticos que passaram a poder ser acompanhados
       notifyListeners();
     }
   }

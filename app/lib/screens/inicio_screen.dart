@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../main.dart';
+import '../services/acompanhamento.dart';
 import '../services/alertas_locais.dart';
 import '../tema.dart';
 import '../widgets/botoes.dart';
 import '../widgets/cartao_alerta.dart';
 import '../widgets/estado_ligacao.dart';
+import '../widgets/seguimento.dart';
 import 'alertas_screen.dart';
 import 'cultura_screen.dart';
 import 'definicoes_screen.dart';
@@ -85,6 +87,18 @@ class InicioScreen extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: CartaoAlerta(alerta: alerta, aoTocar: () => _abrirAlertas(context)),
+              );
+            },
+          ),
+          // Seguimento do tratamento: o diagnóstico mais antigo à espera de resposta.
+          ListenableBuilder(
+            listenable: Acompanhamento.instancia,
+            builder: (context, _) {
+              final pendentes = Acompanhamento.instancia.porResponder;
+              if (pendentes.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: CartaoSeguimento(diagnostico: pendentes.first),
               );
             },
           ),

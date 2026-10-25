@@ -5,6 +5,7 @@ import 'models/utilizador.dart';
 import 'screens/historial_screen.dart';
 import 'screens/inicio_screen.dart';
 import 'screens/login_screen.dart';
+import 'services/acompanhamento.dart';
 import 'services/alertas_locais.dart';
 import 'services/catalogo.dart';
 import 'services/sessao.dart';
@@ -19,6 +20,7 @@ Future<void> main() async {
   await Catalogo.instancia.carregar();
   await AlertasLocais.instancia.carregar();
   await VisitasLocais.instancia.carregar();
+  await Acompanhamento.instancia.actualizar();
   runApp(const AgroDiagnosticoApp());
 }
 

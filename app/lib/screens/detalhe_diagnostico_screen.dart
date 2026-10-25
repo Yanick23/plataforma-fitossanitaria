@@ -5,14 +5,18 @@ import 'package:flutter/material.dart';
 
 import '../models/diagnostico.dart';
 import '../models/visita.dart';
+import '../services/acompanhamento.dart';
 import '../services/api_cliente.dart';
 import '../services/catalogo.dart';
 import '../services/conectividade.dart';
+import '../services/historial_db.dart';
 import '../services/visitas_locais.dart';
 import '../tema.dart';
 import '../widgets/anel_confianca.dart';
 import '../widgets/botoes.dart';
 import '../widgets/formatacao.dart';
+import '../widgets/informacao_patologia.dart';
+import '../widgets/seguimento.dart';
 import '../models/resultado_classificacao.dart' show limiarConfianca;
 
 /// Detalhe de um diagnóstico do historial, com o Grad-CAM gerado na API
@@ -33,7 +37,13 @@ class _DetalheDiagnosticoScreenState extends State<DetalheDiagnosticoScreen> {
   Uint8List? _gradcam;
   String? _erro;
 
-  Diagnostico get _d => widget.diagnostico;
+  late Diagnostico _d = widget.diagnostico;
+
+  Future<void> _responderSeguimento() async {
+    if (!await perguntarSeguimento(context, _d)) return;
+    final novo = await HistorialDb.instancia.obter(_d.id);
+    if (novo != null && mounted) setState(() => _d = novo);
+  }
 
   @override
   void initState() {
@@ -148,6 +158,14 @@ class _DetalheDiagnosticoScreenState extends State<DetalheDiagnosticoScreen> {
               Text(pat.recomendacao, style: const TextStyle(height: 1.4)),
             ]),
           ),
+          const SizedBox(height: 12),
+          ComoReconhecer(patologia: pat),
+          const SizedBox(height: 12),
+          Prevencao(patologia: pat),
+          if (Acompanhamento.elegivel(_d)) ...[
+            const SizedBox(height: 12),
+            _CaixaSeguimento(diagnostico: _d, aoResponder: _responderSeguimento),
+          ],
           const SizedBox(height: 18),
           if (_gradcam == null)
             BotaoPrincipal(
@@ -207,6 +225,41 @@ class _DetalheDiagnosticoScreenState extends State<DetalheDiagnosticoScreen> {
         ]),
       ),
     );
+  }
+}
+
+/// Seguimento do tratamento: a resposta dada, ou o botão para responder.
+class _CaixaSeguimento extends StatelessWidget {
+  const _CaixaSeguimento({required this.diagnostico, required this.aoResponder});
+
+  final Diagnostico diagnostico;
+  final VoidCallback aoResponder;
+
+  @override
+  Widget build(BuildContext context) {
+    final d = diagnostico;
+    if (d.seguiu != null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: Cores.cartao, borderRadius: BorderRadius.circular(16), boxShadow: sombraSuave),
+        child: Row(children: [
+          const Icon(Icons.task_alt, color: Cores.verdeEscuro),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('A sua resposta ao seguimento', style: TextStyle(fontWeight: FontWeight.w800)),
+              Text('Seguiu a recomendação: ${d.seguiu!.rotulo.toLowerCase()} · planta: ${d.resultadoTratamento!.rotulo.toLowerCase()}'
+                  '${d.seguimentoEnviado ? '' : ' · por enviar'}',
+                  style: const TextStyle(fontSize: 13, color: Cores.textoSecundario)),
+            ]),
+          ),
+          TextButton(onPressed: aoResponder, child: const Text('Mudar')),
+        ]),
+      );
+    }
+    if (d.seguimentoEnviado) return const SizedBox.shrink(); // respondido noutro telemóvel
+    return BotaoSecundario(texto: 'Como está a planta? Responder', aoPremir: aoResponder);
   }
 }
 

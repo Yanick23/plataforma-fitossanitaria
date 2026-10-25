@@ -14,9 +14,11 @@ import 'registo_tecnico.dart';
 
 /// Decide que versão do modelo usar em cada cultura (RF12).
 ///
-/// A versão 1 vem dentro do APK. Quando a API publica uma versão mais recente,
-/// a sincronização descarrega-a, confirma o SHA-256 e a interface do modelo, e
-/// só então a activa. O estado fica em documentos/modelos/estado.json.
+/// A versão 1 vem dentro do APK. A API diz que versão esta conta deve usar: a publicada ou,
+/// se o distrito do agricultor estiver num piloto, a versão piloto. A sincronização descarrega-a,
+/// confirma o SHA-256 e a interface do modelo, e só então a activa. Se a versão em uso for
+/// retirada, a API indica uma anterior e a app volta a ela (a v1 é a embutida, sem descarregar).
+/// O estado fica em documentos/modelos/estado.json.
 class GestorModelos {
   GestorModelos._();
   static final instancia = GestorModelos._();
@@ -70,11 +72,21 @@ class GestorModelos {
     );
   }
 
-  /// Verifica na API se há versão nova e instala-a. Devolve true se actualizou.
+  /// Instala a versão que a API indica para esta conta. Devolve true se mudou de versão.
   Future<bool> actualizar(Cultura cultura) async {
     final actual = await modeloActual(cultura);
     final info = await ApiCliente.instancia.ultimaVersaoModelo(cultura);
-    if (info == null || info.versao <= actual.versao) return false;
+    if (info == null) return false;
+    if (info.versao == actual.versao) {
+      if (!actual.embutido && actual.piloto != info.piloto) {
+        _descarregados[cultura] = ModeloML(
+            cultura: cultura, versao: actual.versao, caminhoTflite: actual.caminhoTflite, classes: actual.classes,
+            acuraciaTeste: actual.acuraciaTeste, embutido: false, piloto: info.piloto); // o piloto passou a publicado
+        await _gravarEstado();
+      }
+      return false;
+    }
+    if (info.versao == 1) return _voltarAoEmbutido(cultura); // a versão em uso foi retirada
 
     final bytes = await ApiCliente.instancia.descarregar(info.urlFicheiro);
     if (sha256.convert(bytes).toString() != info.sha256) {
@@ -93,13 +105,25 @@ class GestorModelos {
       classes: info.classes,
       acuraciaTeste: info.acuraciaTeste,
       embutido: false,
+      piloto: info.piloto,
     );
     await _gravarEstado();
     Classificador.instancia.descartar(cultura); // a próxima inferência usa a versão nova
     if (anterior != null && anterior.caminhoTflite != destino.path) {
       await File(anterior.caminhoTflite).delete().catchError((_) => File(''));
     }
-    RegistoTecnico.instancia.escrever('modelo ${cultura.id} actualizado para a versão ${info.versao}');
+    RegistoTecnico.instancia.escrever(
+        'modelo ${cultura.id}: versão ${actual.versao} → ${info.versao}${info.piloto ? ' (piloto)' : ''}');
+    return true;
+  }
+
+  Future<bool> _voltarAoEmbutido(Cultura cultura) async {
+    final anterior = _descarregados.remove(cultura);
+    if (anterior == null) return false;
+    await _gravarEstado();
+    Classificador.instancia.descartar(cultura);
+    await File(anterior.caminhoTflite).delete().catchError((_) => File(''));
+    RegistoTecnico.instancia.escrever('modelo ${cultura.id}: versão ${anterior.versao} retirada, de volta à embutida (v1)');
     return true;
   }
 }
