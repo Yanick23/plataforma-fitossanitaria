@@ -245,3 +245,59 @@ export interface RegistoAuditoria {
   detalhes: string | null
   criado_em: string
 }
+
+// --- Boletim fitossanitário (fase 2) ---------------------------------------------------------
+
+export interface LinhaBoletim {
+  nome: string
+  valor: number
+  detalhe: string | null
+}
+
+export interface Declaracao {
+  diagnostico_id: string
+  cultura_id: string
+  classe: string
+  patologia_nome: string
+  estado: 'CONFIRMADO' | 'SUSPEITA'
+  confianca: number
+  data: string
+  distrito_nome: string | null
+  provincia_codigo: string | null
+  agricultor_nome: string
+  agricultor_telefone: string
+}
+
+export interface EficaciaPatologia {
+  cultura_id: string
+  classe: string
+  nome: string
+  respostas: number
+  seguiram: number
+  melhoraram: number
+  eficacia: number | null
+}
+
+export interface Boletim {
+  zona: string
+  inicio: string
+  fim: string
+  gerado_em: string
+  diagnosticos: number
+  diagnosticos_pragas_doencas: number
+  agricultores_activos: number
+  agricultores_novos: number
+  taxa_confianca_baixa: number | null
+  validados: number
+  exactidao_campo: number | null
+  alertas_enviados: number
+  visitas_pedidas: number
+  visitas_resolvidas: number
+  dias_medios_resolucao: number | null
+  principais_pragas: LinhaBoletim[]
+  distritos_mais_afectados: LinhaBoletim[]
+  alertas: Alerta[]
+  surtos: Surto[]
+  declaracoes: Declaracao[]
+  eficacia: EficaciaPatologia[]
+}

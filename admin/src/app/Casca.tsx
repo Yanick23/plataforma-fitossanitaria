@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  BellRing, Boxes, CalendarCheck, LayoutDashboard, ListChecks, LogOut, MapPin, Moon, Radar, ScanSearch, ScrollText, Sprout, Sun,
+  BellRing, Boxes, CalendarCheck, FileText, LayoutDashboard, ListChecks, LogOut, MapPin, Moon, Radar, ScanSearch, ScrollText, Sprout, Sun,
   SunMoon, Users,
 } from 'lucide-react'
 import { visitasRepo } from '@/model/repositorios'
@@ -34,6 +34,7 @@ const NAVEGACAO: { grupo: string; itens: ItemNav[] }[] = [
     grupo: 'Visão geral', itens: [
       { para: '/', nome: 'Painel', icone: LayoutDashboard },
       { para: '/vigilancia', nome: 'Vigilância', icone: Radar },
+      { para: '/boletim', nome: 'Boletim', icone: FileText },
     ],
   },
   {
