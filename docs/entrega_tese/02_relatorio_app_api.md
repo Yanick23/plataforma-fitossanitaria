@@ -61,7 +61,7 @@ Nota para o texto: o tempo vai até ao **resultado pronto**, um frame antes de o
 (da ordem de dezenas de milissegundos). Pode escrever «da confirmação da fotografia até o resultado
 estar pronto a apresentar».
 
-## B3. Testes funcionais T01–T13 — **12 aprovados, 1 bloqueado (T13)**
+## B3. Testes funcionais T01–T13 — **13 aprovados** (T12 com ressalva)
 
 Preparação da API (uma vez):
 
@@ -118,8 +118,8 @@ configuração real da demonstração é esta.
 | T09 | **Aprovado** | Com 3 pendentes, fechei a app à força 80 ms depois de tocar em «Sincronizar». A API ficou com 25 diagnósticos e **só 23 imagens**: a sincronização foi interrompida a meio. Ao reabrir, a app voltou a enviar o lote (a API respondeu «confirmados» para os UUID que já tinha) e enviou as 2 imagens em falta. Estado final: **25 diagnósticos, 25 UUID distintos, 25 imagens**. Nada perdido, nada duplicado. |
 | T10 | **Aprovado** | O administrador alterou a recomendação da mancha cinzenta (`PUT /patologias/5`). Depois de sincronizar, o detalhe de um diagnóstico mostra o texto novo («[T10] Recomendação alterada pelo administrador…»). Prova `provas/T10_recomendacao_alterada.png`. No fim, a recomendação original foi reposta. |
 | T11 | **Aprovado** | O administrador publicou a v2 do modelo de milho (`POST /modelos/milho`). Na sincronização, a app pediu `ultima-versao`, descarregou `/modelos/milho/2/ficheiro`, verificou o SHA-256 e a interface, e escreveu no log «modelo milho actualizado para a versão 2». O diagnóstico seguinte correu com `[milho v2]` (carregamento 26 ms). Usou-se o mesmo ficheiro INT8; a v2 ficou publicada na base de dados. |
-| T12 | **Aprovado** | Ver B2: 20 tempos entre 0,313 e 0,710 s, todos ≤ 3 s. Fizeram-se mais de 60 inferências seguidas (20 do B2, 7 extra, 36 do teste com fotografias) sem nenhum encerramento inesperado da app. Pico de memória: 327,7 MB. |
-| T13 | **Bloqueado** | «Ver onde o modelo olhou» → a app mostra «Falta o ficheiro modelo_milho.keras em api/modelos/» (a API responde 503). O fluxo está implementado, mas faltam os `.keras` do treino neste PC. Prova `provas/T13_gradcam_sem_keras.png`. |
+| T12 | **Aprovado, com uma ressalva** | Ver B2: 20 tempos entre 0,313 e 0,710 s, todos ≤ 3 s. Em 23/10 fizeram-se mais de 60 inferências seguidas (20 do B2, 7 extra, 36 do teste com fotografias) sem nenhum encerramento inesperado da app. Pico de memória: 327,7 MB. **Ressalva (25/10):** a app foi abaixo 3 vezes, sempre na 1.ª inferência depois de abrir. Foi um erro nativo (`SIGSEGV`, ponteiro nulo em `TfLiteInterpreterInvoke`, dentro do `libtensorflowlite_jni.so` do LiteRT 1.4.0). Aconteceu com os dois modelos (milho v2 descarregado e mandioca v1 embutida) e sem nenhuma alteração ao código desde 23/10. Nesse dia o telemóvel estava com a bateria a 29–30%, sem carregador, e o Android ligava e desligava núcleos (`cpu/online` a variar entre `0-5` e `0-7`). Com os 8 núcleos ligados no arranque, o mesmo teste passou 2 vezes. Causa provável, não confirmada: a biblioteca `cpuinfo` (usada pelo TFLite) é inicializada com núcleos desligados e depois a inferência corre num núcleo que entretanto se ligou. |
+| T13 | **Aprovado** (25/10) | Com `modelo_milho.keras` e `modelo_mandioca.keras` em `api/modelos/`, «Ver onde o modelo olhou» mostra o mapa Grad-CAM sobreposto à fotografia, com a legenda «Zonas a vermelho: as que mais pesaram na decisão do modelo». **Tempo de resposta da API** (do toque até ao `200 OK`): **2,4 s** no 1.º pedido de milho e **2,1 s** no 1.º de mandioca (ambos incluem carregar o modelo Keras); **0,8 s** num pedido seguinte de milho, com o modelo já carregado. Capturas 09, 09b e 09c. Antes de copiar os `.keras`, a app mostrava «Falta o ficheiro…» (503): prova `provas/T13_gradcam_sem_keras.png`. |
 
 ### Teste com fotografias no telemóvel (36 imagens de teste do CCMT, 3 por classe)
 
@@ -156,7 +156,7 @@ api/.venv/Scripts/python -m pytest      (Python 3.11.9, requirements.txt)
 **23 aprovados, 0 falhados.** O número coincide com o texto. Os 16 avisos são de depreciação
 (pyparsing/matplotlib e Keras) e não afectam o resultado.
 
-## B5. Capturas de ecrã — **12 de 13 feitas** (falta a 09)
+## B5. Capturas de ecrã — **todas feitas**
 
 Em `docs/entrega_tese/dados_telemovel/capturas/` (SOTEN R80, vertical, PNG, conta de teste):
 
@@ -173,7 +173,20 @@ Em `docs/entrega_tese/dados_telemovel/capturas/` (SOTEN R80, vertical, PNG, cont
 | `08_historial.png` | 2 pendentes (laranja) + sincronizados (verde) |
 | `10_administracao_ou_docs.png` | `/docs` no navegador do telemóvel |
 | `11_diagnostico_tecnico.png` | Ecrã de desempenho com as 20 medições do B2 |
-| **`09_detalhe_gradcam.png`** | **Em falta**: precisa dos `.keras` (ver T13) |
+| `09_detalhe_gradcam.png` | Milho, mancha cinzenta da folha (96%): o vermelho fica sobre a faixa da folha com lesões |
+| `09b_detalhe_gradcam_mandioca.png` | Mandioca, ácaro verde (99%): **o vermelho fica sobretudo no fundo** (cantos superior direito e inferior esquerdo), não no centro da folha |
+| `09c_detalhe_gradcam_milho_saudavel.png` | Milho, folha saudável (95%) |
+
+**Observação para o texto (Grad-CAM):** no exemplo da mandioca, as zonas que mais pesaram ficam
+no fundo e não na folha. Isto sugere que, nalgumas imagens, o modelo pode estar a apoiar-se no
+contexto típico do CCMT (fundo, luz) e não só nos sintomas. É uma explicação possível para a
+queda de exactidão nas imagens de outra origem (Uganda). É um caso isolado; para o afirmar com
+segurança seria preciso analisar mais mapas.
+
+**Verificação dos `.keras`:** nas 36 imagens de teste, o Keras e o TFLite INT8 dão a mesma classe
+em 21/21 imagens de milho e 14/15 de mandioca. A diferença mediana de probabilidade é de 0,009 no
+milho e 0,001 na mandioca. A excepção é `mandioca_0002`, uma imagem no limite: o Keras dá
+«saudável» com 47,9% e o TFLite dá «ácaro verde» com 75,8%. A quantização mudou a decisão.
 
 - O nome «AgroDiagnóstico» foi retirado de tudo o que aparece ao utilizador: ecrã de login, ecrã
   inicial, título da app, nome no lançador do Android e título da página `/docs` da API.

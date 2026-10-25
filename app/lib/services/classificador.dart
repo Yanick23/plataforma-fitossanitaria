@@ -22,10 +22,23 @@ class ErroModelo implements Exception {
 }
 
 class _ModeloCarregado {
-  _ModeloCarregado(this.modelo, this.interpreter, this.tamanhoBytes);
+  _ModeloCarregado(this.modelo, this.motor, this.tamanhoBytes);
   final ModeloML modelo;
-  final Interpreter interpreter;
+  final _Motor motor;
+  Interpreter get interpreter => motor.interpreter;
   final int tamanhoBytes;
+}
+
+/// Interpreter e o delegado XNNPACK que ele usa (o delegado tem de viver tanto como o Interpreter).
+class _Motor {
+  _Motor(this.interpreter, this.xnnpack);
+  final Interpreter interpreter;
+  final XNNPackDelegate xnnpack;
+
+  void fechar() {
+    interpreter.close();
+    xnnpack.delete();
+  }
 }
 
 /// Inferência offline com TensorFlow Lite (RF03, RNF01), um modelo por cultura (RF02).
@@ -40,9 +53,17 @@ class Classificador {
 
   /// Cria o Interpreter e confirma a interface: entrada float32 [1,224,224,3]
   /// e saída float32 [1, n_classes] (probabilidades softmax).
-  static Interpreter _criarInterpreter(Uint8List bytes, int nClasses, Cultura cultura) {
-    final interpreter = Interpreter.fromBuffer(bytes, options: InterpreterOptions()..threads = threads)
-      ..allocateTensors();
+  ///
+  /// As operações correm no delegado XNNPACK: com os kernels internos do LiteRT 1.4.0,
+  /// a 1.ª inferência ia abaixo (SIGSEGV) no SOTEN R80 quando o Android tinha núcleos
+  /// desligados (bateria fraca).
+  static _Motor _criarInterpreter(Uint8List bytes, int nClasses, Cultura cultura) {
+    final xnnpack = XNNPackDelegate();
+    final options = InterpreterOptions()
+      ..threads = threads
+      ..addDelegate(xnnpack);
+    final interpreter = Interpreter.fromBuffer(bytes, options: options)..allocateTensors();
+    final motor = _Motor(interpreter, xnnpack);
     final entrada = interpreter.getInputTensor(0);
     final saida = interpreter.getOutputTensor(0);
     final ok = entrada.type == TensorType.float32 &&
@@ -50,22 +71,22 @@ class Classificador {
         saida.type == TensorType.float32 &&
         listEquals(saida.shape, [1, nClasses]);
     if (!ok) {
-      interpreter.close();
+      motor.fechar();
       throw ErroModelo(
         'O modelo de ${cultura.nome.toLowerCase()} não tem a interface esperada.\n'
         'Entrada: ${entrada.type} ${entrada.shape} (esperado float32 [1, 224, 224, 3]).\n'
         'Saída: ${saida.type} ${saida.shape} (esperado float32 [1, $nClasses]).',
       );
     }
-    return interpreter;
+    return motor;
   }
 
   /// Usado pelo GestorModelos antes de activar um modelo descarregado.
   static void validarModelo(Uint8List bytes, int nClasses, Cultura cultura) =>
-      _criarInterpreter(bytes, nClasses, cultura).close();
+      _criarInterpreter(bytes, nClasses, cultura).fechar();
 
   /// Liberta o modelo em memória (ex.: depois de instalar uma versão nova).
-  void descartar(Cultura cultura) => _carregados.remove(cultura)?.interpreter.close();
+  void descartar(Cultura cultura) => _carregados.remove(cultura)?.motor.fechar();
 
   Future<_ModeloCarregado> _carregar(Cultura cultura) async {
     final modelo = await GestorModelos.instancia.modeloActual(cultura);
