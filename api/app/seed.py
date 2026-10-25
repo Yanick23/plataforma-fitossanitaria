@@ -7,12 +7,14 @@ import hashlib
 import json
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .config import definicoes
+from .regioes import carregar_regioes, distrito_por_nome
 from .seguranca import gerar_hash
-from .tabelas import Cultura, ModeloML, Patologia, Perfil, TipoPatologia, Utilizador
+from .tabelas import (Cultura, Diagnostico, Distrito, ModeloML, Patologia, Perfil, Provincia, TipoPatologia,
+                      Utilizador)
 
 CATALOGO = Path(__file__).with_name("catalogo_inicial.json")
 
@@ -69,4 +71,31 @@ async def semear(sessao: AsyncSession) -> None:
                 perfil=Perfil.ADMINISTRADOR,
             ))
 
+    await semear_regioes(sessao)
     await sessao.commit()
+
+
+async def semear_regioes(sessao: AsyncSession) -> None:
+    """11 províncias e 157 distritos; liga as contas antigas ao distrito escrito na área."""
+    regioes = carregar_regioes()
+    for p in regioes["provincias"]:
+        if await sessao.get(Provincia, p["codigo"]) is None:
+            sessao.add(Provincia(codigo=p["codigo"], nome=p["nome"]))
+    await sessao.flush()
+    existentes = {(d.provincia_codigo, d.nome) for d in await sessao.scalars(select(Distrito))}
+    for d in regioes["distritos"]:
+        if (d["provincia"], d["nome"]) not in existentes:
+            sessao.add(Distrito(nome=d["nome"], provincia_codigo=d["provincia"]))
+    await sessao.flush()
+
+    sem_distrito = await sessao.scalars(select(Utilizador).where(
+        Utilizador.distrito_id.is_(None), Utilizador.area.is_not(None),
+        Utilizador.perfil != Perfil.ADMINISTRADOR))
+    for u in sem_distrito:
+        if (d := await distrito_por_nome(sessao, u.area)) is not None:
+            u.distrito_id, u.provincia_codigo = d.id, d.provincia_codigo
+    await sessao.flush()
+    # Diagnósticos antigos ficam com o distrito do agricultor.
+    await sessao.execute(update(Diagnostico).where(Diagnostico.distrito_id.is_(None)).values(
+        distrito_id=select(Utilizador.distrito_id).where(Utilizador.id == Diagnostico.utilizador_id)
+        .scalar_subquery()))

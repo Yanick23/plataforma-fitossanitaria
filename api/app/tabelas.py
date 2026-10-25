@@ -1,12 +1,14 @@
 """Tabelas da base de dados (diagrama de classes, secção 5.3.3).
 
-Utilizador, Cultura, Patologia, Diagnostico, Imagem e ModeloML.
+Utilizador, Cultura, Patologia, Diagnostico, Imagem e ModeloML; Provincia e Distrito
+(divisão administrativa de Moçambique); Alerta e AlertaLeitura (avisos por zona).
 """
 
 import enum
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text, UniqueConstraint, false,
+                        true)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -28,6 +30,32 @@ class TipoPatologia(str, enum.Enum):
     SAUDAVEL = "SAUDAVEL"
 
 
+class NivelAlerta(str, enum.Enum):
+    INFORMACAO = "INFORMACAO"
+    AVISO = "AVISO"
+    URGENTE = "URGENTE"
+
+
+class Provincia(Base):
+    __tablename__ = "provincias"
+
+    codigo: Mapped[str] = mapped_column(String(10), primary_key=True)  # ISO 3166-2, ex.: "MZ-L"
+    nome: Mapped[str] = mapped_column(String(60))
+
+    distritos: Mapped[list["Distrito"]] = relationship(back_populates="provincia")
+
+
+class Distrito(Base):
+    __tablename__ = "distritos"
+    __table_args__ = (UniqueConstraint("provincia_codigo", "nome"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    nome: Mapped[str] = mapped_column(String(80))
+    provincia_codigo: Mapped[str] = mapped_column(ForeignKey("provincias.codigo"), index=True)
+
+    provincia: Mapped[Provincia] = relationship(back_populates="distritos")
+
+
 class Utilizador(Base):
     __tablename__ = "utilizadores"
 
@@ -36,11 +64,17 @@ class Utilizador(Base):
     telefone: Mapped[str] = mapped_column(String(20), unique=True, index=True)
     hash_palavra_passe: Mapped[str] = mapped_column(String(100))
     perfil: Mapped[Perfil] = mapped_column(Enum(Perfil, name="perfil"), default=Perfil.AGRICULTOR)
-    # Área de actuação (ex.: distrito). O técnico vê os diagnósticos dos agricultores da sua área.
+    # Área em texto livre (como foi escrita no registo); a zona oficial é o distrito/província.
     area: Mapped[str | None] = mapped_column(String(80), index=True)
+    # Zona: o agricultor pertence a um distrito; o técnico actua num distrito ou, sem distrito,
+    # numa província inteira; o administrador actua no país todo.
+    distrito_id: Mapped[int | None] = mapped_column(ForeignKey("distritos.id"), index=True)
+    provincia_codigo: Mapped[str | None] = mapped_column(ForeignKey("provincias.codigo"), index=True)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
 
     diagnosticos: Mapped[list["Diagnostico"]] = relationship(back_populates="utilizador")
+    distrito: Mapped[Distrito | None] = relationship()
 
 
 class Cultura(Base):
@@ -98,9 +132,13 @@ class Diagnostico(Base):
     versao_modelo: Mapped[int | None] = mapped_column(Integer)
     tempo_inferencia_ms: Mapped[int | None] = mapped_column(Integer)
     recebido_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+    # Distrito do agricultor no momento em que o diagnóstico chegou (fica fixo no histórico).
+    distrito_id: Mapped[int | None] = mapped_column(ForeignKey("distritos.id"), index=True)
 
     utilizador: Mapped[Utilizador] = relationship(back_populates="diagnosticos")
     imagem: Mapped["Imagem | None"] = relationship(back_populates="diagnostico", uselist=False)
+    distrito: Mapped[Distrito | None] = relationship()
+    validacao: Mapped["Validacao | None"] = relationship(uselist=False, viewonly=True)
 
 
 class Imagem(Base):
@@ -112,3 +150,100 @@ class Imagem(Base):
     data_captura: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
     diagnostico: Mapped[Diagnostico] = relationship(back_populates="imagem")
+
+
+class Alerta(Base):
+    """Aviso enviado aos agricultores de uma zona (distrito, província ou país todo)."""
+
+    __tablename__ = "alertas"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    titulo: Mapped[str] = mapped_column(String(120))
+    mensagem: Mapped[str] = mapped_column(Text)
+    nivel: Mapped[NivelAlerta] = mapped_column(Enum(NivelAlerta, name="nivel_alerta"), default=NivelAlerta.AVISO)
+    cultura_id: Mapped[str | None] = mapped_column(ForeignKey("culturas.id"))
+    patologia_id: Mapped[int | None] = mapped_column(ForeignKey("patologias.id", ondelete="SET NULL"))
+    # Zona: distrito > província > (nenhum dos dois) país todo.
+    provincia_codigo: Mapped[str | None] = mapped_column(ForeignKey("provincias.codigo"), index=True)
+    distrito_id: Mapped[int | None] = mapped_column(ForeignKey("distritos.id"), index=True)
+    autor_id: Mapped[int] = mapped_column(ForeignKey("utilizadores.id"))
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora, index=True)
+    expira_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    arquivado: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+
+    autor: Mapped[Utilizador] = relationship()
+    patologia: Mapped[Patologia | None] = relationship()
+    distrito: Mapped[Distrito | None] = relationship()
+    provincia: Mapped[Provincia | None] = relationship()
+
+
+class AlertaLeitura(Base):
+    """Regista que um agricultor recebeu e abriu um alerta (para medir o alcance)."""
+
+    __tablename__ = "alertas_leituras"
+
+    alerta_id: Mapped[int] = mapped_column(ForeignKey("alertas.id", ondelete="CASCADE"), primary_key=True)
+    utilizador_id: Mapped[int] = mapped_column(ForeignKey("utilizadores.id"), primary_key=True)
+    lido_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+
+
+class EstadoVisita(str, enum.Enum):
+    PENDENTE = "PENDENTE"
+    AGENDADA = "AGENDADA"
+    RESOLVIDA = "RESOLVIDA"
+    CANCELADA = "CANCELADA"
+
+
+class Validacao(Base):
+    """O técnico confirma ou corrige a classe prevista pelo modelo (exactidão em campo)."""
+
+    __tablename__ = "validacoes"
+
+    diagnostico_id: Mapped[str] = mapped_column(ForeignKey("diagnosticos.id", ondelete="CASCADE"), primary_key=True)
+    tecnico_id: Mapped[int] = mapped_column(ForeignKey("utilizadores.id"))
+    classe_confirmada: Mapped[str] = mapped_column(String(60))
+    correcto: Mapped[bool] = mapped_column(Boolean)  # classe_confirmada == classe prevista pelo modelo
+    nota: Mapped[str | None] = mapped_column(Text)
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+    actualizado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora, onupdate=agora)
+
+    tecnico: Mapped[Utilizador] = relationship()
+
+
+class PedidoVisita(Base):
+    """O agricultor pede ajuda a partir de um diagnóstico; o técnico agenda e resolve."""
+
+    __tablename__ = "pedidos_visita"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    diagnostico_id: Mapped[str] = mapped_column(ForeignKey("diagnosticos.id", ondelete="CASCADE"), index=True)
+    agricultor_id: Mapped[int] = mapped_column(ForeignKey("utilizadores.id"), index=True)
+    tecnico_id: Mapped[int | None] = mapped_column(ForeignKey("utilizadores.id"))
+    distrito_id: Mapped[int | None] = mapped_column(ForeignKey("distritos.id"), index=True)
+    estado: Mapped[EstadoVisita] = mapped_column(Enum(EstadoVisita, name="estado_visita"), default=EstadoVisita.PENDENTE)
+    mensagem: Mapped[str | None] = mapped_column(Text)
+    data_agendada: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    notas_tecnico: Mapped[str | None] = mapped_column(Text)
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora, index=True)
+    actualizado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora, onupdate=agora)
+
+    diagnostico: Mapped[Diagnostico] = relationship()
+    agricultor: Mapped[Utilizador] = relationship(foreign_keys=[agricultor_id])
+    tecnico: Mapped[Utilizador | None] = relationship(foreign_keys=[tecnico_id])
+    distrito: Mapped[Distrito | None] = relationship()
+
+
+class RegistoAuditoria(Base):
+    """Quem fez o quê e quando (alterações ao catálogo, alertas, contas, validações...)."""
+
+    __tablename__ = "auditoria"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    utilizador_id: Mapped[int | None] = mapped_column(ForeignKey("utilizadores.id"), index=True)
+    accao: Mapped[str] = mapped_column(String(60), index=True)  # ex.: "patologia.actualizar"
+    entidade: Mapped[str] = mapped_column(String(40))
+    entidade_id: Mapped[str | None] = mapped_column(String(60))
+    detalhes: Mapped[str | None] = mapped_column(Text)  # JSON: {"antes": ..., "depois": ...}
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora, index=True)
+
+    utilizador: Mapped[Utilizador | None] = relationship()
