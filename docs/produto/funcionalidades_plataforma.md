@@ -1,5 +1,8 @@
 # Plataforma de vigilância fitossanitária — funcionalidades e faseamento
 
+> O estado de cada funcionalidade, o que falta e o calendário até 10/11/2026 estão em
+> [estado_e_pendentes.md](estado_e_pendentes.md).
+
 Base: o que o sistema já tem. Cada diagnóstico regista **cultura, praga ou doença, confiança,
 fotografia, data, versão do modelo e distrito do agricultor**, feito offline no telemóvel e
 sincronizado com a API. Hoje esses dados só servem para o historial. As funcionalidades abaixo
