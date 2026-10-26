@@ -9,6 +9,7 @@ Actualizado a **26/10/2026**.
 | `feature/api` | `api/` | API FastAPI |
 | `feature/painel` | `admin/` | Painel web (React + Vite + TypeScript) |
 | `feature/app` | `app/` | App Flutter |
+| `feature/ml` | `ml/` | Notebooks e scripts do modelo (treino, plano da parte 2: D2–D7) |
 | `docs/pfc` | `docs/` | Documentação e texto para o PFC |
 
 Cada branch só altera a sua pasta, por isso juntá-las na `main` não dá conflitos. Os commits das
