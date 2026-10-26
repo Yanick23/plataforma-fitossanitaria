@@ -1,6 +1,21 @@
 # Plataforma — estado, o que falta e calendário até 10/11/2026
 
-Actualizado a **26/10/2026**. Ramo de trabalho: `feature/painel-admin`.
+Actualizado a **26/10/2026**.
+
+**Branches (uma por projecto, a partir da `main`):**
+
+| Branch | Pasta | Conteúdo |
+|---|---|---|
+| `feature/api` | `api/` | API FastAPI |
+| `feature/painel` | `admin/` | Painel web (React + Vite + TypeScript) |
+| `feature/app` | `app/` | App Flutter |
+| `docs/pfc` | `docs/` | Documentação e texto para o PFC |
+
+Cada branch só altera a sua pasta, por isso juntá-las na `main` não dá conflitos. Os commits das
+entregas 1a–2c foram separados por pasta a partir da `feature/painel-admin`, que fica como cópia
+de referência. As quatro juntas dão exactamente o mesmo conteúdo que ela. Uma alteração que
+mexa em vários projectos (por exemplo, uma rota nova na API e o ecrã que a usa) faz um commit em
+cada branch, com o mesmo assunto.
 
 Este documento junta o plano que se combinou para a plataforma e o que já está feito. Também
 diz o que falta para a entrega do PFC a **10/11/2026**. A lista das funcionalidades, com o porquê
