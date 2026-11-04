@@ -375,3 +375,45 @@ export interface ListaNotificacoes {
   nao_lidas: number
   itens: Notificacao[]
 }
+
+/** Risco meteorológico: condições do tempo favoráveis a uma praga/doença num distrito (próximos 7 dias). */
+export type NivelRisco = 'ALTO' | 'MEDIO'
+
+export interface RiscoDistrito {
+  distrito_id: number
+  distrito: string
+  provincia_codigo: string
+  cultura_id: string
+  classe: string
+  patologia_id: number
+  patologia_nome: string
+  nivel: NivelRisco
+  motivo: string
+  dias_favoraveis: number
+  de: string
+  ate: string
+  evidencia: 'moderada' | 'fraca'
+  previsao_obtida_em: string
+}
+
+export interface RegraRisco {
+  cultura_id: string
+  classe: string
+  patologia_nome: string
+  condicao: string
+  fontes: string[]
+  evidencia: 'moderada' | 'fraca'
+  limiares_de_projecto: string[]
+}
+
+export interface RiscoMeteorologico {
+  gerado_em: string
+  fonte: string
+  aviso: string
+  erro: string | null
+  distritos_avaliados: number
+  distritos_com_agricultores: number
+  previsao_mais_antiga: string | null
+  itens: RiscoDistrito[]
+  regras: RegraRisco[]
+}

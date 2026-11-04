@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { vigilanciaRepo } from '@/model/repositorios'
-import type { Surto } from '@/model/tipos'
+import type { RiscoDistrito, Surto } from '@/model/tipos'
 import { diasAtras } from '@/nucleo/formatos'
 import { useSessao } from '@/nucleo/sessao'
 import type { ValorDistrito } from '@/ui/graficos'
@@ -38,6 +38,9 @@ export function useVigilanciaViewModel() {
   const declaracoes = useQuery({ queryKey: ['declaracoes', periodo], queryFn: () => vigilanciaRepo.declaracoes(diasAtras(periodo)) })
   const eficacia = useQuery({ queryKey: ['eficacia', periodo], queryFn: () => vigilanciaRepo.eficacia(diasAtras(periodo)) })
 
+  // A previsão muda pouco: a API guarda-a 3 horas; aqui não se volta a pedir durante 10 minutos.
+  const risco = useQuery({ queryKey: ['risco-meteorologico'], queryFn: vigilanciaRepo.riscoMeteorologico, staleTime: 600_000 })
+
   const mapa: ValorDistrito[] = useMemo(() => (ocorrencias.data ?? []).map((o) => ({
     distrito: o.distrito, provincia_codigo: o.provincia_codigo, valor: o.total,
   })), [ocorrencias.data])
@@ -56,10 +59,27 @@ export function useVigilanciaViewModel() {
     navegar('/alertas', { state: { preencher } })
   }
 
+  /** Aviso preventivo: as condições do tempo favorecem a praga/doença (ainda não há casos). */
+  const criarAlertaRisco = (r: RiscoDistrito) => {
+    const p = catalogo.patologia(r.cultura_id, r.classe)
+    const conselho = p?.prevencao || p?.recomendacao
+    const preencher: Preenchimento = {
+      titulo: `Tempo favorável a ${r.patologia_nome.toLowerCase()} em ${r.distrito}`,
+      mensagem: `A previsão para os próximos dias (${r.motivo}) favorece ${r.patologia_nome.toLowerCase()} `
+        + `nas plantas de ${catalogo.nomeCultura(r.cultura_id).toLowerCase()}. Vigie-as e, se vir sintomas, faça um diagnóstico na app.`
+        + (conselho ? ` ${conselho}` : ''),
+      nivel: r.nivel === 'ALTO' ? 'AVISO' : 'INFORMACAO',
+      patologia_id: r.patologia_id,
+      distrito_id: r.distrito_id,
+    }
+    navegar('/alertas', { state: { preencher } })
+  }
+
   return {
     podeOperar,
     sensibilidade, setSensibilidade, janela, setJanela,
     surtos: surtos.data ?? [], aCarregarSurtos: surtos.isLoading,
+    risco: risco.data, aCarregarRisco: risco.isLoading, erroRisco: risco.error as Error | null, criarAlertaRisco,
     cultura, setCultura: (c: string) => { setCultura(c); setClasse('') }, classe, setClasse, periodo, setPeriodo,
     mapa, totalOcorrencias: mapa.reduce((s, v) => s + v.valor, 0), aCarregarMapa: ocorrencias.isLoading,
     ranking: (ocorrencias.data ?? []).slice(0, 10).map((o) => ({ chave: String(o.distrito_id), nome: o.distrito, valor: o.total })),
