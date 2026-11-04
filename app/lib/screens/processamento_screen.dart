@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/cultura.dart';
+import '../models/resultado_classificacao.dart';
 import '../services/classificador.dart';
 import '../tema.dart';
 import '../widgets/botoes.dart';
@@ -14,9 +15,11 @@ class ProcessamentoScreen extends StatefulWidget {
     required this.caminhoImagem,
     required this.cronometro,
     required this.dataCaptura,
+    this.anterior,
   });
 
   final Cultura cultura;
+  final ResultadoClassificacao? anterior; // fotos já analisadas da mesma planta
   final String caminhoImagem;
   final Stopwatch cronometro;
   final DateTime dataCaptura;
@@ -44,8 +47,12 @@ class _ProcessamentoScreenState extends State<ProcessamentoScreen> {
         dataCaptura: widget.dataCaptura,
       );
       if (!mounted) return;
+      final anterior = widget.anterior;
+      // Se o modelo mudou entretanto (sincronização a meio), não se misturam versões.
+      final combinado =
+          anterior != null && anterior.versaoModelo == resultado.versaoModelo ? anterior.juntar(resultado) : resultado;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => ResultadoScreen(resultado: resultado)),
+        MaterialPageRoute(builder: (_) => ResultadoScreen(resultado: combinado)),
       );
     } on ErroModelo catch (e) {
       if (mounted) setState(() => _erro = e.mensagem);

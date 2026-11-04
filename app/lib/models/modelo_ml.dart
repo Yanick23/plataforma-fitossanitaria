@@ -9,6 +9,7 @@ class ModeloML {
     required this.classes,
     required this.embutido,
     this.acuraciaTeste,
+    this.piloto = false,
   });
 
   final Cultura cultura;
@@ -22,11 +23,15 @@ class ModeloML {
   final bool embutido;
   final double? acuraciaTeste;
 
+  /// Versão em teste no distrito do agricultor (piloto); pode ser retirada e a app volta à anterior.
+  final bool piloto;
+
   Map<String, dynamic> toJson() => {
         'versao': versao,
         'caminho_tflite': caminhoTflite,
         'classes': classes,
         'acuracia_teste': acuraciaTeste,
+        'piloto': piloto,
       };
 
   factory ModeloML.fromJson(Cultura cultura, Map<String, dynamic> j) => ModeloML(
@@ -35,6 +40,7 @@ class ModeloML {
         caminhoTflite: j['caminho_tflite'] as String,
         classes: (j['classes'] as List).cast<String>(),
         acuraciaTeste: (j['acuracia_teste'] as num?)?.toDouble(),
+        piloto: j['piloto'] as bool? ?? false,
         embutido: false,
       );
 }

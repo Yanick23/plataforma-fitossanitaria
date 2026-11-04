@@ -14,9 +14,29 @@ class HistorialDb {
 
   Database? _db;
 
+  // Versão 2: colunas da validação pelo técnico.
+  static const _colunasValidacao = [
+    "validacao TEXT NOT NULL DEFAULT 'PENDENTE'",
+    'classe_confirmada TEXT',
+    'nota_tecnico TEXT',
+  ];
+
+  // Versão 3: seguimento do tratamento (resposta do agricultor dias depois).
+  static const _colunasSeguimento = [
+    'seguiu TEXT',
+    'resultado_tratamento TEXT',
+    'seguimento_enviado INTEGER NOT NULL DEFAULT 0',
+  ];
+
   Future<Database> get _base async => _db ??= await openDatabase(
         p.join(await getDatabasesPath(), 'agrodiagnostico.db'),
-        version: 1,
+        version: 3,
+        onUpgrade: (db, antiga, nova) async {
+          final novas = [if (antiga < 2) ..._colunasValidacao, if (antiga < 3) ..._colunasSeguimento];
+          for (final coluna in novas) {
+            await db.execute('ALTER TABLE diagnosticos ADD COLUMN $coluna');
+          }
+        },
         onCreate: (db, version) => db.execute('''
           CREATE TABLE diagnosticos (
             id TEXT PRIMARY KEY,               -- UUID gerado no telemóvel
@@ -31,7 +51,8 @@ class HistorialDb {
             tempo_inferencia_ms INTEGER NOT NULL,
             tempo_total_ms INTEGER NOT NULL,
             estado_sinc TEXT NOT NULL DEFAULT '${EstadoSinc.pendente.valor}',
-            imagem_enviada INTEGER NOT NULL DEFAULT 0
+            imagem_enviada INTEGER NOT NULL DEFAULT 0,
+            ${[..._colunasValidacao, ..._colunasSeguimento].join(',\n            ')}
           )
         '''),
       );
@@ -75,4 +96,40 @@ class HistorialDb {
   Future<void> marcarSincronizado(String id) async => (await _base).update(
       'diagnosticos', {'estado_sinc': EstadoSinc.sincronizado.valor},
       where: 'id = ?', whereArgs: [id]);
+
+  Future<Diagnostico?> obter(String id) async {
+    final linhas = await (await _base).query('diagnosticos', where: 'id = ?', whereArgs: [id]);
+    return linhas.isEmpty ? null : Diagnostico.fromMap(linhas.first);
+  }
+
+  /// Guarda a resposta ao seguimento; fica por enviar até à próxima sincronização.
+  Future<void> responderSeguimento(String id, Seguiu seguiu, ResultadoTratamento resultado) async =>
+      (await _base).update('diagnosticos',
+          {'seguiu': seguiu.valor, 'resultado_tratamento': resultado.valor, 'seguimento_enviado': 0},
+          where: 'id = ?', whereArgs: [id]);
+
+  Future<List<Diagnostico>> seguimentosPorEnviar(int utilizadorId) async => [
+        for (final m in await (await _base).query('diagnosticos',
+            where: 'utilizador_id = ? AND seguiu IS NOT NULL AND seguimento_enviado = 0', whereArgs: [utilizadorId]))
+          Diagnostico.fromMap(m),
+      ];
+
+  Future<void> marcarSeguimentoEnviado(String id) async =>
+      (await _base).update('diagnosticos', {'seguimento_enviado': 1}, where: 'id = ?', whereArgs: [id]);
+
+  /// A API já tem resposta (dada noutro telemóvel): deixa de se perguntar. Não apaga uma resposta local.
+  Future<void> seguimentoRespondidoNoServidor(String id) async => (await _base).update(
+      'diagnosticos', {'seguimento_enviado': 1},
+      where: 'id = ? AND seguiu IS NULL AND seguimento_enviado = 0', whereArgs: [id]);
+
+  /// Guarda a validação do técnico; devolve true se mudou alguma coisa.
+  Future<bool> actualizarValidacao(String id, Validacao validacao, String? classe, String? nota) async {
+    final n = await (await _base).update(
+      'diagnosticos',
+      {'validacao': validacao.valor, 'classe_confirmada': classe, 'nota_tecnico': nota},
+      where: 'id = ? AND (validacao != ? OR IFNULL(classe_confirmada, \'\') != ? OR IFNULL(nota_tecnico, \'\') != ?)',
+      whereArgs: [id, validacao.valor, classe ?? '', nota ?? ''],
+    );
+    return n > 0;
+  }
 }

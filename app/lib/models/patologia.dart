@@ -13,8 +13,23 @@ enum TipoPatologia {
       values.firstWhere((t) => t.valor == texto.toUpperCase());
 }
 
+/// Fotografia de exemplo de uma patologia (descarregada na sincronização para ver sem rede).
+class FotoReferencia {
+  const FotoReferencia({required this.id, this.legenda, required this.url});
+
+  final int id;
+  final String? legenda;
+  final String url; // relativo à API, ex.: /fotos-referencia/3
+
+  Map<String, dynamic> toJson() => {'id': id, 'legenda': legenda, 'url': url};
+
+  factory FotoReferencia.fromJson(Map<String, dynamic> j) =>
+      FotoReferencia(id: j['id'] as int, legenda: j['legenda'] as String?, url: j['url'] as String);
+}
+
 /// Uma classe do modelo: doença, praga ou folha saudável.
-/// Nome local e científico (RF06) e recomendação básica (RF07).
+/// Nome local e científico (RF06), recomendação básica (RF07) e, desde a fase 2,
+/// sintomas, prevenção e fotografias de referência revistos no painel.
 class Patologia {
   const Patologia({
     this.id,
@@ -24,6 +39,10 @@ class Patologia {
     required this.nomeCientifico,
     required this.tipo,
     required this.recomendacao,
+    this.sintomas,
+    this.prevencao,
+    this.validado = false,
+    this.fotos = const [],
   });
 
   final int? id; // id na API (nulo no catálogo embutido)
@@ -33,6 +52,12 @@ class Patologia {
   final String nomeCientifico;
   final TipoPatologia tipo;
   final String recomendacao;
+  final String? sintomas;
+  final String? prevencao;
+
+  /// O texto foi revisto e validado por um técnico no painel.
+  final bool validado;
+  final List<FotoReferencia> fotos;
 
   /// Formato do catálogo embutido (assets/catalogo.json).
   factory Patologia.doCatalogo(Cultura cultura, String codigo, Map<String, dynamic> j) => Patologia(
@@ -42,6 +67,10 @@ class Patologia {
         nomeCientifico: j['nome_cientifico'] as String,
         tipo: TipoPatologia.deTexto(j['tipo'] as String),
         recomendacao: j['recomendacao'] as String,
+        sintomas: j['sintomas'] as String?,
+        prevencao: j['prevencao'] as String?,
+        validado: j['validado'] as bool? ?? false,
+        fotos: [for (final f in (j['fotos'] as List? ?? const [])) FotoReferencia.fromJson(f as Map<String, dynamic>)],
       );
 
   /// Formato da API (GET /patologias).
@@ -53,6 +82,10 @@ class Patologia {
         nomeCientifico: j['nome_cientifico'] as String,
         tipo: TipoPatologia.deTexto(j['tipo'] as String),
         recomendacao: j['recomendacao'] as String,
+        sintomas: j['sintomas'] as String?,
+        prevencao: j['prevencao'] as String?,
+        validado: j['validado_por_nome'] != null,
+        fotos: [for (final f in (j['fotos'] as List? ?? const [])) FotoReferencia.fromJson(f as Map<String, dynamic>)],
       );
 
   Map<String, dynamic> paraCatalogo() => {
@@ -60,6 +93,10 @@ class Patologia {
         'nome_cientifico': nomeCientifico,
         'tipo': tipo.valor,
         'recomendacao': recomendacao,
+        'sintomas': sintomas,
+        'prevencao': prevencao,
+        'validado': validado,
+        'fotos': [for (final f in fotos) f.toJson()],
       };
 
   /// Usada se o modelo devolver uma classe que não está no catálogo.
