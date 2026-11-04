@@ -2,7 +2,7 @@
 
 import { http } from './http'
 import type {
-  Alcance, Alerta, Boletim, ListaNotificacoes, Cultura, Declaracao, EficaciaPatologia, Diagnostico, Distrito, EstadoModelo, EstadoValidacao, EstadoVisita, ExactidaoCampo, Modelo,
+  Alcance, Alerta, Boletim, ListaNotificacoes, RiscoMeteorologico, Cultura, Declaracao, EficaciaPatologia, Diagnostico, Distrito, EstadoModelo, EstadoValidacao, EstadoVisita, ExactidaoCampo, Modelo,
   Monitorizacao, PortaQualidade,
   NovoAlerta, Ocorrencia, Pagina, Patologia, PatologiaEscrita, Perfil, Provincia, RegistoAuditoria, Resumo, Surto, TipoPatologia,
   Utilizador, UtilizadorAdmin, Visita,
@@ -139,6 +139,7 @@ export const vigilanciaRepo = {
     dados(http.get<Ocorrencia[]>('/vigilancia/ocorrencias', { params: limpar(f) })),
   surtos: (p: { janela_dias?: number; semanas_base?: number; min_casos?: number; factor?: number } = {}) =>
     dados(http.get<Surto[]>('/vigilancia/surtos', { params: limpar(p) })),
+  riscoMeteorologico: () => dados(http.get<RiscoMeteorologico>('/vigilancia/risco-meteorologico')),
   declaracoes: (desde?: string) => dados(http.get<Declaracao[]>('/vigilancia/declaracoes', { params: limpar({ desde }) })),
   eficacia: (desde?: string) => dados(http.get<EficaciaPatologia[]>('/gestao/eficacia', { params: limpar({ desde }) })),
 }

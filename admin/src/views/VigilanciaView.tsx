@@ -6,6 +6,7 @@ import { Botao, CabecalhoPagina, Campo, Cartao, Esqueleto, Etiqueta, Segmentos, 
 import { BarrasHorizontais, MapaDistritos } from '@/ui/graficos'
 import { useCatalogo } from '@/viewmodels/referencias'
 import { useVigilanciaViewModel, type Sensibilidade } from '@/viewmodels/useVigilanciaViewModel'
+import { CartaoRiscoMeteo } from './CartaoRiscoMeteo'
 
 export function VigilanciaView() {
   const vm = useVigilanciaViewModel()
@@ -15,7 +16,7 @@ export function VigilanciaView() {
     <>
       <CabecalhoPagina
         titulo="Vigilância"
-        descricao="Onde estão as pragas e doenças, e onde estão a subir acima do habitual. Um sinal de surto é uma sugestão: o técnico decide se envia alerta."
+        descricao="Onde estão as pragas e doenças, onde estão a subir acima do habitual e onde o tempo as vai favorecer. Cada sinal é uma sugestão: o técnico decide se envia alerta."
       />
       {vm.declaracoes.length > 0 && (
         <div className="aviso-caixa critico">
@@ -25,6 +26,8 @@ export function VigilanciaView() {
             técnico). <a href="#declaracoes">Ver a lista</a>.</span>
         </div>
       )}
+      <CartaoRiscoMeteo risco={vm.risco} aCarregar={vm.aCarregarRisco} erro={vm.erroRisco} podeOperar={vm.podeOperar}
+        aoCriarAlerta={vm.criarAlertaRisco} />
       <Cartao
         titulo="Sinais de surto"
         subtitulo={`Casos nos últimos ${vm.janela} dias comparados com a média das 4 semanas anteriores (mínimo ${vm.parametros.min_casos} casos, subida de ${String(vm.parametros.factor).replace('.', ',')}×)`}

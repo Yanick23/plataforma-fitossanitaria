@@ -1143,3 +1143,29 @@ select.entrada {
 .sino-accoes a:hover {
   text-decoration: underline;
 }
+
+/* --- Regras do risco meteorológico (Vigilância) ------------------------------ */
+.regras-risco {
+  display: grid;
+  gap: var(--e-4);
+  padding: var(--e-4) var(--e-5);
+  border-bottom: 1px solid var(--linha);
+  background: var(--plano);
+  font-size: var(--t-13);
+}
+
+.regras-risco p {
+  margin: var(--e-1) 0;
+  line-height: 1.5;
+}
+
+.regras-risco ul {
+  margin: 0;
+  padding-left: var(--e-5);
+  color: var(--tinta-2);
+}
+
+.regras-risco a {
+  color: var(--marca-texto);
+  word-break: break-all;
+}
