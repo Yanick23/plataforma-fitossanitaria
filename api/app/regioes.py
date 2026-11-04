@@ -76,8 +76,10 @@ class Zona:
 
 
 def zona_de(u: Utilizador) -> Zona:
-    if u.perfil == Perfil.ADMINISTRADOR:
+    if u.perfil in (Perfil.ADMINISTRADOR, Perfil.INVESTIGADOR):
         return Zona(nacional=True)
+    if u.perfil == Perfil.COORDENADOR:  # a província inteira, mesmo que a conta tenha um distrito
+        return Zona(provincia_codigo=u.provincia_codigo)
     if u.distrito_id:
         return Zona(distrito_id=u.distrito_id)
     if u.provincia_codigo:

@@ -13,6 +13,7 @@ from ..esquemas import Boletim, Declaracao, EficaciaPatologia, LinhaBoletim
 from ..regioes import condicao_utilizador_na_zona, filtro_zona, zona_de
 from ..repositorios import diagnosticos as repo
 from ..repositorios.diagnosticos import FiltrosDiagnostico
+from ..seguranca import anonimizado, pseudonimo
 from ..tabelas import (Alerta, Cultura, Diagnostico, Distrito, EstadoVisita, Patologia, PedidoVisita, Perfil, ResultadoTratamento,
                        Seguiu, Seguimento, TipoPatologia, Utilizador)
 from . import alertas as servico_alertas
@@ -53,7 +54,7 @@ async def eficacia(sessao: AsyncSession, u: Utilizador, desde: datetime | None =
     return _eficacia(await _diagnosticos(sessao, u, desde, None), await _patologias(sessao))
 
 
-def _declaracoes(diags: list[Diagnostico], pats: dict) -> list[Declaracao]:
+def _declaracoes(diags: list[Diagnostico], pats: dict, anonimo: bool = False) -> list[Declaracao]:
     saida = []
     for d in diags:
         p = pats.get((d.cultura_id, classe_final(d)))
@@ -64,13 +65,14 @@ def _declaracoes(diags: list[Diagnostico], pats: dict) -> list[Declaracao]:
             estado="CONFIRMADO" if d.validacao else "SUSPEITA", confianca=d.confianca, data=d.data,
             distrito_nome=d.distrito.nome if d.distrito else None,
             provincia_codigo=d.distrito.provincia_codigo if d.distrito else None,
-            agricultor_nome=d.utilizador.nome, agricultor_telefone=d.utilizador.telefone))
+            agricultor_nome=pseudonimo(d.utilizador_id) if anonimo else d.utilizador.nome,
+            agricultor_telefone="" if anonimo else d.utilizador.telefone))
     return saida
 
 
 async def declaracoes(sessao: AsyncSession, u: Utilizador, desde: datetime | None = None) -> list[Declaracao]:
     """Casos de pragas/doenças de declaração obrigatória: confirmados pelo técnico ou suspeitos (só o modelo)."""
-    return _declaracoes(await _diagnosticos(sessao, u, desde, None), await _patologias(sessao))
+    return _declaracoes(await _diagnosticos(sessao, u, desde, None), await _patologias(sessao), anonimizado(u))
 
 
 async def boletim(sessao: AsyncSession, u: Utilizador, inicio: datetime, fim: datetime) -> Boletim:
@@ -112,7 +114,7 @@ async def boletim(sessao: AsyncSession, u: Utilizador, inicio: datetime, fim: da
         distritos_mais_afectados=[LinhaBoletim(nome=n, valor=v) for n, v in por_distrito.most_common(8)],
         alertas=await servico_alertas.para_ler(sessao, alertas),
         surtos=await surtos(sessao, u, agora=fim),
-        declaracoes=_declaracoes(diags, pats),
+        declaracoes=_declaracoes(diags, pats, anonimizado(u)),
         eficacia=_eficacia(diags, pats),
     )
 

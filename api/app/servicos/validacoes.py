@@ -15,24 +15,28 @@ from ..config import definicoes
 from ..esquemas import Confusao, ExactidaoCampo, ExactidaoClasse, ExactidaoVersao, ValidacaoEscrever
 from ..regioes import filtro_zona, zona_de
 from ..repositorios import diagnosticos as repo
-from ..tabelas import Diagnostico, Distrito, Patologia, Perfil, Utilizador, Validacao
+from ..tabelas import PERFIS_PESSOAL, Diagnostico, Distrito, Patologia, Utilizador, Validacao
 from .auditoria import auditar
 from .diagnosticos import pode_ver
+from .notificacoes import avisar_declaracao
 from .painel import descricao_zona
 
 
 async def validar(sessao: AsyncSession, tecnico: Utilizador, d: Diagnostico, dados: ValidacaoEscrever) -> None:
-    if tecnico.perfil not in (Perfil.TECNICO, Perfil.ADMINISTRADOR) or not pode_ver(tecnico, d):
+    if tecnico.perfil not in PERFIS_PESSOAL or not pode_ver(tecnico, d):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Este diagnóstico não é da sua zona")
-    existe = await sessao.scalar(select(Patologia.id).where(
+    patologia = await sessao.scalar(select(Patologia).where(
         Patologia.cultura_id == d.cultura_id, Patologia.codigo == dados.classe_confirmada))
-    if existe is None:
+    if patologia is None:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Classe inexistente para esta cultura")
 
     correcto = dados.classe_confirmada == d.classe_prevista
     nota = (dados.nota or "").strip() or None
     v = await sessao.get(Validacao, d.id)
     antes = None
+    # 3b: avisar logo quando o caso passa a ser confirmado como praga de declaração obrigatória
+    # (não se repete o aviso se a classe confirmada já era a mesma).
+    novo_caso = patologia.declaracao_obrigatoria and (v is None or v.classe_confirmada != dados.classe_confirmada)
     if v is None:
         v = Validacao(diagnostico_id=d.id, tecnico_id=tecnico.id, classe_confirmada=dados.classe_confirmada,
                       correcto=correcto, nota=nota)
@@ -42,6 +46,8 @@ async def validar(sessao: AsyncSession, tecnico: Utilizador, d: Diagnostico, dad
         v.tecnico_id, v.classe_confirmada, v.correcto, v.nota = tecnico.id, dados.classe_confirmada, correcto, nota
     auditar(sessao, tecnico, "diagnostico.validar", "diagnostico", d.id, antes=antes, depois={
         "classe_prevista": d.classe_prevista, "classe_confirmada": dados.classe_confirmada, "nota": nota})
+    if novo_caso:
+        await avisar_declaracao(sessao, tecnico, d, patologia)
     await sessao.commit()
 
 

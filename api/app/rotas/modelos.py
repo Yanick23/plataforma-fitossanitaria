@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..config import definicoes
 from ..database import obter_sessao
 from ..esquemas import ModeloActualizar, ModeloLer, Monitorizacao, PortaQualidade
-from ..seguranca import Administrador, Pessoal, UtilizadorActual
+from ..seguranca import Administrador, Leitor, UtilizadorActual
 from ..servicos import modelos as servico
 from ..servicos.auditoria import auditar
 from ..tabelas import Cultura, Distrito, EstadoModelo, ModeloML
@@ -45,7 +45,7 @@ async def _validar_distritos(sessao: AsyncSession, ids: list[int]) -> list[int]:
 
 
 @router.get("/modelos/{cultura}", response_model=list[ModeloLer])
-async def historico(cultura: str, pedido: Request, _: Pessoal, sessao: Sessao) -> list[ModeloLer]:
+async def historico(cultura: str, pedido: Request, _: Leitor, sessao: Sessao) -> list[ModeloLer]:
     """Todas as versões de uma cultura (a mais recente primeiro), com o estado de cada uma."""
     modelos = await sessao.scalars(select(ModeloML).where(ModeloML.cultura_id == cultura)
                                    .order_by(ModeloML.versao.desc()))
@@ -62,13 +62,13 @@ async def ultima_versao(cultura: str, pedido: Request, utilizador: UtilizadorAct
 
 
 @router.get("/modelos/{cultura}/monitorizacao", response_model=Monitorizacao)
-async def monitorizacao(cultura: str, _: Pessoal, sessao: Sessao) -> Monitorizacao:
+async def monitorizacao(cultura: str, _: Leitor, sessao: Sessao) -> Monitorizacao:
     """Por semana e versão: diagnósticos, confiança média, proporção abaixo de 60% e exactidão em campo."""
     return await servico.monitorizacao(sessao, cultura)
 
 
 @router.get("/modelos/{cultura}/{versao}/porta-qualidade", response_model=PortaQualidade)
-async def porta_qualidade(cultura: str, versao: int, _: Pessoal, sessao: Sessao) -> PortaQualidade:
+async def porta_qualidade(cultura: str, versao: int, _: Leitor, sessao: Sessao) -> PortaQualidade:
     return await servico.porta_qualidade(sessao, await _obter(sessao, cultura, versao))
 
 

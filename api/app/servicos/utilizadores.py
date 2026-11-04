@@ -1,7 +1,12 @@
-"""Gestão de contas pelo pessoal: listar, mudar perfil e zona, desactivar, repor palavra-passe."""
+"""Gestão de contas pelo pessoal: listar, mudar perfil e zona, desactivar, repor palavra-passe.
+
+Administrador: todas as contas e todos os perfis.
+Coordenador provincial: só agricultores e técnicos da sua província, e só lhes dá esses dois perfis.
+Técnico: só vê os agricultores da sua zona.
+"""
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, or_, select
+from sqlalchemy import false, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..esquemas import UtilizadorActualizar, UtilizadorAdminLer
@@ -17,7 +22,11 @@ async def listar(sessao: AsyncSession, pedinte: Utilizador, q: str | None, perfi
                  provincia: str | None, distrito_id: int | None, activo: bool | None,
                  limite: int, deslocamento: int) -> tuple[int, list[UtilizadorAdminLer]]:
     zona = zona_de(pedinte)
-    consulta = select(Utilizador).where(condicao_utilizador_na_zona(zona))
+    if pedinte.perfil == Perfil.COORDENADOR:  # agricultores e técnicos da província (com ou sem distrito)
+        consulta = select(Utilizador).where(_na_provincia(pedinte.provincia_codigo),
+                                            Utilizador.perfil.in_(PERFIS_DO_COORDENADOR))
+    else:
+        consulta = select(Utilizador).where(condicao_utilizador_na_zona(zona))
     if pedinte.perfil == Perfil.TECNICO:  # o técnico só gere (vê) os agricultores da sua zona
         consulta = consulta.where(Utilizador.perfil == Perfil.AGRICULTOR)
     if q:
@@ -55,14 +64,57 @@ async def para_admin(sessao: AsyncSession, contas: list[Utilizador]) -> list[Uti
         diagnosticos=n_diag.get(u.id, 0)) for u in contas]
 
 
-async def actualizar(sessao: AsyncSession, admin: Utilizador, alvo_id: int, dados: UtilizadorActualizar) -> Utilizador:
+# Perfis que o coordenador provincial pode ver, criar e alterar.
+PERFIS_DO_COORDENADOR = (Perfil.AGRICULTOR, Perfil.TECNICO)
+FORA_DA_PROVINCIA = HTTPException(status.HTTP_403_FORBIDDEN, "Esta conta não é da sua província")
+
+
+def _na_provincia(provincia_codigo: str | None):
+    if not provincia_codigo:
+        return false()
+    return or_(Utilizador.provincia_codigo == provincia_codigo,
+               Utilizador.distrito_id.in_(select(Distrito.id).where(Distrito.provincia_codigo == provincia_codigo)))
+
+
+def verificar_perfil_pedido(gestor: Utilizador, perfil: Perfil | None) -> None:
+    """O coordenador só cria ou atribui os perfis de agricultor e de técnico."""
+    if gestor.perfil == Perfil.COORDENADOR and perfil is not None and perfil not in PERFIS_DO_COORDENADOR:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "O coordenador só atribui os perfis de agricultor e técnico")
+
+
+def verificar_zona_final(gestor: Utilizador, perfil: Perfil, provincia_codigo: str | None) -> None:
+    """Depois de alterar: o coordenador precisa de província e o do gestor-coordenador fica na dele."""
+    if perfil == Perfil.COORDENADOR and not provincia_codigo:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "O coordenador precisa de uma província")
+    if gestor.perfil == Perfil.COORDENADOR and provincia_codigo != gestor.provincia_codigo:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só pode colocar contas na sua província")
+
+
+def _pode_gerir(gestor: Utilizador, alvo: Utilizador) -> bool:
+    if gestor.perfil == Perfil.ADMINISTRADOR:
+        return True
+    return (gestor.perfil == Perfil.COORDENADOR and alvo.perfil in PERFIS_DO_COORDENADOR
+            and bool(gestor.provincia_codigo) and alvo.provincia_codigo == gestor.provincia_codigo)
+
+
+async def _alvo(sessao: AsyncSession, gestor: Utilizador, alvo_id: int) -> Utilizador:
     alvo = await sessao.get(Utilizador, alvo_id)
     if alvo is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Utilizador não encontrado")
+    if not _pode_gerir(gestor, alvo):
+        raise FORA_DA_PROVINCIA
+    return alvo
+
+
+async def actualizar(sessao: AsyncSession, admin: Utilizador, alvo_id: int, dados: UtilizadorActualizar) -> Utilizador:
+    """`admin` é quem gere: administrador ou coordenador provincial."""
     campos = dados.model_fields_set
-    if alvo.id == admin.id and (("activo" in campos and dados.activo is False)
-                                or ("perfil" in campos and dados.perfil != Perfil.ADMINISTRADOR)):
-        raise HTTPException(status.HTTP_409_CONFLICT, "Não pode desactivar nem despromover a sua própria conta")
+    if admin.id == alvo_id and (("activo" in campos and dados.activo is False)
+                                or ("perfil" in campos and dados.perfil != admin.perfil)):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Não pode desactivar nem mudar o perfil da sua própria conta")
+    alvo = admin if admin.id == alvo_id else await _alvo(sessao, admin, alvo_id)
+    if "perfil" in campos:
+        verificar_perfil_pedido(admin, dados.perfil)
     antes = instantaneo(alvo, CAMPOS_AUDITADOS)
     if "nome" in campos and dados.nome:
         alvo.nome = dados.nome.strip()
@@ -77,6 +129,7 @@ async def actualizar(sessao: AsyncSession, admin: Utilizador, alvo_id: int, dado
         alvo.provincia_codigo = provincia
         if distrito:
             alvo.area = distrito.nome
+    verificar_zona_final(admin, alvo.perfil, alvo.provincia_codigo)
     auditar(sessao, admin, "utilizador.actualizar", "utilizador", alvo.id, antes=antes,
             depois=instantaneo(alvo, CAMPOS_AUDITADOS))
     await sessao.commit()
@@ -84,9 +137,7 @@ async def actualizar(sessao: AsyncSession, admin: Utilizador, alvo_id: int, dado
 
 
 async def repor_palavra_passe(sessao: AsyncSession, admin: Utilizador, alvo_id: int, nova: str) -> None:
-    alvo = await sessao.get(Utilizador, alvo_id)
-    if alvo is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Utilizador não encontrado")
+    alvo = await _alvo(sessao, admin, alvo_id)
     alvo.hash_palavra_passe = gerar_hash(nova)
     auditar(sessao, admin, "utilizador.repor_palavra_passe", "utilizador", alvo.id)
     await sessao.commit()

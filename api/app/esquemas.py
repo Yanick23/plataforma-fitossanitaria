@@ -29,7 +29,7 @@ class UtilizadorCriar(Registo):
     """Criação por um administrador (permite escolher o perfil, ex.: TECNICO)."""
 
     perfil: Perfil = Perfil.AGRICULTOR
-    provincia_codigo: str | None = None  # técnico provincial (sem distrito)
+    provincia_codigo: str | None = None  # técnico provincial ou coordenador (sem distrito)
 
 
 class Login(Esquema):
@@ -394,6 +394,21 @@ class AuditoriaLer(Esquema):
 class PaginaAuditoria(Esquema):
     total: int
     itens: list[AuditoriaLer]
+
+
+class NotificacaoLer(Esquema):
+    id: int
+    tipo: str
+    titulo: str
+    mensagem: str
+    diagnostico_id: UUID | None
+    criado_em: datetime
+    lida_em: datetime | None
+
+
+class ListaNotificacoes(Esquema):
+    nao_lidas: int
+    itens: list[NotificacaoLer]
 
 
 # --- Modelos ML -------------------------------------------------------------
