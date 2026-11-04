@@ -435,3 +435,72 @@ PostgreSQL) e cria a tabela `notificacoes`.
 - A auditoria continua só visível ao administrador; o coordenador não vê o registo da sua
   província.
 - A app não muda: os perfis novos são só da equipa e usam o painel.
+
+## Entrega 3a — Risco meteorológico (04/11/2026)
+
+### O que foi implementado
+
+A plataforma passou a **antecipar**: além de reagir aos diagnósticos que chegam, avisa quando o
+tempo dos próximos 7 dias favorece uma praga ou doença num distrito, antes de surgirem os casos.
+
+- **Previsão:** para cada distrito da zona com agricultores, a API pede à **Open-Meteo**
+  (gratuita, sem chave) a previsão horária de 7 dias (temperatura, humidade relativa e chuva) no
+  centro do distrito. Os 157 centros foram calculados a partir do mapa do painel
+  (`api/scripts/gerar_centroides.py`). Um pedido serve até 50 distritos.
+- **Cache e funcionamento sem internet:** a previsão de cada distrito fica guardada na base
+  (tabela `previsoes_meteo`, migração 0005) durante 3 horas. Se a Open-Meteo não responder,
+  usa-se a última guardada e o painel diz que não é recente.
+- **Regras:** cada dia resume-se em temperatura média, horas com humidade ≥ 90% e ≥ 95%, horas
+  húmidas entre 22 e 30 °C e chuva. Há uma regra por praga ou doença:
+
+| Praga ou doença | Dia favorável | Risco médio / alto | Base |
+|---|---|---|---|
+| Queima da folha (milho) | média 15–30 °C e ≥ 9 h com HR ≥ 90% | 2 / ≥ 3 dias | infecção de *E. turcicum* entre 15 e 30 °C (óptimo 20 °C); esporulação com ≥ 9 h de orvalho |
+| Mancha cinzenta (milho) | ≥ 12 h com HR ≥ 90% entre 22 e 30 °C | 1 dia / ≥ 2 seguidos | Purdue BP-56; Nebraska CropWatch; *Plant Disease* 86:1127 (2002) |
+| Mancha castanha (mandioca) | média ≥ 20 °C e ≥ 12 h com HR ≥ 95% | 2 / ≥ 4 dias | tese KNUST (1991); evidência **fraca** |
+| Ácaro verde (mandioca) | semana seca | < 10 mm / < 2 mm em 7 dias | Akinlosotu (1982); Gutierrez et al. (1988); Hanna et al. (2005) |
+
+  A humidade ≥ 90% serve de aproximação do orvalho e da folha molhada, que a previsão não dá. Os
+  números de dias e de chuva são **limiares de projecto**, a calibrar com os técnicos e com os
+  casos validados. Ficaram de fora a mancha bacteriana (sem limiares encontrados nas fontes) e as
+  classes que pouco dependem do tempo: gafanhoto, besouro-da-folha, listrado do milho e mosaico
+  (que dependem dos insectos vectores).
+- **No painel:** na Vigilância, o cartão «Risco meteorológico» lista o distrito, a praga e o
+  motivo (por exemplo, «1 dia com 12 h ou mais de humidade ≥ 90% entre 22 e 30 °C»), mais as
+  regras e as fontes. O botão «Criar alerta» prepara um aviso preventivo para os agricultores do
+  distrito, que o técnico revê antes de enviar. O investigador vê o cartão, mas sem o botão.
+
+### Como foi testado
+
+- `pytest`: **59 testes aprovados** (52 anteriores e 7 novos em `test_plataforma_meteo.py`, com
+  a Open-Meteo simulada):
+  - semana húmida (risco alto de queima, mancha cinzenta e mancha castanha);
+  - semana seca (só o ácaro verde);
+  - frio demais para a mancha cinzenta;
+  - os limiares do ácaro verde;
+  - previsão guardada sem pedir outra vez, e funcionamento sem internet;
+  - permissões: o agricultor não vê; o técnico só vê a sua zona.
+- **Com a previsão real** de 04/11/2026 para os 5 distritos com agricultores na base de teste
+  (porta 8001):
+  - mancha cinzenta com risco médio em Manhiça;
+  - ácaro verde com risco médio em Chokwe (9,9 mm de chuva prevista);
+  - nenhum risco em Boane (33,7 mm de chuva prevista).
+- Painel testado no Chrome (Puppeteer), sem erros na consola. O alerta preparado a partir do
+  risco chega ao formulário com o título, a mensagem, o nível, a praga e o distrito.
+
+| Figura | Ficheiro |
+|---|---|
+| Cartão «Risco meteorológico» na Vigilância | `dados_web/9_01_risco_meteorologico.png` |
+| Regras e fontes de cada praga ou doença | `dados_web/9_02_regras_e_fontes.png` |
+| Alerta preventivo preparado a partir do risco | `dados_web/9_03_alerta_preenchido.png` |
+
+### Limitações da entrega 3a
+
+- **As regras não foram validadas com dados de Moçambique.** São um sinal de condições
+  favoráveis, não uma previsão da doença. Os limiares devem ser revistos com o IIAM e com os casos
+  validados pelos técnicos (exactidão em campo).
+- A previsão é para o centro do distrito; distritos grandes ou com relevo variado (por exemplo,
+  Angónia) têm climas diferentes dentro do mesmo distrito.
+- A previsão não dá horas de folha molhada; a humidade ≥ 90% é só uma aproximação.
+- Não se sabe que culturas tem cada distrito: o risco do milho e o da mandioca mostram-se em todos.
+- As fontes científicas indicadas devem ser confirmadas na bibliografia do PFC antes da entrega.
