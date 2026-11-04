@@ -2,7 +2,7 @@
 
 import { http } from './http'
 import type {
-  Alcance, Alerta, Boletim, Cultura, Declaracao, EficaciaPatologia, Diagnostico, Distrito, EstadoModelo, EstadoValidacao, EstadoVisita, ExactidaoCampo, Modelo,
+  Alcance, Alerta, Boletim, ListaNotificacoes, Cultura, Declaracao, EficaciaPatologia, Diagnostico, Distrito, EstadoModelo, EstadoValidacao, EstadoVisita, ExactidaoCampo, Modelo,
   Monitorizacao, PortaQualidade,
   NovoAlerta, Ocorrencia, Pagina, Patologia, PatologiaEscrita, Perfil, Provincia, RegistoAuditoria, Resumo, Surto, TipoPatologia,
   Utilizador, UtilizadorAdmin, Visita,
@@ -153,6 +153,12 @@ export const visitasRepo = {
   listar: (estado?: EstadoVisita) => dados(http.get<Visita[]>('/visitas', { params: limpar({ estado }) })),
   actualizar: (id: number, alteracoes: { estado?: EstadoVisita; data_agendada?: string | null; notas_tecnico?: string | null }) =>
     dados(http.patch<Visita>(`/visitas/${id}`, alteracoes)),
+}
+
+export const notificacoesRepo = {
+  listar: () => dados(http.get<ListaNotificacoes>('/gestao/notificacoes')),
+  marcarLida: (id: number) => http.post(`/gestao/notificacoes/${id}/lida`),
+  marcarTodas: () => http.post('/gestao/notificacoes/lidas'),
 }
 
 export const auditoriaRepo = {

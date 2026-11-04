@@ -1,6 +1,6 @@
 // Tipos do domínio, iguais aos esquemas da API (api/app/esquemas.py).
 
-export type Perfil = 'AGRICULTOR' | 'TECNICO' | 'ADMINISTRADOR'
+export type Perfil = 'AGRICULTOR' | 'TECNICO' | 'COORDENADOR' | 'INVESTIGADOR' | 'ADMINISTRADOR'
 export type TipoPatologia = 'DOENCA' | 'PRAGA' | 'SAUDAVEL'
 export type NivelAlerta = 'INFORMACAO' | 'AVISO' | 'URGENTE'
 export type EstadoValidacao = 'PENDENTE' | 'CONFIRMADO' | 'CORRIGIDO'
@@ -358,4 +358,20 @@ export interface Boletim {
   surtos: Surto[]
   declaracoes: Declaracao[]
   eficacia: EficaciaPatologia[]
+}
+
+/** Aviso para a equipa (ex.: caso confirmado de praga de declaração obrigatória). */
+export interface Notificacao {
+  id: number
+  tipo: string
+  titulo: string
+  mensagem: string
+  diagnostico_id: string | null
+  criado_em: string
+  lida_em: string | null
+}
+
+export interface ListaNotificacoes {
+  nao_lidas: number
+  itens: Notificacao[]
 }

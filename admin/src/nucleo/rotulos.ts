@@ -5,6 +5,8 @@ export type Tom = 'neutro' | 'marca' | 'bom' | 'aviso' | 'critico' | 'info'
 export const PERFIL: Record<Perfil, { nome: string; tom: Tom }> = {
   AGRICULTOR: { nome: 'Agricultor', tom: 'neutro' },
   TECNICO: { nome: 'Técnico', tom: 'info' },
+  COORDENADOR: { nome: 'Coordenador', tom: 'info' },
+  INVESTIGADOR: { nome: 'Investigador', tom: 'neutro' },
   ADMINISTRADOR: { nome: 'Administrador', tom: 'marca' },
 }
 
@@ -54,6 +56,7 @@ export const ACCOES_AUDITORIA: Record<string, string> = {
   'utilizador.actualizar': 'Alterou uma conta',
   'utilizador.repor_palavra_passe': 'Repôs uma palavra-passe',
   'diagnostico.validar': 'Validou um diagnóstico',
+  'declaracao.notificar': 'Avisou um caso de declaração obrigatória',
   'visita.pedir': 'Pediu uma visita',
   'visita.actualizar': 'Actualizou uma visita',
   'visita.cancelar': 'Cancelou uma visita',

@@ -10,6 +10,7 @@ import { useSessao } from '@/nucleo/sessao'
 import { PERFIL } from '@/nucleo/rotulos'
 import { Botao, Etiqueta } from '@/ui/componentes'
 import { useRegioes } from '@/viewmodels/referencias'
+import { SinoNotificacoes } from '@/views/SinoNotificacoes'
 
 type Tema = 'sistema' | 'claro' | 'escuro'
 
@@ -27,7 +28,8 @@ function useTema() {
   return { tema, seguinte }
 }
 
-interface ItemNav { para: string; nome: string; icone: typeof LayoutDashboard; soAdmin?: boolean; contador?: 'visitas' }
+/** quem: 'operar' = técnico, coordenador e administrador (o investigador não vê); 'admin' = só o administrador. */
+interface ItemNav { para: string; nome: string; icone: typeof LayoutDashboard; quem?: 'operar' | 'admin'; contador?: 'visitas' }
 
 const NAVEGACAO: { grupo: string; itens: ItemNav[] }[] = [
   {
@@ -41,8 +43,8 @@ const NAVEGACAO: { grupo: string; itens: ItemNav[] }[] = [
     grupo: 'Operação', itens: [
       { para: '/diagnosticos', nome: 'Diagnósticos', icone: ScanSearch },
       { para: '/validacao', nome: 'Validação', icone: ListChecks },
-      { para: '/alertas', nome: 'Alertas', icone: BellRing },
-      { para: '/visitas', nome: 'Visitas', icone: CalendarCheck, contador: 'visitas' },
+      { para: '/alertas', nome: 'Alertas', icone: BellRing, quem: 'operar' },
+      { para: '/visitas', nome: 'Visitas', icone: CalendarCheck, contador: 'visitas', quem: 'operar' },
     ],
   },
   {
@@ -53,23 +55,30 @@ const NAVEGACAO: { grupo: string; itens: ItemNav[] }[] = [
   },
   {
     grupo: 'Administração', itens: [
-      { para: '/utilizadores', nome: 'Utilizadores', icone: Users },
-      { para: '/auditoria', nome: 'Auditoria', icone: ScrollText, soAdmin: true },
+      { para: '/utilizadores', nome: 'Utilizadores', icone: Users, quem: 'operar' },
+      { para: '/auditoria', nome: 'Auditoria', icone: ScrollText, quem: 'admin' },
     ],
   },
 ]
 
 export function Casca() {
-  const { utilizador, sair, eAdministrador } = useSessao()
+  const { utilizador, sair, eAdministrador, eInvestigador, podeOperar } = useSessao()
   const regioes = useRegioes()
   const { tema, seguinte } = useTema()
-  const pendentes = useQuery({ queryKey: ['visitas', 'PENDENTE'], queryFn: () => visitasRepo.listar('PENDENTE'), refetchInterval: 60_000 })
+  const pendentes = useQuery({
+    queryKey: ['visitas', 'PENDENTE'], queryFn: () => visitasRepo.listar('PENDENTE'), refetchInterval: 60_000, enabled: podeOperar,
+  })
+  const visivel = (i: ItemNav) => !i.quem || (i.quem === 'admin' ? eAdministrador : podeOperar)
   const visitasPendentes = pendentes.data?.length ?? 0
   if (!utilizador) return null
 
   const distrito = regioes.distrito(utilizador.distrito_id)
   const zona = utilizador.perfil === 'ADMINISTRADOR'
     ? 'Moçambique — todas as províncias'
+    : eInvestigador
+      ? 'Moçambique — só leitura, agricultores anonimizados'
+    : utilizador.perfil === 'COORDENADOR' && utilizador.provincia_codigo
+      ? `Província de ${regioes.nomeProvincia(utilizador.provincia_codigo)} (coordenação)`
     : distrito
       ? `${distrito.nome}, ${regioes.nomeProvincia(distrito.provincia_codigo)}`
       : utilizador.provincia_codigo
@@ -88,10 +97,10 @@ export function Casca() {
           </div>
         </div>
         <nav aria-label="Navegação principal" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {NAVEGACAO.map((g) => (
+          {NAVEGACAO.filter((g) => g.itens.some(visivel)).map((g) => (
             <div key={g.grupo} className="nav-grupo">
               <p>{g.grupo}</p>
-              {g.itens.filter((i) => !i.soAdmin || eAdministrador).map(({ para, nome, icone: Icone, contador }) => (
+              {g.itens.filter(visivel).map(({ para, nome, icone: Icone, contador }) => (
                 <NavLink key={para} to={para} end={para === '/'} className={({ isActive }) => `nav-ligacao${isActive ? ' activa' : ''}`}>
                   <Icone size={17} strokeWidth={1.8} />
                   {nome}
@@ -120,6 +129,7 @@ export function Casca() {
         <header className="barra-topo">
           <span className="zona"><MapPin size={15} />Zona de actuação: <strong style={{ color: 'var(--tinta)' }}>{zona}</strong></span>
           <span className="espaco" />
+          <SinoNotificacoes />
           <span className="suave pequeno">{new Intl.DateTimeFormat('pt-MZ', { dateStyle: 'full' }).format(new Date())}</span>
         </header>
         <main className="conteudo">

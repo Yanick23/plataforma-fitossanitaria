@@ -4,13 +4,16 @@ import type { Diagnostico } from '@/model/tipos'
 import { diagnosticosRepo } from '@/model/repositorios'
 import { dataHora, numero } from '@/nucleo/formatos'
 import { TIPO, VALIDACAO } from '@/nucleo/rotulos'
+import { useSessao } from '@/nucleo/sessao'
 import { Botao, Campo, Confianca, Etiqueta, Gaveta, ImagemProtegida, Segmentos, Seleccao } from '@/ui/componentes'
 import { useCatalogo } from '@/viewmodels/referencias'
 
-/** Gaveta com a foto, o Grad-CAM e a validação de um diagnóstico (usada em Diagnósticos e Validação). */
+/** Gaveta com a foto, o Grad-CAM e a validação de um diagnóstico (usada em Diagnósticos e Validação).
+ *  O investigador só vê: sem validação e com o agricultor anonimizado. */
 export function DetalheDiagnostico({ diagnostico: d, aoFechar, aoValidar, aValidar }:
   { diagnostico: Diagnostico | null; aoFechar: () => void; aoValidar: (id: string, classe: string, nota: string) => void; aValidar: boolean }) {
   const catalogo = useCatalogo()
+  const { podeOperar } = useSessao()
   const [vista, setVista] = useState<'foto' | 'gradcam'>('foto')
   const [classe, setClasse] = useState('')
   const [nota, setNota] = useState('')
@@ -36,10 +39,12 @@ export function DetalheDiagnostico({ diagnostico: d, aoFechar, aoValidar, aValid
       rodape={
         <>
           <Botao onClick={aoFechar}>Fechar</Botao>
-          <Botao variante="primario" disabled={aValidar} onClick={() => aoValidar(d.id, classe, nota)}>
-            {corrigir ? <PenLine size={15} /> : <CircleCheck size={15} />}
-            {aValidar ? 'A guardar…' : corrigir ? 'Guardar correcção' : 'Confirmar diagnóstico'}
-          </Botao>
+          {podeOperar && (
+            <Botao variante="primario" disabled={aValidar} onClick={() => aoValidar(d.id, classe, nota)}>
+              {corrigir ? <PenLine size={15} /> : <CircleCheck size={15} />}
+              {aValidar ? 'A guardar…' : corrigir ? 'Guardar correcção' : 'Confirmar diagnóstico'}
+            </Botao>
+          )}
         </>
       }
     >
@@ -67,7 +72,9 @@ export function DetalheDiagnostico({ diagnostico: d, aoFechar, aoValidar, aValid
             <dt>Confiança</dt>
             <dd><Confianca valor={d.confianca} /></dd>
             <dt>Agricultor</dt>
-            <dd>{d.utilizador_nome}<div className="suave pequeno mono">{d.utilizador_telefone}</div></dd>
+            <dd>{d.utilizador_nome}{d.utilizador_telefone
+              ? <div className="suave pequeno mono">{d.utilizador_telefone}</div>
+              : <div className="suave pequeno">Anonimizado</div>}</dd>
             <dt>Distrito</dt>
             <dd>{d.distrito_nome ?? '—'}</dd>
             <dt>Modelo</dt>
@@ -78,7 +85,7 @@ export function DetalheDiagnostico({ diagnostico: d, aoFechar, aoValidar, aValid
               {d.tecnico_nome && <div className="suave pequeno">por {d.tecnico_nome}{d.validado_em ? ` · ${dataHora(d.validado_em)}` : ''}</div>}
             </dd>
           </dl>
-          <div className="formulario" style={{ paddingTop: 14, borderTop: '1px solid var(--linha)' }}>
+          {podeOperar && <div className="formulario" style={{ paddingTop: 14, borderTop: '1px solid var(--linha)' }}>
             <h3>Validação pelo técnico</h3>
             <Campo rotulo="Classe correcta" ajuda={corrigir ? 'Vai registar uma correcção ao modelo.' : 'Igual à previsão: confirma o diagnóstico.'}>
               <Seleccao value={classe} onChange={(e) => setClasse(e.target.value)} opcoes={opcoes} />
@@ -87,7 +94,7 @@ export function DetalheDiagnostico({ diagnostico: d, aoFechar, aoValidar, aValid
               <textarea className="entrada" value={nota} onChange={(e) => setNota(e.target.value)} maxLength={1000}
                 placeholder="Ex.: Confirmado na visita. Retire as folhas mais afectadas." />
             </Campo>
-          </div>
+          </div>}
         </div>
       </div>
     </Gaveta>

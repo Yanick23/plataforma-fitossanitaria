@@ -16,7 +16,7 @@ import { VisitasView } from '@/views/VisitasView'
 import { Casca } from './Casca'
 
 export function App() {
-  const { utilizador, aVerificar, eAdministrador } = useSessao()
+  const { utilizador, aVerificar, eAdministrador, podeOperar } = useSessao()
   if (aVerificar) {
     return <div style={{ padding: 48, maxWidth: 420 }}><Esqueleto altura={20} /><br /><Esqueleto altura={120} /></div>
   }
@@ -27,14 +27,14 @@ export function App() {
         <Route element={<Casca />}>
           <Route index element={<PainelView />} />
           <Route path="diagnosticos" element={<DiagnosticosView />} />
-          <Route path="alertas" element={<AlertasView />} />
+          {podeOperar && <Route path="alertas" element={<AlertasView />} />}
           <Route path="catalogo" element={<CatalogoView />} />
           <Route path="modelos" element={<ModelosView />} />
-          <Route path="utilizadores" element={<UtilizadoresView />} />
+          {podeOperar && <Route path="utilizadores" element={<UtilizadoresView />} />}
           <Route path="vigilancia" element={<VigilanciaView />} />
           <Route path="boletim" element={<BoletimView />} />
           <Route path="validacao" element={<ValidacaoView />} />
-          <Route path="visitas" element={<VisitasView />} />
+          {podeOperar && <Route path="visitas" element={<VisitasView />} />}
           {eAdministrador && <Route path="auditoria" element={<AuditoriaView />} />}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

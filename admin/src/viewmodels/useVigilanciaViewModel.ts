@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { vigilanciaRepo } from '@/model/repositorios'
 import type { Surto } from '@/model/tipos'
 import { diasAtras } from '@/nucleo/formatos'
+import { useSessao } from '@/nucleo/sessao'
 import type { ValorDistrito } from '@/ui/graficos'
 import type { Preenchimento } from './useAlertasViewModel'
 import { useCatalogo } from './referencias'
@@ -18,6 +19,7 @@ const PARAMETROS: Record<Sensibilidade, { min_casos: number; factor: number }> =
 }
 
 export function useVigilanciaViewModel() {
+  const { podeOperar } = useSessao()
   const catalogo = useCatalogo()
   const navegar = useNavigate()
   const [sensibilidade, setSensibilidade] = useState<Sensibilidade>('normal')
@@ -55,6 +57,7 @@ export function useVigilanciaViewModel() {
   }
 
   return {
+    podeOperar,
     sensibilidade, setSensibilidade, janela, setJanela,
     surtos: surtos.data ?? [], aCarregarSurtos: surtos.isLoading,
     cultura, setCultura: (c: string) => { setCultura(c); setClasse('') }, classe, setClasse, periodo, setPeriodo,

@@ -20,7 +20,7 @@ export function ValidacaoView() {
           <>
             <Seleccao vazio="Todas as culturas" value={vm.cultura} onChange={(ev) => vm.setCultura(ev.target.value)}
               opcoes={catalogo.culturas.map((c) => ({ valor: c.id, nome: c.nome }))} style={{ width: 200 }} />
-            {vm.eAdministrador && (
+            {vm.podeExportar && (
               <Botao onClick={vm.exportar} disabled={vm.aExportar || !e?.validados}>
                 <Download size={16} />{vm.aExportar ? 'A preparar…' : 'Exportar para retreino'}
               </Botao>

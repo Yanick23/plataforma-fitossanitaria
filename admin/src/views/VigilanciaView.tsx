@@ -50,7 +50,7 @@ export function VigilanciaView() {
                     <td className="numero">{numero(s.media_anterior)}</td>
                     <td className="numero">{s.razao === null ? <span className="suave">sem histórico</span> : `${String(s.razao).replace('.', ',')}×`}</td>
                     <td><Etiqueta tom={NIVEL[s.nivel].tom} icone={<TriangleAlert size={12} />}>{NIVEL[s.nivel].nome}</Etiqueta></td>
-                    <td style={{ width: 1 }}><Botao pequeno onClick={() => vm.criarAlerta(s)}><Megaphone size={14} />Criar alerta</Botao></td>
+                    <td style={{ width: 1 }}>{vm.podeOperar && <Botao pequeno onClick={() => vm.criarAlerta(s)}><Megaphone size={14} />Criar alerta</Botao>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -99,7 +99,7 @@ export function VigilanciaView() {
                           : <Etiqueta tom="aviso" icone={<CircleAlert size={12} />}>Suspeita</Etiqueta>}</td>
                         <td className="numero">{percentagem(d.confianca)}</td>
                         <td className="celula-principal"><strong style={{ fontWeight: 400 }}>{d.agricultor_nome}</strong><span className="mono">{d.agricultor_telefone}</span></td>
-                        <td style={{ width: 1 }}>{d.estado === 'SUSPEITA' && <Link to="/validacao" className="pequeno">Validar</Link>}</td>
+                        <td style={{ width: 1 }}>{d.estado === 'SUSPEITA' && vm.podeOperar && <Link to="/validacao" className="pequeno">Validar</Link>}</td>
                       </tr>
                     ))}
                   </tbody>
