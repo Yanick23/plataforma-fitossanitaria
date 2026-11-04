@@ -52,8 +52,12 @@ async def utilizador_actual(
     utilizador = await sessao.get(Utilizador, utilizador_id)
     if utilizador is None:
         raise NAO_AUTENTICADO
+    if not utilizador.activo:
+        raise CONTA_DESACTIVADA
     return utilizador
 
+
+CONTA_DESACTIVADA = HTTPException(status.HTTP_403_FORBIDDEN, "Conta desactivada. Contacte o administrador.")
 
 UtilizadorActual = Annotated[Utilizador, Depends(utilizador_actual)]
 
@@ -65,3 +69,13 @@ async def exigir_administrador(utilizador: UtilizadorActual) -> Utilizador:
 
 
 Administrador = Annotated[Utilizador, Depends(exigir_administrador)]
+
+
+async def exigir_pessoal(utilizador: UtilizadorActual) -> Utilizador:
+    """Técnico ou administrador (quem acompanha os agricultores de uma zona)."""
+    if utilizador.perfil not in (Perfil.TECNICO, Perfil.ADMINISTRADOR):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Operação reservada a técnicos e administradores")
+    return utilizador
+
+
+Pessoal = Annotated[Utilizador, Depends(exigir_pessoal)]

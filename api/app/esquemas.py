@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .tabelas import Perfil, TipoPatologia
+from .tabelas import EstadoModelo, EstadoVisita, NivelAlerta, Perfil, ResultadoTratamento, Seguiu, TipoPatologia
 
 
 class Esquema(BaseModel):
@@ -22,12 +22,14 @@ class Registo(Esquema):
     telefone: str = TELEFONE
     palavra_passe: str = Field(min_length=6, max_length=72)  # o bcrypt só usa 72 bytes
     area: str | None = Field(default=None, max_length=80, examples=["Boane"])
+    distrito_id: int | None = None  # se vier, tem prioridade sobre a área em texto
 
 
 class UtilizadorCriar(Registo):
     """Criação por um administrador (permite escolher o perfil, ex.: TECNICO)."""
 
     perfil: Perfil = Perfil.AGRICULTOR
+    provincia_codigo: str | None = None  # técnico provincial (sem distrito)
 
 
 class Login(Esquema):
@@ -41,6 +43,30 @@ class UtilizadorLer(Esquema):
     telefone: str
     perfil: Perfil
     area: str | None
+    distrito_id: int | None = None
+    provincia_codigo: str | None = None
+    activo: bool = True
+
+
+class UtilizadorAdminLer(UtilizadorLer):
+    criado_em: datetime
+    distrito_nome: str | None = None
+    provincia_nome: str | None = None
+    diagnosticos: int = 0
+
+
+class UtilizadorActualizar(Esquema):
+    """Só os campos enviados são alterados."""
+
+    nome: str | None = Field(default=None, min_length=2, max_length=120)
+    perfil: Perfil | None = None
+    distrito_id: int | None = None
+    provincia_codigo: str | None = None
+    activo: bool | None = None
+
+
+class NovaPalavraPasse(Esquema):
+    palavra_passe: str = Field(min_length=6, max_length=72)
 
 
 class Token(Esquema):
@@ -69,6 +95,10 @@ class PatologiaEscrever(Esquema):
     nome_cientifico: str
     tipo: TipoPatologia
     recomendacao: str
+    # Opcionais: se não forem enviados, ficam como estão.
+    sintomas: str | None = None
+    prevencao: str | None = None
+    declaracao_obrigatoria: bool = False
 
 
 class PatologiaCriar(PatologiaEscrever):
@@ -76,8 +106,18 @@ class PatologiaCriar(PatologiaEscrever):
     codigo: str = Field(pattern=r"^[a-z_]+$", examples=["mosaico"])
 
 
+class FotoLer(Esquema):
+    id: int
+    legenda: str | None
+    url: str  # caminho relativo à API, ex.: /fotos-referencia/3
+
+
 class PatologiaLer(PatologiaCriar):
     id: int
+    versao_conteudo: int = 1
+    validado_por_nome: str | None = None
+    validado_em: datetime | None = None
+    fotos: list[FotoLer] = []
 
 
 # --- Diagnósticos e sincronização -------------------------------------------
@@ -109,6 +149,251 @@ class DiagnosticoLer(Esquema):
     versao_modelo: int | None
     tempo_inferencia_ms: int | None
     tem_imagem: bool
+    # Validação pelo técnico (a app mostra «Confirmado» ou «Corrigido: ...»).
+    validacao: str = "PENDENTE"  # PENDENTE | CONFIRMADO | CORRIGIDO
+    classe_confirmada: str | None = None
+    nota_tecnico: str | None = None
+    seguimento_respondido: bool = False  # a app só pergunta «a planta melhorou?» uma vez
+
+
+class DiagnosticoAdminLer(DiagnosticoLer):
+    utilizador_nome: str
+    utilizador_telefone: str
+    distrito_id: int | None
+    distrito_nome: str | None
+    provincia_codigo: str | None
+    patologia_nome: str | None
+    tipo: TipoPatologia | None
+    tecnico_nome: str | None = None
+    validado_em: datetime | None = None
+
+
+class PaginaDiagnosticos(Esquema):
+    total: int
+    itens: list[DiagnosticoAdminLer]
+
+
+class PaginaUtilizadores(Esquema):
+    total: int
+    itens: list[UtilizadorAdminLer]
+
+
+# --- Regiões ----------------------------------------------------------------
+
+class ProvinciaLer(Esquema):
+    codigo: str
+    nome: str
+
+
+class DistritoLer(Esquema):
+    id: int
+    nome: str
+    provincia_codigo: str
+
+
+# --- Painel -----------------------------------------------------------------
+
+class Contagem(Esquema):
+    chave: str
+    nome: str
+    total: int
+
+
+class DiaContagem(Esquema):
+    dia: str  # AAAA-MM-DD
+    total: int
+    pragas: int
+    doencas: int
+
+
+class DistritoContagem(Esquema):
+    distrito_id: int
+    distrito: str
+    provincia_codigo: str
+    total: int
+    pragas_doencas: int
+    agricultores: int
+
+
+class Resumo(Esquema):
+    zona: str
+    agricultores: int
+    agricultores_novos_30d: int
+    tecnicos: int
+    diagnosticos: int
+    diagnosticos_30d: int
+    diagnosticos_30d_anteriores: int
+    confianca_baixa_30d: int
+    alertas_activos: int
+    por_dia: list[DiaContagem]
+    por_classe: list[Contagem]
+    por_cultura: list[Contagem]
+    por_distrito: list[DistritoContagem]
+
+
+# --- Alertas ----------------------------------------------------------------
+
+class AlertaCriar(Esquema):
+    titulo: str = Field(min_length=3, max_length=120)
+    mensagem: str = Field(min_length=3, max_length=2000)
+    nivel: NivelAlerta = NivelAlerta.AVISO
+    cultura_id: str | None = None
+    patologia_id: int | None = None
+    provincia_codigo: str | None = None
+    distrito_id: int | None = None
+    expira_em: datetime | None = None
+
+
+class AlertaLer(Esquema):
+    id: int
+    titulo: str
+    mensagem: str
+    nivel: NivelAlerta
+    cultura_id: str | None
+    patologia_id: int | None
+    patologia_nome: str | None
+    provincia_codigo: str | None
+    distrito_id: int | None
+    zona: str
+    autor_nome: str
+    criado_em: datetime
+    expira_em: datetime | None
+    arquivado: bool
+    destinatarios: int
+    lidos: int
+
+
+class AlertaAgricultorLer(Esquema):
+    id: int
+    titulo: str
+    mensagem: str
+    nivel: NivelAlerta
+    cultura_id: str | None
+    patologia_id: int | None
+    patologia_codigo: str | None = None  # a app procura a praga no catálogo local por cultura + código
+    zona: str
+    criado_em: datetime
+    expira_em: datetime | None
+    lido: bool
+
+
+class AlcanceAlerta(Esquema):
+    zona: str
+    destinatarios: int
+
+
+# --- Validação pelo técnico ---------------------------------------------------
+
+class ValidacaoEscrever(Esquema):
+    classe_confirmada: str = Field(min_length=1, max_length=60)
+    nota: str | None = Field(default=None, max_length=1000)
+
+
+class ExactidaoClasse(Esquema):
+    classe: str
+    nome: str
+    validados: int
+    correctos: int
+    exactidao: float | None
+
+
+class ExactidaoVersao(Esquema):
+    cultura_id: str
+    versao_modelo: int | None
+    validados: int
+    correctos: int
+    exactidao: float | None
+
+
+class Confusao(Esquema):
+    cultura_id: str
+    prevista: str
+    confirmada: str
+    total: int
+
+
+class ExactidaoCampo(Esquema):
+    zona: str
+    validados: int
+    correctos: int
+    exactidao: float | None
+    pendentes: int
+    por_classe: list[ExactidaoClasse]
+    por_versao: list[ExactidaoVersao]
+    confusoes: list[Confusao]
+
+
+# --- Pedidos de visita --------------------------------------------------------
+
+class VisitaCriar(Esquema):
+    diagnostico_id: UUID
+    mensagem: str | None = Field(default=None, max_length=1000)
+
+
+class VisitaActualizar(Esquema):
+    """O técnico agenda, resolve ou cancela; só os campos enviados mudam."""
+
+    estado: EstadoVisita | None = None
+    data_agendada: datetime | None = None
+    notas_tecnico: str | None = Field(default=None, max_length=2000)
+
+
+class VisitaLer(Esquema):
+    id: int
+    diagnostico_id: UUID
+    estado: EstadoVisita
+    mensagem: str | None
+    data_agendada: datetime | None
+    notas_tecnico: str | None
+    criado_em: datetime
+    actualizado_em: datetime
+    agricultor_nome: str
+    agricultor_telefone: str
+    tecnico_nome: str | None
+    distrito_nome: str | None
+    cultura_id: str
+    classe_prevista: str
+    patologia_nome: str | None
+
+
+# --- Vigilância ---------------------------------------------------------------
+
+class Surto(Esquema):
+    distrito_id: int
+    distrito: str
+    provincia_codigo: str
+    cultura_id: str
+    classe: str
+    patologia_nome: str
+    tipo: TipoPatologia
+    casos_recentes: int          # nos últimos `janela_dias`
+    media_anterior: float        # média por janela nas `semanas_base` anteriores
+    razao: float | None          # casos_recentes / media_anterior (None se a média for 0)
+    nivel: NivelAlerta           # AVISO ou URGENTE, conforme a subida
+
+
+class Ocorrencia(Esquema):
+    distrito_id: int
+    distrito: str
+    provincia_codigo: str
+    total: int
+
+
+# --- Auditoria ----------------------------------------------------------------
+
+class AuditoriaLer(Esquema):
+    id: int
+    utilizador_nome: str | None
+    accao: str
+    entidade: str
+    entidade_id: str | None
+    detalhes: str | None
+    criado_em: datetime
+
+
+class PaginaAuditoria(Esquema):
+    total: int
+    itens: list[AuditoriaLer]
 
 
 # --- Modelos ML -------------------------------------------------------------
@@ -122,3 +407,114 @@ class ModeloLer(Esquema):
     sha256: str
     url_ficheiro: str
     criado_em: datetime
+    estado: EstadoModelo = EstadoModelo.PUBLICADO
+    distritos_piloto: list[int] = []
+    notas: str | None = None
+
+
+class ModeloActualizar(Esquema):
+    estado: EstadoModelo | None = None
+    distritos_piloto: list[int] | None = None
+    notas: str | None = None
+    forcar: bool = False  # passar à frente da porta de qualidade (fica na auditoria)
+
+
+class SemanaModelo(Esquema):
+    semana: str  # segunda-feira da semana, AAAA-MM-DD
+    versao: int | None
+    diagnosticos: int
+    confianca_media: float
+    taxa_baixa: float  # proporção com confiança < 60%
+    validados: int
+    exactidao: float | None
+
+
+class SinalDeriva(Esquema):
+    versao: int
+    taxa_baixa_inicial: float
+    taxa_baixa_recente: float
+    diagnosticos_recentes: int
+    deriva: bool
+    explicacao: str
+
+
+class Monitorizacao(Esquema):
+    cultura_id: str
+    semanas: list[SemanaModelo]
+    sinais: list[SinalDeriva]
+
+
+class PortaQualidade(Esquema):
+    versao: int
+    validados: int
+    exactidao: float | None
+    referencia_versao: int | None
+    referencia_exactidao: float | None
+    aprovado: bool
+    motivo: str
+
+
+# --- Seguimento do tratamento --------------------------------------------------
+
+class SeguimentoEscrever(Esquema):
+    seguiu: Seguiu
+    resultado: ResultadoTratamento
+    comentario: str | None = Field(default=None, max_length=500)
+
+
+class EficaciaPatologia(Esquema):
+    cultura_id: str
+    classe: str
+    nome: str
+    respostas: int
+    seguiram: int        # SIM ou PARCIAL
+    melhoraram: int      # dos que seguiram
+    eficacia: float | None  # melhoraram / seguiram
+
+
+# --- Declaração obrigatória ------------------------------------------------------
+
+class Declaracao(Esquema):
+    diagnostico_id: UUID
+    cultura_id: str
+    classe: str
+    patologia_nome: str
+    estado: str  # CONFIRMADO (validado pelo técnico) ou SUSPEITA (só previsto pelo modelo)
+    confianca: float
+    data: datetime
+    distrito_nome: str | None
+    provincia_codigo: str | None
+    agricultor_nome: str
+    agricultor_telefone: str
+
+
+# --- Boletim ------------------------------------------------------------------
+
+class LinhaBoletim(Esquema):
+    nome: str
+    valor: int
+    detalhe: str | None = None
+
+
+class Boletim(Esquema):
+    zona: str
+    inicio: datetime
+    fim: datetime
+    gerado_em: datetime
+    diagnosticos: int
+    diagnosticos_pragas_doencas: int
+    agricultores_activos: int
+    agricultores_novos: int
+    taxa_confianca_baixa: float | None
+    validados: int
+    exactidao_campo: float | None
+    alertas_enviados: int
+    visitas_pedidas: int
+    visitas_resolvidas: int
+    dias_medios_resolucao: float | None
+    principais_pragas: list[LinhaBoletim]
+    distritos_mais_afectados: list[LinhaBoletim]
+    alertas: list[AlertaLer]
+    surtos: list[Surto]
+    declaracoes: list[Declaracao]
+    eficacia: list[EficaciaPatologia]
