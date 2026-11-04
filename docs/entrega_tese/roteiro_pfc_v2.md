@@ -259,7 +259,7 @@ Nova ordem sugerida:
 
 ## 5. Diagramas novos (substituem as Figuras 5.1 a 5.6)
 
-O Claude Code pode gerá-los a partir do código, para garantir que batem com a implementação.
+**Feitos** (04/11): estão em `diagramas_v2/` em `.drawio` e `.png`, no estilo da v1. Ver `diagramas_v2/LEIA-ME.md`, que diz também que figuras da v1 sair ou ficar.
 
 | ID | Diagrama | Conteúdo |
 |---|---|---|
@@ -321,7 +321,7 @@ cada uma na fonte original antes de a pôr nas referências; não inventar dados
 | Tarefa | Quem |
 |---|---|
 | Reescrever o texto (caps. I a VI, resumo, anexos) seguindo este roteiro | Projecto do Claude na web |
-| Gerar os diagramas D1 a D6 a partir do código | Claude Code |
+| Gerar os diagramas D1 a D6 a partir do código | Claude Code (**feito**) |
 | Recontar os pontos de função e refazer o COCOMO II e o orçamento | Claude Code (o texto da web usa os números) |
 | Tabela de casos de teste T14 em diante, com os resultados reais | Claude Code |
 | Verificar que o texto final diz a verdade sobre a plataforma (números, nomes, funcionalidades) | Claude Code, no fim |
