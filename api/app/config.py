@@ -23,6 +23,10 @@ class Definicoes(BaseSettings):
     # Origens do painel web autorizadas (CORS). No .env: CORS_ORIGENS=["http://localhost:5173"]
     cors_origens: list[str] = [f"http://{h}:{p}" for h in ("localhost", "127.0.0.1") for p in (5173, 5174, 4173)]
 
+    # Previsão do tempo (risco meteorológico): Open-Meteo, gratuita e sem chave.
+    meteo_url: str = "https://api.open-meteo.com/v1/forecast"
+    meteo_validade_horas: float = 3.0  # depois disto pede-se uma previsão nova
+
     # Ficheiros guardados pela API (fora do Git).
     pasta_modelos: Path = PASTA_API / "modelos"
     pasta_imagens: Path = PASTA_API / "dados" / "imagens"

@@ -1,6 +1,6 @@
 """Esquemas Pydantic de todos os pedidos e respostas (validados automaticamente)."""
 
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -533,3 +533,44 @@ class Boletim(Esquema):
     surtos: list[Surto]
     declaracoes: list[Declaracao]
     eficacia: list[EficaciaPatologia]
+
+
+# --- Risco meteorológico ----------------------------------------------------------------
+
+class RiscoDistrito(Esquema):
+    distrito_id: int
+    distrito: str
+    provincia_codigo: str
+    cultura_id: str
+    classe: str
+    patologia_id: int
+    patologia_nome: str
+    nivel: str  # ALTO ou MEDIO
+    motivo: str
+    dias_favoraveis: int
+    de: date
+    ate: date
+    evidencia: str
+    previsao_obtida_em: datetime
+
+
+class RegraRisco(Esquema):
+    cultura_id: str
+    classe: str
+    patologia_nome: str
+    condicao: str
+    fontes: list[str]
+    evidencia: str
+    limiares_de_projecto: list[str]
+
+
+class RiscoMeteorologico(Esquema):
+    gerado_em: datetime
+    fonte: str
+    aviso: str
+    erro: str | None
+    distritos_avaliados: int
+    distritos_com_agricultores: int
+    previsao_mais_antiga: datetime | None
+    itens: list[RiscoDistrito]
+    regras: list[RegraRisco]

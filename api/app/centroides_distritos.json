@@ -1,0 +1,947 @@
+{
+ "fonte": "Centro de cada distrito calculado a partir de mapa_mocambique.json",
+ "distritos": [
+  {
+   "nome": "Chimbonila",
+   "provincia": "MZ-A",
+   "latitude": -13.3919,
+   "longitude": 35.2887
+  },
+  {
+   "nome": "Cidade de Lichinga",
+   "provincia": "MZ-A",
+   "latitude": -13.2988,
+   "longitude": 35.2467
+  },
+  {
+   "nome": "Cuamba",
+   "provincia": "MZ-A",
+   "latitude": -14.748,
+   "longitude": 36.5442
+  },
+  {
+   "nome": "Lago",
+   "provincia": "MZ-A",
+   "latitude": -12.3045,
+   "longitude": 34.9911
+  },
+  {
+   "nome": "Lago Niassa",
+   "provincia": "MZ-A",
+   "latitude": -12.4684,
+   "longitude": 34.6611
+  },
+  {
+   "nome": "Majune",
+   "provincia": "MZ-A",
+   "latitude": -13.3214,
+   "longitude": 36.3734
+  },
+  {
+   "nome": "Mandimba",
+   "provincia": "MZ-A",
+   "latitude": -14.2084,
+   "longitude": 35.8978
+  },
+  {
+   "nome": "Marrupa",
+   "provincia": "MZ-A",
+   "latitude": -13.0318,
+   "longitude": 37.5194
+  },
+  {
+   "nome": "Maua",
+   "provincia": "MZ-A",
+   "latitude": -13.9034,
+   "longitude": 37.0413
+  },
+  {
+   "nome": "Mavago",
+   "provincia": "MZ-A",
+   "latitude": -12.2357,
+   "longitude": 36.4064
+  },
+  {
+   "nome": "Mecanhelas",
+   "provincia": "MZ-A",
+   "latitude": -15.0044,
+   "longitude": 36.0763
+  },
+  {
+   "nome": "Mecula",
+   "provincia": "MZ-A",
+   "latitude": -11.9597,
+   "longitude": 37.5653
+  },
+  {
+   "nome": "Metarica",
+   "provincia": "MZ-A",
+   "latitude": -14.3234,
+   "longitude": 36.8615
+  },
+  {
+   "nome": "Muembe",
+   "provincia": "MZ-A",
+   "latitude": -12.8263,
+   "longitude": 35.8114
+  },
+  {
+   "nome": "Ngauma",
+   "provincia": "MZ-A",
+   "latitude": -13.8217,
+   "longitude": 35.5748
+  },
+  {
+   "nome": "Nipepe",
+   "provincia": "MZ-A",
+   "latitude": -13.9881,
+   "longitude": 37.9029
+  },
+  {
+   "nome": "Sanga",
+   "provincia": "MZ-A",
+   "latitude": -12.1784,
+   "longitude": 35.5598
+  },
+  {
+   "nome": "Barue",
+   "provincia": "MZ-B",
+   "latitude": -17.9959,
+   "longitude": 33.225
+  },
+  {
+   "nome": "Cidade de Chimoio",
+   "provincia": "MZ-B",
+   "latitude": -19.1282,
+   "longitude": 33.4569
+  },
+  {
+   "nome": "Gondola",
+   "provincia": "MZ-B",
+   "latitude": -19.1507,
+   "longitude": 33.8048
+  },
+  {
+   "nome": "Guro",
+   "provincia": "MZ-B",
+   "latitude": -16.974,
+   "longitude": 33.5379
+  },
+  {
+   "nome": "Macate",
+   "provincia": "MZ-B",
+   "latitude": -19.3662,
+   "longitude": 33.5365
+  },
+  {
+   "nome": "Machaze",
+   "provincia": "MZ-B",
+   "latitude": -21.0432,
+   "longitude": 33.271
+  },
+  {
+   "nome": "Macossa",
+   "provincia": "MZ-B",
+   "latitude": -17.9114,
+   "longitude": 33.7889
+  },
+  {
+   "nome": "Manica",
+   "provincia": "MZ-B",
+   "latitude": -18.8267,
+   "longitude": 32.9937
+  },
+  {
+   "nome": "Mossurize",
+   "provincia": "MZ-B",
+   "latitude": -20.5148,
+   "longitude": 32.9427
+  },
+  {
+   "nome": "Sussundenga",
+   "provincia": "MZ-B",
+   "latitude": -19.6711,
+   "longitude": 33.2642
+  },
+  {
+   "nome": "Tambara",
+   "provincia": "MZ-B",
+   "latitude": -16.964,
+   "longitude": 34.104
+  },
+  {
+   "nome": "Vanduzi",
+   "provincia": "MZ-B",
+   "latitude": -18.8476,
+   "longitude": 33.3881
+  },
+  {
+   "nome": "Bilene",
+   "provincia": "MZ-G",
+   "latitude": -25.0531,
+   "longitude": 33.1324
+  },
+  {
+   "nome": "Chibuto",
+   "provincia": "MZ-G",
+   "latitude": -24.3006,
+   "longitude": 33.6089
+  },
+  {
+   "nome": "Chicualacuala",
+   "provincia": "MZ-G",
+   "latitude": -22.7453,
+   "longitude": 31.8635
+  },
+  {
+   "nome": "Chigubo",
+   "provincia": "MZ-G",
+   "latitude": -23.1279,
+   "longitude": 33.4276
+  },
+  {
+   "nome": "Chokwe",
+   "provincia": "MZ-G",
+   "latitude": -24.5617,
+   "longitude": 32.9552
+  },
+  {
+   "nome": "Chongoene",
+   "provincia": "MZ-G",
+   "latitude": -24.9013,
+   "longitude": 33.8783
+  },
+  {
+   "nome": "Cidade de Xai-Xai",
+   "provincia": "MZ-G",
+   "latitude": -25.0493,
+   "longitude": 33.6577
+  },
+  {
+   "nome": "Guija",
+   "provincia": "MZ-G",
+   "latitude": -24.168,
+   "longitude": 33.1208
+  },
+  {
+   "nome": "Limpopo",
+   "provincia": "MZ-G",
+   "latitude": -25.0145,
+   "longitude": 33.4322
+  },
+  {
+   "nome": "Mabalane",
+   "provincia": "MZ-G",
+   "latitude": -23.4807,
+   "longitude": 32.7382
+  },
+  {
+   "nome": "Mandlakaze",
+   "provincia": "MZ-G",
+   "latitude": -24.5818,
+   "longitude": 34.0875
+  },
+  {
+   "nome": "Mapai",
+   "provincia": "MZ-G",
+   "latitude": -22.5849,
+   "longitude": 32.5564
+  },
+  {
+   "nome": "Massangena",
+   "provincia": "MZ-G",
+   "latitude": -21.749,
+   "longitude": 32.5926
+  },
+  {
+   "nome": "Massingir",
+   "provincia": "MZ-G",
+   "latitude": -23.8684,
+   "longitude": 32.0934
+  },
+  {
+   "nome": "Cidade de Inhambane",
+   "provincia": "MZ-I",
+   "latitude": -23.8882,
+   "longitude": 35.4693
+  },
+  {
+   "nome": "Funhalouro",
+   "provincia": "MZ-I",
+   "latitude": -23.0571,
+   "longitude": 34.3059
+  },
+  {
+   "nome": "Govuro",
+   "provincia": "MZ-I",
+   "latitude": -21.3186,
+   "longitude": 34.6768
+  },
+  {
+   "nome": "Homoine",
+   "provincia": "MZ-I",
+   "latitude": -23.8772,
+   "longitude": 35.0408
+  },
+  {
+   "nome": "Inharrime",
+   "provincia": "MZ-I",
+   "latitude": -24.401,
+   "longitude": 34.77
+  },
+  {
+   "nome": "Inhassoro",
+   "provincia": "MZ-I",
+   "latitude": -21.7503,
+   "longitude": 34.86
+  },
+  {
+   "nome": "Jangamo",
+   "provincia": "MZ-I",
+   "latitude": -24.163,
+   "longitude": 35.2712
+  },
+  {
+   "nome": "Mabote",
+   "provincia": "MZ-I",
+   "latitude": -22.0039,
+   "longitude": 33.8013
+  },
+  {
+   "nome": "Massinga",
+   "provincia": "MZ-I",
+   "latitude": -22.8376,
+   "longitude": 35.0195
+  },
+  {
+   "nome": "Maxixe",
+   "provincia": "MZ-I",
+   "latitude": -23.8825,
+   "longitude": 35.3091
+  },
+  {
+   "nome": "Morrumbene",
+   "provincia": "MZ-I",
+   "latitude": -23.476,
+   "longitude": 35.0994
+  },
+  {
+   "nome": "Panda",
+   "provincia": "MZ-I",
+   "latitude": -24.0158,
+   "longitude": 34.4009
+  },
+  {
+   "nome": "Vilankulo",
+   "provincia": "MZ-I",
+   "latitude": -22.3014,
+   "longitude": 35.1259
+  },
+  {
+   "nome": "Zavala",
+   "provincia": "MZ-I",
+   "latitude": -24.6518,
+   "longitude": 34.6666
+  },
+  {
+   "nome": "Boane",
+   "provincia": "MZ-L",
+   "latitude": -26.0364,
+   "longitude": 32.3515
+  },
+  {
+   "nome": "Cidade da Matola",
+   "provincia": "MZ-L",
+   "latitude": -25.8352,
+   "longitude": 32.4948
+  },
+  {
+   "nome": "Magude",
+   "provincia": "MZ-L",
+   "latitude": -24.7016,
+   "longitude": 32.4382
+  },
+  {
+   "nome": "Manhiça",
+   "provincia": "MZ-L",
+   "latitude": -25.3098,
+   "longitude": 32.8258
+  },
+  {
+   "nome": "Marracuene",
+   "provincia": "MZ-L",
+   "latitude": -25.6574,
+   "longitude": 32.7132
+  },
+  {
+   "nome": "Matutuine",
+   "provincia": "MZ-L",
+   "latitude": -26.5277,
+   "longitude": 32.5635
+  },
+  {
+   "nome": "Moamba",
+   "provincia": "MZ-L",
+   "latitude": -25.3459,
+   "longitude": 32.2534
+  },
+  {
+   "nome": "Namaacha",
+   "provincia": "MZ-L",
+   "latitude": -26.061,
+   "longitude": 32.1612
+  },
+  {
+   "nome": "Cidade de Maputo",
+   "provincia": "MZ-MPM",
+   "latitude": -25.9622,
+   "longitude": 32.6254
+  },
+  {
+   "nome": "Angoche",
+   "provincia": "MZ-N",
+   "latitude": -16.095,
+   "longitude": 39.8046
+  },
+  {
+   "nome": "Cidade de Nampula",
+   "provincia": "MZ-N",
+   "latitude": -15.1046,
+   "longitude": 39.2646
+  },
+  {
+   "nome": "Erati",
+   "provincia": "MZ-N",
+   "latitude": -13.9198,
+   "longitude": 39.7727
+  },
+  {
+   "nome": "Ilha de Moçambique",
+   "provincia": "MZ-N",
+   "latitude": -15.0514,
+   "longitude": 40.6195
+  },
+  {
+   "nome": "Lalaua",
+   "provincia": "MZ-N",
+   "latitude": -14.4378,
+   "longitude": 38.1254
+  },
+  {
+   "nome": "Larde",
+   "provincia": "MZ-N",
+   "latitude": -16.3658,
+   "longitude": 39.4872
+  },
+  {
+   "nome": "Liúpo",
+   "provincia": "MZ-N",
+   "latitude": -15.6787,
+   "longitude": 40.0194
+  },
+  {
+   "nome": "Malema",
+   "provincia": "MZ-N",
+   "latitude": -14.7993,
+   "longitude": 37.3899
+  },
+  {
+   "nome": "Meconta",
+   "provincia": "MZ-N",
+   "latitude": -15.2835,
+   "longitude": 39.646
+  },
+  {
+   "nome": "Mecuburi",
+   "provincia": "MZ-N",
+   "latitude": -14.4772,
+   "longitude": 38.9153
+  },
+  {
+   "nome": "Memba",
+   "provincia": "MZ-N",
+   "latitude": -13.9672,
+   "longitude": 40.3949
+  },
+  {
+   "nome": "Mogincual",
+   "provincia": "MZ-N",
+   "latitude": -15.4134,
+   "longitude": 40.1501
+  },
+  {
+   "nome": "Mogovolas",
+   "provincia": "MZ-N",
+   "latitude": -15.7386,
+   "longitude": 39.2594
+  },
+  {
+   "nome": "Moma",
+   "provincia": "MZ-N",
+   "latitude": -16.3552,
+   "longitude": 39.1678
+  },
+  {
+   "nome": "Monapo",
+   "provincia": "MZ-N",
+   "latitude": -14.7923,
+   "longitude": 40.134
+  },
+  {
+   "nome": "Mossuril",
+   "provincia": "MZ-N",
+   "latitude": -15.0631,
+   "longitude": 40.5141
+  },
+  {
+   "nome": "Muecate",
+   "provincia": "MZ-N",
+   "latitude": -14.6844,
+   "longitude": 39.5329
+  },
+  {
+   "nome": "Murrupula",
+   "provincia": "MZ-N",
+   "latitude": -15.4015,
+   "longitude": 38.6618
+  },
+  {
+   "nome": "Nacala",
+   "provincia": "MZ-N",
+   "latitude": -14.5387,
+   "longitude": 40.7193
+  },
+  {
+   "nome": "Nacala-a-Velha",
+   "provincia": "MZ-N",
+   "latitude": -14.5631,
+   "longitude": 40.4838
+  },
+  {
+   "nome": "Nacaroa",
+   "provincia": "MZ-N",
+   "latitude": -14.3374,
+   "longitude": 39.9052
+  },
+  {
+   "nome": "Rapale",
+   "provincia": "MZ-N",
+   "latitude": -15.1263,
+   "longitude": 39.1381
+  },
+  {
+   "nome": "Ribaue",
+   "provincia": "MZ-N",
+   "latitude": -15.008,
+   "longitude": 38.1944
+  },
+  {
+   "nome": "Ancuabe",
+   "provincia": "MZ-P",
+   "latitude": -12.9719,
+   "longitude": 39.7736
+  },
+  {
+   "nome": "Balama",
+   "provincia": "MZ-P",
+   "latitude": -13.4649,
+   "longitude": 38.4068
+  },
+  {
+   "nome": "Chiure",
+   "provincia": "MZ-P",
+   "latitude": -13.4678,
+   "longitude": 39.7035
+  },
+  {
+   "nome": "Cidade de Pemba",
+   "provincia": "MZ-P",
+   "latitude": -13.0222,
+   "longitude": 40.5295
+  },
+  {
+   "nome": "Ibo",
+   "provincia": "MZ-P",
+   "latitude": -12.3271,
+   "longitude": 40.5939
+  },
+  {
+   "nome": "Macomia",
+   "provincia": "MZ-P",
+   "latitude": -12.0644,
+   "longitude": 40.1915
+  },
+  {
+   "nome": "Mecufi",
+   "provincia": "MZ-P",
+   "latitude": -13.2408,
+   "longitude": 40.4031
+  },
+  {
+   "nome": "Meluco",
+   "provincia": "MZ-P",
+   "latitude": -12.4667,
+   "longitude": 39.6245
+  },
+  {
+   "nome": "Metuge",
+   "provincia": "MZ-P",
+   "latitude": -12.8978,
+   "longitude": 40.3129
+  },
+  {
+   "nome": "Mocimboa da Praia",
+   "provincia": "MZ-P",
+   "latitude": -11.4345,
+   "longitude": 40.1639
+  },
+  {
+   "nome": "Montepuez",
+   "provincia": "MZ-P",
+   "latitude": -12.6056,
+   "longitude": 38.7284
+  },
+  {
+   "nome": "Mueda",
+   "provincia": "MZ-P",
+   "latitude": -11.5902,
+   "longitude": 39.1306
+  },
+  {
+   "nome": "Muidumbe",
+   "provincia": "MZ-P",
+   "latitude": -11.8358,
+   "longitude": 39.8368
+  },
+  {
+   "nome": "Namuno",
+   "provincia": "MZ-P",
+   "latitude": -13.7451,
+   "longitude": 38.8942
+  },
+  {
+   "nome": "Nangade",
+   "provincia": "MZ-P",
+   "latitude": -11.1615,
+   "longitude": 39.7764
+  },
+  {
+   "nome": "Palma",
+   "provincia": "MZ-P",
+   "latitude": -10.8655,
+   "longitude": 40.32
+  },
+  {
+   "nome": "Quissanga",
+   "provincia": "MZ-P",
+   "latitude": -12.5748,
+   "longitude": 40.3223
+  },
+  {
+   "nome": "Alto Molocue",
+   "provincia": "MZ-Q",
+   "latitude": -15.65,
+   "longitude": 37.6639
+  },
+  {
+   "nome": "Chinde",
+   "provincia": "MZ-Q",
+   "latitude": -18.4236,
+   "longitude": 36.4028
+  },
+  {
+   "nome": "Cidade de Quelimane",
+   "provincia": "MZ-Q",
+   "latitude": -17.8636,
+   "longitude": 36.9135
+  },
+  {
+   "nome": "Derre",
+   "provincia": "MZ-Q",
+   "latitude": -17.0837,
+   "longitude": 36.1342
+  },
+  {
+   "nome": "Gile",
+   "provincia": "MZ-Q",
+   "latitude": -15.9288,
+   "longitude": 38.3069
+  },
+  {
+   "nome": "Gurue",
+   "provincia": "MZ-Q",
+   "latitude": -15.3503,
+   "longitude": 36.947
+  },
+  {
+   "nome": "Ile",
+   "provincia": "MZ-Q",
+   "latitude": -16.0049,
+   "longitude": 37.3108
+  },
+  {
+   "nome": "Inhassunge",
+   "provincia": "MZ-Q",
+   "latitude": -18.0593,
+   "longitude": 36.8021
+  },
+  {
+   "nome": "Luabo",
+   "provincia": "MZ-Q",
+   "latitude": -18.3164,
+   "longitude": 36.0977
+  },
+  {
+   "nome": "Lugela",
+   "provincia": "MZ-Q",
+   "latitude": -16.3058,
+   "longitude": 36.6525
+  },
+  {
+   "nome": "Maganja da Costa",
+   "provincia": "MZ-Q",
+   "latitude": -17.3202,
+   "longitude": 37.4293
+  },
+  {
+   "nome": "Maquival",
+   "provincia": "MZ-Q",
+   "latitude": -17.8069,
+   "longitude": 37.0474
+  },
+  {
+   "nome": "Milange",
+   "provincia": "MZ-Q",
+   "latitude": -16.2905,
+   "longitude": 35.8223
+  },
+  {
+   "nome": "Mocuba",
+   "provincia": "MZ-Q",
+   "latitude": -16.8544,
+   "longitude": 36.8622
+  },
+  {
+   "nome": "Mocubela",
+   "provincia": "MZ-Q",
+   "latitude": -16.9815,
+   "longitude": 37.7417
+  },
+  {
+   "nome": "Molumbo",
+   "provincia": "MZ-Q",
+   "latitude": -15.6687,
+   "longitude": 36.2019
+  },
+  {
+   "nome": "Mopeia",
+   "provincia": "MZ-Q",
+   "latitude": -17.834,
+   "longitude": 36.0617
+  },
+  {
+   "nome": "Morrumbala",
+   "provincia": "MZ-Q",
+   "latitude": -17.0439,
+   "longitude": 35.586
+  },
+  {
+   "nome": "Mulevala",
+   "provincia": "MZ-Q",
+   "latitude": -16.3735,
+   "longitude": 37.6348
+  },
+  {
+   "nome": "Namacurra",
+   "provincia": "MZ-Q",
+   "latitude": -17.4819,
+   "longitude": 37.0729
+  },
+  {
+   "nome": "Namarroi",
+   "provincia": "MZ-Q",
+   "latitude": -15.8558,
+   "longitude": 36.8069
+  },
+  {
+   "nome": "Nicoadala",
+   "provincia": "MZ-Q",
+   "latitude": -17.5728,
+   "longitude": 36.6737
+  },
+  {
+   "nome": "Pebane",
+   "provincia": "MZ-Q",
+   "latitude": -16.7195,
+   "longitude": 38.5396
+  },
+  {
+   "nome": "Buzi",
+   "provincia": "MZ-S",
+   "latitude": -20.0408,
+   "longitude": 34.372
+  },
+  {
+   "nome": "Caia",
+   "provincia": "MZ-S",
+   "latitude": -17.7844,
+   "longitude": 35.0075
+  },
+  {
+   "nome": "Chemba",
+   "provincia": "MZ-S",
+   "latitude": -17.2063,
+   "longitude": 34.6294
+  },
+  {
+   "nome": "Cheringoma",
+   "provincia": "MZ-S",
+   "latitude": -18.5292,
+   "longitude": 35.2229
+  },
+  {
+   "nome": "Chibabava",
+   "provincia": "MZ-S",
+   "latitude": -20.3695,
+   "longitude": 33.8824
+  },
+  {
+   "nome": "Cidade da Beira",
+   "provincia": "MZ-S",
+   "latitude": -19.7165,
+   "longitude": 34.9316
+  },
+  {
+   "nome": "Dondo",
+   "provincia": "MZ-S",
+   "latitude": -19.493,
+   "longitude": 34.8285
+  },
+  {
+   "nome": "Gorongosa",
+   "provincia": "MZ-S",
+   "latitude": -18.6151,
+   "longitude": 34.2169
+  },
+  {
+   "nome": "Machanga",
+   "provincia": "MZ-S",
+   "latitude": -20.9126,
+   "longitude": 34.521
+  },
+  {
+   "nome": "Maringue",
+   "provincia": "MZ-S",
+   "latitude": -17.8574,
+   "longitude": 34.4837
+  },
+  {
+   "nome": "Marromeu",
+   "provincia": "MZ-S",
+   "latitude": -18.4257,
+   "longitude": 35.7413
+  },
+  {
+   "nome": "Muanza",
+   "provincia": "MZ-S",
+   "latitude": -19.0842,
+   "longitude": 35.0582
+  },
+  {
+   "nome": "Nhamatanda",
+   "provincia": "MZ-S",
+   "latitude": -19.3363,
+   "longitude": 34.2398
+  },
+  {
+   "nome": "Angonia",
+   "provincia": "MZ-T",
+   "latitude": -14.6756,
+   "longitude": 34.1617
+  },
+  {
+   "nome": "Cahora Bassa",
+   "provincia": "MZ-T",
+   "latitude": -16.0265,
+   "longitude": 32.5049
+  },
+  {
+   "nome": "Changara",
+   "provincia": "MZ-T",
+   "latitude": -16.5856,
+   "longitude": 33.1331
+  },
+  {
+   "nome": "Chifunde",
+   "provincia": "MZ-T",
+   "latitude": -14.617,
+   "longitude": 32.8285
+  },
+  {
+   "nome": "Chiuta",
+   "provincia": "MZ-T",
+   "latitude": -15.4721,
+   "longitude": 33.4536
+  },
+  {
+   "nome": "Cidade de Tete",
+   "provincia": "MZ-T",
+   "latitude": -16.1415,
+   "longitude": 33.5665
+  },
+  {
+   "nome": "Doa",
+   "provincia": "MZ-T",
+   "latitude": -16.5978,
+   "longitude": 34.5169
+  },
+  {
+   "nome": "Macanga",
+   "provincia": "MZ-T",
+   "latitude": -14.8032,
+   "longitude": 33.5339
+  },
+  {
+   "nome": "Magoe",
+   "provincia": "MZ-T",
+   "latitude": -15.903,
+   "longitude": 31.3622
+  },
+  {
+   "nome": "Marara",
+   "provincia": "MZ-T",
+   "latitude": -16.0574,
+   "longitude": 33.1761
+  },
+  {
+   "nome": "Maravia",
+   "provincia": "MZ-T",
+   "latitude": -15.0942,
+   "longitude": 32.0646
+  },
+  {
+   "nome": "Moatize",
+   "provincia": "MZ-T",
+   "latitude": -15.9739,
+   "longitude": 34.0024
+  },
+  {
+   "nome": "Mutarara",
+   "provincia": "MZ-T",
+   "latitude": -17.2248,
+   "longitude": 35.1098
+  },
+  {
+   "nome": "Tsangano",
+   "provincia": "MZ-T",
+   "latitude": -15.1263,
+   "longitude": 34.3446
+  },
+  {
+   "nome": "Zumbu",
+   "provincia": "MZ-T",
+   "latitude": -15.2322,
+   "longitude": 30.9331
+  }
+ ]
+}
