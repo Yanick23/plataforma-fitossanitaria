@@ -1,0 +1,163 @@
+/* Tokens do painel. A interface usa o verde agronómico da app; os gráficos usam a paleta
+   validada (azul sequencial, categóricas azul/laranja, estados com ícone + texto). */
+
+:root {
+  color-scheme: light;
+
+  /* Superfícies */
+  --plano: #f4f4f0;
+  --superficie: #fcfcfb;
+  --superficie-2: #f0efea;
+  --superficie-elevada: #ffffff;
+  --linha: #e1e0d9;
+  --linha-forte: #c3c2b7;
+  --contorno: rgba(11, 11, 11, 0.1);
+
+  /* Tinta */
+  --tinta: #0b0b0b;
+  --tinta-2: #52514e;
+  --tinta-3: #898781;
+  --tinta-inversa: #ffffff;
+
+  /* Marca */
+  --marca: #13693b;
+  --marca-forte: #0d4f2c;
+  --marca-suave: #e5f0e9;
+  --marca-texto: #0f5a32;
+  --foco: #2a78d6;
+
+  /* Estados (sempre com ícone + texto) */
+  --bom: #0ca30c;
+  --bom-texto: #006300;
+  --bom-suave: #e3f3e3;
+  --aviso: #fab219;
+  --aviso-texto: #7a5200;
+  --aviso-suave: #fdf1d5;
+  --serio: #ec835a;
+  --critico: #d03b3b;
+  --critico-texto: #a42626;
+  --critico-suave: #fbe6e5;
+  --info-texto: #1c5cab;
+  --info-suave: #e3eefb;
+
+  /* Gráficos (paleta de referência validada) */
+  --serie-1: #2a78d6;
+  --serie-2: #eb6834;
+  --serie-3: #1baf7a;
+  --seq-0: #f0efea;
+  --seq-1: #cde2fb;
+  --seq-2: #9ec5f4;
+  --seq-3: #5598e7;
+  --seq-4: #256abf;
+  --seq-5: #104281;
+  --grelha: #e1e0d9;
+  --eixo: #c3c2b7;
+
+  /* Tipografia */
+  --letra: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --letra-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --t-11: 11px;
+  --t-12: 12px;
+  --t-13: 13px;
+  --t-14: 14px;
+  --t-16: 16px;
+  --t-20: 20px;
+  --t-24: 24px;
+  --t-32: 32px;
+
+  /* Espaço e forma */
+  --e-1: 4px;
+  --e-2: 8px;
+  --e-3: 12px;
+  --e-4: 16px;
+  --e-5: 20px;
+  --e-6: 24px;
+  --e-8: 32px;
+  --raio: 6px;
+  --raio-g: 10px;
+  --sombra: 0 1px 2px rgba(11, 11, 11, 0.04), 0 0 0 1px var(--contorno);
+  --sombra-flutuante: 0 12px 32px rgba(11, 11, 11, 0.14), 0 0 0 1px var(--contorno);
+  --lateral: 240px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) {
+    color-scheme: dark;
+    --plano: #0f0f0e;
+    --superficie: #1a1a19;
+    --superficie-2: #232321;
+    --superficie-elevada: #20201e;
+    --linha: #2c2c2a;
+    --linha-forte: #383835;
+    --contorno: rgba(255, 255, 255, 0.1);
+    --tinta: #f0efec;
+    --tinta-2: #c3c2b7;
+    --tinta-3: #898781;
+    --marca: #2f9a5c;
+    --marca-forte: #3fb06e;
+    --marca-suave: #17301f;
+    --marca-texto: #6fcf97;
+    --foco: #5598e7;
+    --bom-texto: #0ca30c;
+    --bom-suave: #142a14;
+    --aviso-texto: #fab219;
+    --aviso-suave: #2e2410;
+    --critico-texto: #e66767;
+    --critico-suave: #331717;
+    --info-texto: #86b6ef;
+    --info-suave: #13243a;
+    --serie-1: #3987e5;
+    --serie-2: #d95926;
+    --serie-3: #199e70;
+    --seq-0: #232321;
+    --seq-1: #13304f;
+    --seq-2: #184f95;
+    --seq-3: #2a78d6;
+    --seq-4: #6da7ec;
+    --seq-5: #b7d3f6;
+    --grelha: #2c2c2a;
+    --eixo: #383835;
+    --sombra: 0 0 0 1px var(--contorno);
+    --sombra-flutuante: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--contorno);
+  }
+}
+
+:root[data-tema="escuro"] {
+  color-scheme: dark;
+  --plano: #0f0f0e;
+  --superficie: #1a1a19;
+  --superficie-2: #232321;
+  --superficie-elevada: #20201e;
+  --linha: #2c2c2a;
+  --linha-forte: #383835;
+  --contorno: rgba(255, 255, 255, 0.1);
+  --tinta: #f0efec;
+  --tinta-2: #c3c2b7;
+  --tinta-3: #898781;
+  --marca: #2f9a5c;
+  --marca-forte: #3fb06e;
+  --marca-suave: #17301f;
+  --marca-texto: #6fcf97;
+  --foco: #5598e7;
+  --bom-texto: #0ca30c;
+  --bom-suave: #142a14;
+  --aviso-texto: #fab219;
+  --aviso-suave: #2e2410;
+  --critico-texto: #e66767;
+  --critico-suave: #331717;
+  --info-texto: #86b6ef;
+  --info-suave: #13243a;
+  --serie-1: #3987e5;
+  --serie-2: #d95926;
+  --serie-3: #199e70;
+  --seq-0: #232321;
+  --seq-1: #13304f;
+  --seq-2: #184f95;
+  --seq-3: #2a78d6;
+  --seq-4: #6da7ec;
+  --seq-5: #b7d3f6;
+  --grelha: #2c2c2a;
+  --eixo: #383835;
+  --sombra: 0 0 0 1px var(--contorno);
+  --sombra-flutuante: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--contorno);
+}

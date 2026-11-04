@@ -1,0 +1,249 @@
+/* Boletim fitossanitário: aspecto de documento no ecrã e página A4 na impressão. */
+
+.boletim {
+  padding: var(--e-8) 40px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-6);
+  max-width: 980px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.boletim-cabecalho {
+  padding-bottom: var(--e-5);
+  border-bottom: 2px solid var(--marca);
+}
+
+.boletim-marca {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  color: var(--tinta-2);
+  font-size: var(--t-12);
+  margin-bottom: var(--e-4);
+}
+
+.boletim-cabecalho h1 {
+  font-size: var(--t-32);
+  letter-spacing: -0.015em;
+}
+
+.boletim-zona {
+  margin-top: var(--e-1);
+  font-size: var(--t-20);
+  color: var(--marca-texto);
+  font-weight: 500;
+}
+
+.boletim-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2) var(--e-8);
+  margin: var(--e-4) 0 0;
+  font-size: var(--t-13);
+}
+
+.boletim-meta dt {
+  color: var(--tinta-3);
+  font-size: var(--t-12);
+}
+
+.boletim-meta dd {
+  margin: 0;
+}
+
+.boletim-seccao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  min-width: 0;
+}
+
+.boletim-seccao h2 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e-2);
+  font-size: var(--t-16);
+  font-weight: 600;
+}
+
+.boletim-n {
+  color: var(--marca-texto);
+  font-variant-numeric: tabular-nums;
+}
+
+.boletim-n::after {
+  content: ".";
+}
+
+.boletim-nota {
+  margin-top: calc(-1 * var(--e-2));
+}
+
+.boletim-texto {
+  max-width: 78ch;
+  line-height: 1.65;
+}
+
+.boletim-numeros {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--linha);
+  border-left: 1px solid var(--linha);
+}
+
+.boletim-numero {
+  padding: var(--e-3) var(--e-4);
+  border-right: 1px solid var(--linha);
+  border-bottom: 1px solid var(--linha);
+}
+
+.boletim-numero dt {
+  color: var(--tinta-2);
+  font-size: var(--t-12);
+}
+
+.boletim-numero dd {
+  margin: 0;
+}
+
+.boletim-numero dd:first-of-type {
+  font-size: var(--t-24);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+
+.boletim-duas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--e-8);
+}
+
+.boletim .tabela th:first-child,
+.boletim .tabela td:first-child {
+  padding-left: 0;
+}
+
+.boletim-rodape {
+  padding-top: var(--e-4);
+  border-top: 1px solid var(--linha);
+  color: var(--tinta-2);
+  font-size: var(--t-12);
+}
+
+.boletim-rodape h2 {
+  font-size: var(--t-13);
+  font-weight: 600;
+  margin-bottom: var(--e-2);
+  color: var(--tinta);
+}
+
+.boletim-rodape ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+@media (max-width: 900px) {
+  .boletim {
+    padding: var(--e-5) var(--e-4);
+  }
+  .boletim-numeros {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .boletim-duas {
+    grid-template-columns: 1fr;
+    gap: var(--e-6);
+  }
+}
+
+/* ----- Impressão (também é o que fica no PDF) ----- */
+
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm 14mm;
+  }
+
+  /* Papel é sempre claro, mesmo que o painel esteja no tema escuro. */
+  :root,
+  :root[data-tema] {
+    color-scheme: light;
+    --plano: #ffffff;
+    --superficie: #ffffff;
+    --superficie-2: #f0efea;
+    --linha: #d6d5cd;
+    --tinta: #0b0b0b;
+    --tinta-2: #3f3e3b;
+    --tinta-3: #6b6a65;
+    --marca: #13693b;
+    --marca-texto: #0f5a32;
+    --serie-1: #2a78d6;
+    --aviso-texto: #7a5200;
+    --aviso-suave: #fdf1d5;
+    --critico-texto: #a42626;
+    --critico-suave: #fbe6e5;
+    --info-texto: #1c5cab;
+    --info-suave: #e3eefb;
+    --bom-texto: #006300;
+    --bom-suave: #e3f3e3;
+  }
+
+  html,
+  body,
+  #raiz {
+    height: auto;
+    background: #ffffff !important;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-size: 11pt;
+  }
+
+  .lateral,
+  .barra-topo,
+  .nao-imprimir,
+  .so-ecra,
+  .notificacoes {
+    display: none !important;
+  }
+
+  .casca {
+    display: block;
+  }
+
+  .conteudo {
+    max-width: none;
+    padding: 0;
+  }
+
+  .boletim {
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    max-width: none;
+    gap: 7mm;
+  }
+
+  .boletim-seccao,
+  .boletim-numeros,
+  .boletim-rodape,
+  .tabela tr {
+    break-inside: avoid;
+  }
+
+  .boletim-seccao h2 {
+    break-after: avoid;
+  }
+
+  .boletim-duas {
+    gap: 10mm;
+  }
+}
