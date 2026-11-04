@@ -4,8 +4,8 @@ import sys
 
 from drawio import ASSOC, ORTOGONAL, Diagrama
 
-d = Diagrama("Classes", 2640, 1800)
-C = [40, 580, 1120, 1660, 2200]   # colunas
+d = Diagrama("Classes", 3180, 1800)
+C = [40, 580, 1120, 1660, 2200, 2760]   # colunas
 R = [40, 520, 990, 1420]          # linhas
 W = 380
 
@@ -66,6 +66,13 @@ auditoria = d.classe("RegistoAuditoria", ["- accao: String", "- entidade: String
 d.classe("EstadoVisita", ["PENDENTE", "AGENDADA", "RESOLVIDA", "CANCELADA"], C[4], R[3], W,
          estereotipo="enumeration")
 
+# Restantes enumerados (coluna da direita)
+d.classe("EstadoModelo", ["PILOTO", "PUBLICADO", "RETIRADO"], C[5], R[0], W, estereotipo="enumeration")
+d.classe("NivelAlerta", ["INFORMACAO", "AVISO", "URGENTE"], C[5], R[1], W, estereotipo="enumeration")
+d.classe("Seguiu", ["SIM", "PARCIAL", "NAO"], C[5], R[2], W, estereotipo="enumeration")
+d.classe("ResultadoTratamento", ["MELHOROU", "IGUAL", "PIOROU", "NAO_SEI"], C[5], R[3], W,
+         estereotipo="enumeration")
+
 # Relações
 rel(cultura, patologia, "1", "1..*", "contém", COMPOSICAO)
 rel(patologia, foto, "1", "0..*", "ilustrada por", COMPOSICAO)
@@ -75,10 +82,10 @@ rel(utilizador, diag, "1", "0..*", "efectua")
 rel(diag, imagem, "1", "0..1", "analisa", COMPOSICAO)
 rel(diag, seguimento, "1", "0..1", "", COMPOSICAO + ORTOGONAL, saida=(0.85, 1), entrada=(0.5, 1),
     pontos=[(1443, 830), (2390, 830)])
-rel(diag, validacao, "1", "0..1", "", COMPOSICAO + ORTOGONAL, saida=(0.65, 1), entrada=(0.5, 0),
-    pontos=[(1311, 955), (1850, 955)])
+rel(diag, validacao, "1", "0..1", "", COMPOSICAO + ORTOGONAL, saida=(0.75, 1), entrada=(0.5, 0),
+    pontos=[(1405, 955), (1850, 955)])
 rel(utilizador, validacao, "1", "0..*", "valida")
-rel(diag, visita, "1", "0..*", "origina", ORTOGONAL, saida=(0.95, 1), entrada=(0.5, 0),
+rel(diag, visita, "1", "0..*", "origina", ASSOC + ORTOGONAL, saida=(0.95, 1), entrada=(0.5, 0),
     pontos=[(1481, 920), (2390, 920)])
 rel(diag, distrito, "0..*", "0..1", "ocorre em")
 rel(provincia, distrito, "1", "1..*", "", COMPOSICAO)

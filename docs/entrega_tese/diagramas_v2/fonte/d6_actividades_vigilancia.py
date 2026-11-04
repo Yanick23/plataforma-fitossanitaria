@@ -19,7 +19,7 @@ def ligar(a, b, rotulo="", **kw):
 
 ini = d.inicio(L0 - 15, 145)
 a1 = d.actividade("Diagnosticar a planta no telemóvel (sem Internet)", L0, 200)
-a2 = d.actividade("Sincronizar quando houver rede", L0, 350)
+a2 = d.actividade("Sincronizar quando houver Internet", L0, 350)
 p1 = d.actividade("Registar o diagnóstico no distrito do agricultor", L1, 350)
 t1 = d.actividade("Validar o diagnóstico (confirmar ou corrigir)", L2, 350)
 q1 = d.losango("Praga de declaração<br>obrigatória?", L2 - 150, 500, 300, 130, tamanho=19)

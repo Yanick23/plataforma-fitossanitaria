@@ -59,8 +59,8 @@ fitossanitária**. O ciclo a fechar é diagnóstico → validação pelo técnic
 |---|---|---|
 | 1 — núcleo | Regiões, painel, mapa e surtos, validação e exactidão em campo, conjunto de retreino, alertas por zona, visitas, auditoria, gestão de contas, catálogo e modelos; na app: alertas, validação, visitas, distrito no registo | **Feita** (entregas 1a–1d) |
 | 2 — gestão e qualidade | Boletim, catálogo enriquecido, modelos com piloto, porta de qualidade e deriva, qualidade da foto, várias fotos, seguimento do tratamento, declaração obrigatória, perfis finos | **Feita** (entregas 2a–2d) |
-| 3 — contexto agrícola | Risco meteorológico, calendário agrícola, campanhas, inspecção de campo (FAMEWS) e armadilhas, machambas com GPS | Por fazer |
-| 4 — alcance e abertura | Push, «não reconhecido», segurança de produção, privacidade, dados abertos; SMS, línguas locais, organizações e severidade como trabalho futuro | Por fazer |
+| 3 — contexto agrícola | Risco meteorológico, calendário agrícola, campanhas, inspecção de campo (FAMEWS) e armadilhas, machambas com GPS | **Risco meteorológico feito** (3a); FAMEWS e armadilhas não se fazem; o resto é trabalho futuro |
+| 4 — alcance e abertura | Push, «não reconhecido», segurança de produção, privacidade, dados abertos; SMS, línguas locais, organizações e severidade como trabalho futuro | Línguas locais em áudio a fazer; «não reconhecido» depende da tarefa D4; segurança, privacidade, dados abertos e severidade não se fazem |
 
 ---
 
@@ -133,51 +133,31 @@ O painel compila sem erros (`npm run build`) e foi testado no Edge com Puppeteer
 
 ### 3.2 Fase 3 — contexto agrícola
 
-Por ordem de prioridade. Se o tempo não chegar, as últimas passam para trabalho futuro no PFC.
-
-1. **Risco meteorológico (9).** Previsão por distrito com a Open-Meteo, que é grátis e não pede
-   chave. Regras simples, por exemplo: humidade alta e chuva durante vários dias aumentam o risco
-   de queima da folha e de mancha cinzenta. O técnico vê o aviso no painel e pode transformá-lo
-   em alerta.
-2. **Calendário agrícola por província (10).** Épocas de sementeira e riscos típicos por mês. A
-   app mostra «nesta altura, vigie…».
-3. **Campanhas de vigilância activa (12).** O técnico pede aos agricultores de uma zona que
-   fotografem as plantas nessa semana e vê quantos responderam.
-4. **Inspecção de campo estruturada (19) e armadilhas de feromona (20).** Formulário do técnico
-   alinhado com o FAMEWS da FAO para a lagarta-do-cartucho e registo semanal de capturas.
-5. **Machambas com GPS (11),** com consentimento explícito do agricultor.
-
-Entregas previstas: 3a (API), 3b (painel), 3c (app), cada uma testada e escrita no PFC.
+- **Risco meteorológico (9): feito** (entrega 3a, 04/11).
+- **Línguas locais em áudio (14): a fazer**, com a API de áudio do Yanick. Falta a documentação
+  da API.
+- **Trabalho futuro no PFC:** calendário agrícola (10), campanhas de vigilância activa (12) e
+  machambas com GPS (11).
+- **Não se fazem** (decisão de 04/11): inspecção de campo FAMEWS (19) e armadilhas de
+  feromona (20).
 
 ### 3.3 Fase 4 — alcance e abertura
 
-A fazer (o que mais pesa na defesa):
-
-- **«Não reconhecido» (17):** «isto não parece milho nem mandioca», em vez de forçar uma classe
-  (o caso da folha de manga). Usa o resultado da D4.2.
-- **Segurança de produção (23):**
-  - HTTPS;
-  - limite de tentativas de login;
-  - cópias de segurança automáticas da base de dados e da pasta de imagens;
-  - **trocar a palavra-passe do administrador e o `JWT_SEGREDO`** antes de qualquer instalação
-    real.
-- **Privacidade (24):** consentimento no registo, anonimização nas exportações, apagar a conta e
-  os dados a pedido.
-- **Notificações push (13b),** se houver tempo.
-- **Dados agregados abertos (22)** e **directório de apoio (21),** se houver tempo.
-
-Entram no PFC como trabalho futuro fundamentado: SMS (13), línguas locais e áudio (14),
-organizações (6c) e severidade (18).
+- **«Não reconhecido» (17):** só se a tarefa D4 do Colab tiver resultados a tempo; senão, fica
+  como trabalho futuro.
+- **Trabalho futuro no PFC:** notificações *push* (13b), SMS (13), organizações (6c) e
+  directório de apoio (21).
+- **Não se fazem** (decisão de 04/11): severidade (18), dados abertos (22), segurança de
+  produção (23) e privacidade (24).
+  - A segurança (HTTPS, cópias de segurança, trocar a palavra-passe do administrador e o
+    `JWT_SEGREDO`) e a privacidade ficam só como **recomendações** no PFC, antes de qualquer
+    instalação real.
 
 ### 3.4 Resultados do modelo (plano da parte 2)
 
-| Tarefa | Quem | Notas |
-|---|---|---|
-| Teste rápido do notebook `03_parte2.ipynb` no Colab | Yanick (Colab com GPU) | Secção 2 do notebook |
-| D2, D3, D4 | Colab | D3 demora cerca de 5 h e pode correr de noite |
-| D5 — teste externo do milho | Agente | Procurar um conjunto público de fora do Gana |
-| D6 (opcional) | Colab | Só se sobrar tempo |
-| D7 — fotos locais | Yanick tira as fotos; o agente analisa | 30–50 fotos com `rotulos.csv` |
+O Yanick indica (04/11) que a versão `PROD_corrigido` do PFC já tem os resultados das tarefas
+D2, D4 e D5. A versão que está neste repositório (`docs/PFC_..._LAST_VERSION.docx`) ainda não os
+tem. A reescrita da v2 parte da `PROD_corrigido`.
 
 ### 3.5 Texto do PFC
 

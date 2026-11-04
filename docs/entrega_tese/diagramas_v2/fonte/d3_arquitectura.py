@@ -23,8 +23,8 @@ interface = bloco("Interface (Flutter / Dart)", "captura, resultado, historial,<
                   260, 110, 420, 110)
 verif = bloco("Verificação da fotografia", "nitidez e luz; várias fotos por caso", 260, 300, 420, 90)
 tflite = bloco("Modelos TFLite INT8", "milho e mandioca (4,35 MB cada)", 260, 470, 420, 100)
-locais = d.cilindro("<b>Dados locais</b><br>SQLite: historial (pendente /<br>sincronizado), alertas, visitas;<br>"
-                    "catálogo em JSON", 760, 100, 400, 170)
+locais = d.cilindro("<b>Dados locais</b><br>SQLite: historial, validações<br>e seguimento; JSON: catálogo,<br>"
+                    "alertas, visitas e versão do modelo", 760, 100, 400, 170)
 sinc = bloco("Sincronização", "UUID, token JWT, verificação SHA-256", 760, 470, 400, 100)
 
 # --- Painel web ----------------------------------------------------------------------
