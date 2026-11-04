@@ -20,8 +20,18 @@ def agora() -> datetime:
 
 class Perfil(str, enum.Enum):
     AGRICULTOR = "AGRICULTOR"
-    TECNICO = "TECNICO"
+    TECNICO = "TECNICO"              # técnico distrital (ou provincial, sem distrito)
+    COORDENADOR = "COORDENADOR"      # coordenador provincial: o que o técnico faz, mais gerir as contas da província
+    INVESTIGADOR = "INVESTIGADOR"    # só leitura, país todo, sem nomes nem telefones dos agricultores
     ADMINISTRADOR = "ADMINISTRADOR"
+
+
+# Quem trabalha no terreno com os agricultores de uma zona (valida, envia alertas, agenda visitas).
+PERFIS_PESSOAL = (Perfil.TECNICO, Perfil.COORDENADOR, Perfil.ADMINISTRADOR)
+# Quem lê os indicadores e a vigilância (o investigador só lê).
+PERFIS_LEITURA = (*PERFIS_PESSOAL, Perfil.INVESTIGADOR)
+# Quem gere contas (o coordenador só na sua província).
+PERFIS_GESTAO = (Perfil.COORDENADOR, Perfil.ADMINISTRADOR)
 
 
 class TipoPatologia(str, enum.Enum):
@@ -67,7 +77,8 @@ class Utilizador(Base):
     # Área em texto livre (como foi escrita no registo); a zona oficial é o distrito/província.
     area: Mapped[str | None] = mapped_column(String(80), index=True)
     # Zona: o agricultor pertence a um distrito; o técnico actua num distrito ou, sem distrito,
-    # numa província inteira; o administrador actua no país todo.
+    # numa província inteira; o coordenador actua na província; o administrador e o investigador
+    # no país todo.
     distrito_id: Mapped[int | None] = mapped_column(ForeignKey("distritos.id"), index=True)
     provincia_codigo: Mapped[str | None] = mapped_column(ForeignKey("provincias.codigo"), index=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
@@ -307,3 +318,18 @@ class Seguimento(Base):
     resultado: Mapped[ResultadoTratamento] = mapped_column(Enum(ResultadoTratamento, name="resultado_tratamento"))
     comentario: Mapped[str | None] = mapped_column(Text)
     respondido_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+
+
+class Notificacao(Base):
+    """Aviso dirigido a uma pessoa da equipa (ex.: caso confirmado de praga de declaração obrigatória)."""
+
+    __tablename__ = "notificacoes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    utilizador_id: Mapped[int] = mapped_column(ForeignKey("utilizadores.id", ondelete="CASCADE"), index=True)
+    tipo: Mapped[str] = mapped_column(String(40))  # ex.: "DECLARACAO_OBRIGATORIA"
+    titulo: Mapped[str] = mapped_column(String(160))
+    mensagem: Mapped[str] = mapped_column(Text)
+    diagnostico_id: Mapped[str | None] = mapped_column(ForeignKey("diagnosticos.id", ondelete="CASCADE"))
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora, index=True)
+    lida_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

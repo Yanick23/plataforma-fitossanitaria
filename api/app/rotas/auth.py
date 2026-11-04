@@ -10,7 +10,8 @@ from ..database import obter_sessao
 from ..esquemas import Login, Registo, Token, UtilizadorCriar, UtilizadorLer
 from ..regioes import resolver_zona
 from ..servicos.auditoria import auditar, instantaneo
-from ..seguranca import (CONTA_DESACTIVADA, Administrador, UtilizadorActual, criar_token, gerar_hash,
+from ..servicos.utilizadores import verificar_perfil_pedido, verificar_zona_final
+from ..seguranca import (CONTA_DESACTIVADA, Gestor, UtilizadorActual, criar_token, gerar_hash,
                          verificar_palavra_passe)
 from ..tabelas import Perfil, Utilizador
 
@@ -19,10 +20,14 @@ Sessao = Annotated[AsyncSession, Depends(obter_sessao)]
 
 
 async def _criar(sessao: AsyncSession, dados: Registo, perfil: Perfil,
-                 provincia_codigo: str | None = None) -> Utilizador:
+                 provincia_codigo: str | None = None, gestor: Utilizador | None = None) -> Utilizador:
     if await sessao.scalar(select(Utilizador).where(Utilizador.telefone == dados.telefone)):
         raise HTTPException(status.HTTP_409_CONFLICT, "Já existe uma conta com este telefone")
     distrito, provincia = await resolver_zona(sessao, dados.distrito_id, dados.area, provincia_codigo)
+    if gestor is not None:
+        if gestor.perfil == Perfil.COORDENADOR and distrito is None and provincia is None:
+            provincia = gestor.provincia_codigo  # sem zona indicada: fica na província do coordenador
+        verificar_zona_final(gestor, perfil, provincia)
     utilizador = Utilizador(
         nome=dados.nome, telefone=dados.telefone, perfil=perfil,
         area=distrito.nome if distrito else dados.area,
@@ -65,9 +70,10 @@ async def eu(utilizador: UtilizadorActual) -> Utilizador:
 
 @router.post("/utilizadores", response_model=UtilizadorLer, status_code=status.HTTP_201_CREATED,
              tags=["Utilizadores"])
-async def criar_utilizador(dados: UtilizadorCriar, admin: Administrador, sessao: Sessao) -> Utilizador:
-    """Só o administrador cria contas de técnico (ou de outro administrador)."""
-    novo = await _criar(sessao, dados, dados.perfil, dados.provincia_codigo)
+async def criar_utilizador(dados: UtilizadorCriar, admin: Gestor, sessao: Sessao) -> Utilizador:
+    """O administrador cria contas de qualquer perfil; o coordenador, de técnicos e agricultores na sua província."""
+    verificar_perfil_pedido(admin, dados.perfil)
+    novo = await _criar(sessao, dados, dados.perfil, dados.provincia_codigo, gestor=admin)
     auditar(sessao, admin, "utilizador.criar", "utilizador", novo.id, depois=instantaneo(
         novo, ("nome", "telefone", "perfil", "distrito_id", "provincia_codigo")))
     await sessao.commit()

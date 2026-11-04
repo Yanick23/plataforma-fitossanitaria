@@ -107,20 +107,22 @@ async def enviar_imagem(diagnostico_id: UUID, utilizador: UtilizadorActual, sess
 @router.get("/diagnosticos", response_model=list[DiagnosticoLer])
 async def listar_diagnosticos(utilizador: UtilizadorActual, sessao: Sessao,
                               cultura: str | None = None) -> list[DiagnosticoLer]:
-    """Agricultor: os seus (com a validação do técnico). Técnico: os da sua zona. Administrador: todos.
+    """Agricultor: os seus (com a validação do técnico). Técnico e coordenador: os da sua zona.
+    Administrador: todos. Investigador: todos, sem o id do agricultor.
 
     O painel usa GET /gestao/diagnosticos, com filtros e paginação.
     """
     consulta = repo.consulta_base().order_by(Diagnostico.data.desc())
     if utilizador.perfil == Perfil.AGRICULTOR:
         consulta = consulta.where(Diagnostico.utilizador_id == utilizador.id)
-    elif utilizador.perfil == Perfil.TECNICO:
+    elif utilizador.perfil in (Perfil.TECNICO, Perfil.COORDENADOR):
         consulta = consulta.where(or_(
             filtro_zona(zona_de(utilizador), Diagnostico.distrito_id, Distrito.provincia_codigo, Utilizador.area),
             Diagnostico.utilizador_id == utilizador.id))
     if cultura:
         consulta = consulta.where(Diagnostico.cultura_id == cultura)
-    return [para_ler(d) for d in await sessao.scalars(consulta)]
+    anonimo = utilizador.perfil == Perfil.INVESTIGADOR
+    return [para_ler(d, anonimo) for d in await sessao.scalars(consulta)]
 
 
 @router.get("/diagnosticos/{diagnostico_id}/imagem", response_class=FileResponse,

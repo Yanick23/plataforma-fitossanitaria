@@ -155,8 +155,13 @@ async def arquivar(sessao: AsyncSession, utilizador: Utilizador, alerta_id: int)
     alerta = await sessao.get(Alerta, alerta_id)
     if alerta is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Alerta não encontrado")
-    if utilizador.perfil != Perfil.ADMINISTRADOR and alerta.autor_id != utilizador.id:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só o autor ou o administrador podem arquivar")
+    provincia_do_distrito = (await sessao.get(Distrito, alerta.distrito_id)).provincia_codigo \
+        if alerta.distrito_id else None
+    coordenador_da_zona = utilizador.perfil == Perfil.COORDENADOR and zona_contem(
+        zona_de(utilizador), alerta.provincia_codigo, alerta.distrito_id, provincia_do_distrito)
+    if utilizador.perfil != Perfil.ADMINISTRADOR and alerta.autor_id != utilizador.id and not coordenador_da_zona:
+        raise HTTPException(status.HTTP_403_FORBIDDEN,
+                            "Só o autor, o coordenador da província ou o administrador podem arquivar")
     alerta.arquivado = True
     auditar(sessao, utilizador, "alerta.arquivar", "alerta", alerta.id)
     await sessao.commit()

@@ -1,4 +1,4 @@
-"""Gestão (painel web): resumo, diagnósticos, utilizadores e auditoria."""
+"""Gestão (painel web): resumo, diagnósticos, utilizadores, auditoria, boletim e notificações."""
 
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Annotated
@@ -9,13 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..database import obter_sessao
-from ..esquemas import (AuditoriaLer, Boletim, EficaciaPatologia, NovaPalavraPasse, PaginaAuditoria, PaginaDiagnosticos, PaginaUtilizadores,
-                        Resumo, UtilizadorActualizar, UtilizadorAdminLer)
+from ..esquemas import (AuditoriaLer, Boletim, EficaciaPatologia, ListaNotificacoes, NovaPalavraPasse, PaginaAuditoria,
+                        PaginaDiagnosticos, PaginaUtilizadores, Resumo, UtilizadorActualizar, UtilizadorAdminLer)
 from ..regioes import zona_de
 from ..repositorios import diagnosticos as repo
 from ..repositorios.diagnosticos import EstadoValidacao, FiltrosDiagnostico
-from ..seguranca import Administrador, Pessoal
-from ..servicos import painel, relatorios, utilizadores
+from ..seguranca import Administrador, Gestor, Leitor, Pessoal, anonimizado
+from ..servicos import notificacoes, painel, relatorios, utilizadores
 from ..servicos.diagnosticos import mapa_patologias, para_admin
 from ..tabelas import Diagnostico, Perfil, RegistoAuditoria, TipoPatologia
 
@@ -26,20 +26,25 @@ Deslocamento = Annotated[int, Query(ge=0)]
 
 
 @router.get("/resumo", response_model=Resumo)
-async def resumo(utilizador: Pessoal, sessao: Sessao, dias: Annotated[int, Query(ge=7, le=365)] = 30) -> Resumo:
+async def resumo(utilizador: Leitor, sessao: Sessao, dias: Annotated[int, Query(ge=7, le=365)] = 30) -> Resumo:
     """Indicadores da zona de quem pede (o administrador vê o país todo)."""
     return await painel.resumo(sessao, utilizador, dias)
 
 
 @router.get("/diagnosticos", response_model=PaginaDiagnosticos)
-async def diagnosticos(utilizador: Pessoal, sessao: Sessao, cultura: str | None = None, classe: str | None = None,
+async def diagnosticos(utilizador: Leitor, sessao: Sessao, cultura: str | None = None, classe: str | None = None,
                        tipo: TipoPatologia | None = None, provincia: str | None = None,
                        distrito_id: int | None = None, desde: datetime | None = None, ate: datetime | None = None,
                        confianca_max: Annotated[float | None, Query(ge=0, le=1)] = None,
                        validacao: EstadoValidacao | None = None, utilizador_id: int | None = None,
                        ordem: Annotated[str, Query(pattern="^(recentes|confianca)$")] = "recentes",
                        limite: Limite = 50, deslocamento: Deslocamento = 0) -> PaginaDiagnosticos:
-    """Diagnósticos da zona, com filtros. ordem=confianca põe primeiro os menos certos (fila de validação)."""
+    """Diagnósticos da zona, com filtros. ordem=confianca põe primeiro os menos certos (fila de validação).
+
+    O investigador vê o país todo, com um pseudónimo em vez do nome e sem telefone."""
+    anonimo = anonimizado(utilizador)
+    if anonimo:
+        utilizador_id = None  # não se filtra por pessoa em dados anonimizados
     f = FiltrosDiagnostico(cultura=cultura, classe=classe, tipo=tipo, provincia=provincia, distrito_id=distrito_id,
                            desde=desde, ate=ate, confianca_max=confianca_max, validacao=validacao,
                            utilizador_id=utilizador_id)
@@ -49,7 +54,7 @@ async def diagnosticos(utilizador: Pessoal, sessao: Sessao, cultura: str | None 
         else (Diagnostico.data.desc(),)
     itens = list(await sessao.scalars(consulta.order_by(*ordenacao).limit(limite).offset(deslocamento)))
     patologias = await mapa_patologias(sessao)
-    return PaginaDiagnosticos(total=total, itens=[para_admin(d, patologias) for d in itens])
+    return PaginaDiagnosticos(total=total, itens=[para_admin(d, patologias, anonimo) for d in itens])
 
 
 @router.get("/utilizadores", response_model=PaginaUtilizadores)
@@ -57,22 +62,24 @@ async def listar_utilizadores(utilizador: Pessoal, sessao: Sessao, q: str | None
                               perfil: Perfil | None = None, provincia: str | None = None,
                               distrito_id: int | None = None, activo: bool | None = None,
                               limite: Limite = 50, deslocamento: Deslocamento = 0) -> PaginaUtilizadores:
-    """Administrador: todas as contas. Técnico: os agricultores da sua zona."""
+    """Administrador: todas as contas. Coordenador: as da sua província. Técnico: os agricultores da sua zona."""
     total, itens = await utilizadores.listar(sessao, utilizador, q, perfil, provincia, distrito_id, activo,
                                              limite, deslocamento)
     return PaginaUtilizadores(total=total, itens=itens)
 
 
 @router.patch("/utilizadores/{utilizador_id}", response_model=UtilizadorAdminLer)
-async def actualizar_utilizador(utilizador_id: int, dados: UtilizadorActualizar, admin: Administrador,
+async def actualizar_utilizador(utilizador_id: int, dados: UtilizadorActualizar, admin: Gestor,
                                 sessao: Sessao) -> UtilizadorAdminLer:
-    """Mudar nome, perfil, zona (distrito ou província) ou activar/desactivar a conta."""
+    """Mudar nome, perfil, zona (distrito ou província) ou activar/desactivar a conta.
+
+    O coordenador só altera agricultores e técnicos da sua província e não dá outros perfis."""
     alvo = await utilizadores.actualizar(sessao, admin, utilizador_id, dados)
     return (await utilizadores.para_admin(sessao, [alvo]))[0]
 
 
 @router.post("/utilizadores/{utilizador_id}/palavra-passe", status_code=status.HTTP_204_NO_CONTENT)
-async def repor_palavra_passe(utilizador_id: int, dados: NovaPalavraPasse, admin: Administrador,
+async def repor_palavra_passe(utilizador_id: int, dados: NovaPalavraPasse, admin: Gestor,
                               sessao: Sessao) -> None:
     await utilizadores.repor_palavra_passe(sessao, admin, utilizador_id, dados.palavra_passe)
 
@@ -109,13 +116,13 @@ def _periodo(inicio: date | None, fim: date | None) -> tuple[datetime, datetime]
 
 
 @router.get("/boletim", response_model=Boletim)
-async def boletim(utilizador: Pessoal, sessao: Sessao, inicio: date | None = None, fim: date | None = None) -> Boletim:
+async def boletim(utilizador: Leitor, sessao: Sessao, inicio: date | None = None, fim: date | None = None) -> Boletim:
     """Boletim fitossanitário da zona no período (o painel imprime-o em PDF)."""
     return await relatorios.boletim(sessao, utilizador, *_periodo(inicio, fim))
 
 
 @router.get("/boletim.csv", response_class=Response, responses={200: {"content": {"text/csv": {}}}})
-async def boletim_csv(utilizador: Pessoal, sessao: Sessao, inicio: date | None = None,
+async def boletim_csv(utilizador: Leitor, sessao: Sessao, inicio: date | None = None,
                       fim: date | None = None) -> Response:
     a, b = _periodo(inicio, fim)
     nome = f"boletim_{a:%Y%m%d}_{b:%Y%m%d}.csv"
@@ -124,6 +131,23 @@ async def boletim_csv(utilizador: Pessoal, sessao: Sessao, inicio: date | None =
 
 
 @router.get("/eficacia", response_model=list[EficaciaPatologia])
-async def eficacia(utilizador: Pessoal, sessao: Sessao, desde: datetime | None = None) -> list[EficaciaPatologia]:
+async def eficacia(utilizador: Leitor, sessao: Sessao, desde: datetime | None = None) -> list[EficaciaPatologia]:
     """Das respostas dos agricultores: quem seguiu a recomendação e a planta melhorou, por praga."""
     return await relatorios.eficacia(sessao, utilizador, desde)
+
+
+@router.get("/notificacoes", response_model=ListaNotificacoes)
+async def listar_notificacoes(utilizador: Pessoal, sessao: Sessao, so_nao_lidas: bool = False,
+                              limite: Limite = 30) -> ListaNotificacoes:
+    """Avisos para quem pede (ex.: caso confirmado de praga de declaração obrigatória na sua zona)."""
+    return await notificacoes.listar(sessao, utilizador, so_nao_lidas, limite)
+
+
+@router.post("/notificacoes/{notificacao_id}/lida", status_code=status.HTTP_204_NO_CONTENT)
+async def marcar_notificacao_lida(notificacao_id: int, utilizador: Pessoal, sessao: Sessao) -> None:
+    await notificacoes.marcar_lida(sessao, utilizador, notificacao_id)
+
+
+@router.post("/notificacoes/lidas", status_code=status.HTTP_204_NO_CONTENT)
+async def marcar_todas_lidas(utilizador: Pessoal, sessao: Sessao) -> None:
+    await notificacoes.marcar_todas_lidas(sessao, utilizador)

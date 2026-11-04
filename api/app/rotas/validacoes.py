@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import obter_sessao
 from ..esquemas import DiagnosticoAdminLer, ExactidaoCampo, ValidacaoEscrever
-from ..seguranca import Administrador, Pessoal
+from ..seguranca import AdminOuInvestigador, Leitor, Pessoal
 from ..servicos import validacoes as servico
 from ..servicos.diagnosticos import mapa_patologias, para_admin
 from .diagnosticos import _obter
@@ -29,7 +29,7 @@ async def validar(diagnostico_id: UUID, dados: ValidacaoEscrever, utilizador: Pe
 
 
 @router.get("/validacoes/exactidao", response_model=ExactidaoCampo)
-async def exactidao(utilizador: Pessoal, sessao: Sessao, cultura: str | None = None,
+async def exactidao(utilizador: Leitor, sessao: Sessao, cultura: str | None = None,
                     desde: datetime | None = None) -> ExactidaoCampo:
     """Concordância modelo × técnico na zona de quem pede: a exactidão do modelo no terreno."""
     return await servico.exactidao(sessao, utilizador, cultura, desde)
@@ -37,7 +37,7 @@ async def exactidao(utilizador: Pessoal, sessao: Sessao, cultura: str | None = N
 
 @router.get("/validacoes/exportar", response_class=Response,
             responses={200: {"content": {"application/zip": {}}}})
-async def exportar(_: Administrador, sessao: Sessao) -> Response:
+async def exportar(_: AdminOuInvestigador, sessao: Sessao) -> Response:
     """ZIP com as fotografias validadas e rotulos.csv, para retreinar o modelo no Colab."""
     conteudo = await servico.exportar_validados(sessao)
     return Response(conteudo, media_type="application/zip",

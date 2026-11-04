@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from ..esquemas import VisitaActualizar, VisitaCriar, VisitaLer
 from ..regioes import filtro_zona, zona_de
-from ..tabelas import Diagnostico, Distrito, EstadoVisita, Patologia, PedidoVisita, Perfil, Utilizador
+from ..tabelas import PERFIS_PESSOAL, Diagnostico, Distrito, EstadoVisita, Patologia, PedidoVisita, Utilizador
 from .auditoria import auditar, instantaneo
 
 ACTIVOS = (EstadoVisita.PENDENTE, EstadoVisita.AGENDADA)
@@ -123,4 +123,4 @@ async def cancelar_pelo_agricultor(sessao: AsyncSession, agricultor: Utilizador,
 
 
 def e_pessoal(u: Utilizador) -> bool:
-    return u.perfil in (Perfil.TECNICO, Perfil.ADMINISTRADOR)
+    return u.perfil in PERFIS_PESSOAL

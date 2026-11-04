@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .config import definicoes
 from .database import obter_sessao
-from .tabelas import Perfil, Utilizador
+from .tabelas import PERFIS_GESTAO, PERFIS_LEITURA, PERFIS_PESSOAL, Perfil, Utilizador
 
 esquema_bearer = HTTPBearer(auto_error=False, description="Token JWT obtido em POST /auth/login")
 
@@ -72,10 +72,53 @@ Administrador = Annotated[Utilizador, Depends(exigir_administrador)]
 
 
 async def exigir_pessoal(utilizador: UtilizadorActual) -> Utilizador:
-    """Técnico ou administrador (quem acompanha os agricultores de uma zona)."""
-    if utilizador.perfil not in (Perfil.TECNICO, Perfil.ADMINISTRADOR):
+    """Técnico, coordenador ou administrador (quem acompanha os agricultores de uma zona)."""
+    if utilizador.perfil not in PERFIS_PESSOAL:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Operação reservada a técnicos e administradores")
     return utilizador
 
 
 Pessoal = Annotated[Utilizador, Depends(exigir_pessoal)]
+
+
+async def exigir_leitura(utilizador: UtilizadorActual) -> Utilizador:
+    """Pessoal ou investigador: indicadores, vigilância e relatórios (o investigador só lê, anonimizado)."""
+    if utilizador.perfil not in PERFIS_LEITURA:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Operação reservada à equipa da plataforma")
+    return utilizador
+
+
+Leitor = Annotated[Utilizador, Depends(exigir_leitura)]
+
+
+async def exigir_gestor(utilizador: UtilizadorActual) -> Utilizador:
+    """Coordenador (na sua província) ou administrador: gestão de contas."""
+    if utilizador.perfil not in PERFIS_GESTAO:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Operação reservada a coordenadores e administradores")
+    return utilizador
+
+
+Gestor = Annotated[Utilizador, Depends(exigir_gestor)]
+
+
+async def exigir_admin_ou_investigador(utilizador: UtilizadorActual) -> Utilizador:
+    if utilizador.perfil not in (Perfil.ADMINISTRADOR, Perfil.INVESTIGADOR):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Operação reservada ao administrador e ao investigador")
+    return utilizador
+
+
+AdminOuInvestigador = Annotated[Utilizador, Depends(exigir_admin_ou_investigador)]
+
+
+def anonimizado(utilizador: Utilizador) -> bool:
+    """O investigador nunca vê nomes nem telefones de agricultores."""
+    return utilizador.perfil == Perfil.INVESTIGADOR
+
+
+def pseudonimo(utilizador_id: int) -> str:
+    """Nome estável e não reversível para um agricultor ('Agricultor 3F9A1C'), sem expor o id."""
+    import hashlib
+    import hmac
+
+    codigo = hmac.new(definicoes.jwt_segredo.encode(), str(utilizador_id).encode(), hashlib.sha256).hexdigest()
+    return f"Agricultor {codigo[:6].upper()}"
