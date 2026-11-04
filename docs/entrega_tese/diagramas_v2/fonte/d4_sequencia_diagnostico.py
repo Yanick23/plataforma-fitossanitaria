@@ -13,12 +13,11 @@ d.lifeline("Modelo<br>(TFLite)", MOD, 20, ALT)
 d.lifeline("Dados locais<br>(SQLite, JSON)", LOC, 20, ALT)
 d.lifeline("API<br>(FastAPI)", API, 20, ALT, w=300)
 
-y = 180
-d.mensagem(U, APP, y, "1: introduzir telefone e palavra-passe")
-d.fragmento("opt", "primeiro início de sessão ou token expirado", APP - 190, 220, 1350, 260)
-d.mensagem(APP, API, 300, "2: POST /auth/login")
-d.mensagem(API, APP, 370, "3: token JWT (válido 30 dias)", resposta=True)
-d.auto_mensagem(APP, 410, "4: guardar o token no armazenamento seguro")
+d.fragmento("opt", "primeiro início de sessão ou token expirado", U - 140, 130, 1790, 360)
+d.mensagem(U, APP, 220, "1: introduzir telefone e palavra-passe")
+d.mensagem(APP, API, 290, "2: POST /auth/login")
+d.mensagem(API, APP, 360, "3: token JWT (válido 30 dias)", resposta=True)
+d.auto_mensagem(APP, 400, "4: guardar o token no armazenamento seguro")
 
 d.mensagem(U, APP, 550, "5: escolher a cultura")
 d.mensagem(U, APP, 620, "6: tirar 1 a 3 fotografias da planta")

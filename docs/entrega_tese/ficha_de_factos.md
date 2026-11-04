@@ -14,7 +14,12 @@ confirma o texto contra o código.
 | App Android «Diagnóstico de culturas» | Flutter 3.38 / Dart 3.10; tflite_flutter 0.12.1; sqflite | ~5 200 (Dart, `app/lib`) | Diagnóstico sem internet, historial, sincronização, alertas, visitas, seguimento |
 | API REST | FastAPI 0.115.6, Uvicorn, SQLAlchemy 2 (assíncrono), PostgreSQL (SQLite nos testes), Alembic 1.14, PyJWT, bcrypt, TensorFlow 2.17.1 / Keras (Grad-CAM), httpx (Open-Meteo) | ~4 000 (Python, `api/app`) | Dados, regras, permissões, Grad-CAM, previsão do tempo |
 | Painel web | React 18.3, Vite 5.4, TypeScript 5.6, TanStack Query 5.62, padrão MVVM | ~4 900 (TS/TSX, `admin/src`) | Trabalho da equipa: validação, vigilância, alertas, visitas, boletim, gestão |
-| Modelo | EfficientNetB0 por cultura, TFLite INT8 dinâmica (4,35 MB cada) | — | Classificação no telemóvel |
+| Modelo | EfficientNetB0 por cultura, TFLite INT8 dinâmica (4 561 kB = 4,35 MiB cada; o PFC escreve «4,35 MB») | — | Classificação no telemóvel |
+
+**Dados locais da app:**
+- SQLite: o historial dos diagnósticos, com a validação do técnico e o seguimento;
+- ficheiros JSON: o catálogo (`catalogo.json`), os alertas (`alertas.json`), as visitas (`visitas.json`) e o estado do modelo (`estado.json`, versão activa e SHA-256);
+- token JWT (válido 30 dias, `jwt_validade_dias = 30`) no armazenamento seguro do Android.
 
 **Arquitectura da API em camadas:** `rotas/` (HTTP, validação e permissões) → `servicos/` (regras de
 negócio) → `repositorios/` (consultas).
@@ -175,10 +180,12 @@ E0b e a mandioca a E0.
 **Teste externo (iCassava, Uganda, 80 imagens):** **26,2%** (mudança de domínio).
 
 **TFLite INT8:**
-- 4,35 MB por modelo;
+- 4,35 MiB por modelo (4,56 MB em unidades decimais); o PFC usa «4,35 MB» e deve manter a mesma unidade em todo o texto;
 - milho 86,3%, mandioca 93,1%;
-- inferência no telemóvel de cerca de 0,16 a 0,17 s;
-- diagnóstico completo em cerca de 0,4 s, muito abaixo dos 3 s do RNF03.
+- inferência no telemóvel (SOTEN R80, Tabela 5.13 da v1), **duas medições diferentes que não se contradizem**:
+  - 20 inferências com uma imagem sintética: média de 0,164 s (milho) e 0,174 s (mandioca);
+  - 10 diagnósticos com fotografias reais: inferência de cerca de 0,22 s, mais 0,15 s de pré-processamento;
+- diagnóstico completo em 0,374 s (milho) e 0,424 s (mandioca), muito abaixo dos 3 s do RNF03.
 
 ---
 
