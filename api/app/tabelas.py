@@ -333,3 +333,16 @@ class Notificacao(Base):
     diagnostico_id: Mapped[str | None] = mapped_column(ForeignKey("diagnosticos.id", ondelete="CASCADE"))
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora, index=True)
     lida_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class PrevisaoMeteo(Base):
+    """Última previsão horária (7 dias) da Open-Meteo para o centro de um distrito.
+
+    Fica guardada para não repetir pedidos e para o painel funcionar quando o servidor
+    não tem internet (mostra a última previsão e a data em que foi obtida)."""
+
+    __tablename__ = "previsoes_meteo"
+
+    distrito_id: Mapped[int] = mapped_column(ForeignKey("distritos.id", ondelete="CASCADE"), primary_key=True)
+    obtida_em: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    dados: Mapped[str] = mapped_column(Text)  # JSON: {"time": [...], "temperature_2m": [...], ...}

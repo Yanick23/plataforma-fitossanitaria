@@ -7,10 +7,10 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import obter_sessao
-from ..esquemas import Declaracao, Ocorrencia, Surto
+from ..esquemas import Declaracao, Ocorrencia, RiscoMeteorologico, Surto
 from ..repositorios.diagnosticos import FiltrosDiagnostico
 from ..seguranca import Leitor
-from ..servicos import relatorios, vigilancia as servico
+from ..servicos import meteorologia, relatorios, vigilancia as servico
 from ..tabelas import TipoPatologia
 
 router = APIRouter(prefix="/vigilancia", tags=["Vigilância"])
@@ -40,3 +40,10 @@ async def surtos(utilizador: Leitor, sessao: Sessao,
 async def declaracoes(utilizador: Leitor, sessao: Sessao, desde: datetime | None = None) -> list[Declaracao]:
     """Casos de pragas/doenças de declaração obrigatória na zona: confirmados pelo técnico ou suspeitos."""
     return await relatorios.declaracoes(sessao, utilizador, desde)
+
+
+@router.get("/risco-meteorologico", response_model=RiscoMeteorologico)
+async def risco_meteorologico(utilizador: Leitor, sessao: Sessao) -> RiscoMeteorologico:
+    """Condições do tempo favoráveis a pragas e doenças nos próximos 7 dias, por distrito da zona
+    com agricultores (previsão da Open-Meteo; um sinal para o técnico decidir, não uma previsão da doença)."""
+    return await meteorologia.risco(sessao, utilizador)

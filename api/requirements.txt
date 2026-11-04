@@ -12,6 +12,9 @@ asyncpg==0.30.0
 aiosqlite==0.20.0
 alembic==1.14.0      # migrações da base de dados (aplicadas no arranque)
 
+# Previsão do tempo (Open-Meteo) para o risco meteorológico; também usado pelos testes.
+httpx==0.28.1
+
 # Autenticação: palavra-passe com hash bcrypt e token JWT.
 bcrypt==4.2.1
 PyJWT==2.10.1
@@ -26,4 +29,3 @@ matplotlib==3.9.2
 
 # Testes
 pytest==8.3.4
-httpx==0.28.1
