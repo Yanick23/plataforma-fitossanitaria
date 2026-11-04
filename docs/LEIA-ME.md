@@ -16,7 +16,7 @@ Para quem vai reescrever o PFC (versão 2), lê-se por esta ordem:
 Imagens:
 - capturas do painel web: `entrega_tese/dados_web/`;
 - capturas da app: `entrega_tese/dados_telemovel/capturas/` e `.../provas/`;
-- diagramas da v2: `entrega_tese/diagramas_v2/` (quando existirem).
+- diagramas da v2 (D1 a D6, `.drawio` e `.png`): `entrega_tese/diagramas_v2/`, com o LEIA-ME a dizer o que substituem.
 
 Ficheiros antigos, só para consulta: `entrega_tese/01_resumo_implementacao.md`,
 `entrega_tese/02_relatorio_app_api.md` e `produto/plano_trabalho_parte2_pfc.md` (plano das
