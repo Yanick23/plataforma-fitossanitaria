@@ -1,6 +1,6 @@
 # Plataforma — estado, o que falta e calendário até 10/11/2026
 
-Actualizado a **26/10/2026**.
+Actualizado a **04/11/2026**.
 
 **Branches (uma por projecto, a partir da `main`):**
 
@@ -58,7 +58,7 @@ fitossanitária**. O ciclo a fechar é diagnóstico → validação pelo técnic
 | Fase | Conteúdo | Estado |
 |---|---|---|
 | 1 — núcleo | Regiões, painel, mapa e surtos, validação e exactidão em campo, conjunto de retreino, alertas por zona, visitas, auditoria, gestão de contas, catálogo e modelos; na app: alertas, validação, visitas, distrito no registo | **Feita** (entregas 1a–1d) |
-| 2 — gestão e qualidade | Boletim, catálogo enriquecido, modelos com piloto, porta de qualidade e deriva, qualidade da foto, várias fotos, seguimento do tratamento, declaração obrigatória, perfis finos | **Feita, menos os perfis finos** (entregas 2a–2c) |
+| 2 — gestão e qualidade | Boletim, catálogo enriquecido, modelos com piloto, porta de qualidade e deriva, qualidade da foto, várias fotos, seguimento do tratamento, declaração obrigatória, perfis finos | **Feita** (entregas 2a–2d) |
 | 3 — contexto agrícola | Risco meteorológico, calendário agrícola, campanhas, inspecção de campo (FAMEWS) e armadilhas, machambas com GPS | Por fazer |
 | 4 — alcance e abertura | Push, «não reconhecido», segurança de produção, privacidade, dados abertos; SMS, línguas locais, organizações e severidade como trabalho futuro | Por fazer |
 
@@ -75,8 +75,9 @@ fitossanitária**. O ciclo a fechar é diagnóstico → validação pelo técnic
 | 2a — API da fase 2 | 25/10 | `6842230`, `07b37dd` | Catálogo enriquecido, piloto, porta de qualidade, deriva, seguimento, declarações, boletim; 44 testes |
 | 2b — Painel da fase 2 | 25/10 | `41c98aa`, `43768d5` | Boletim para imprimir, PDF e CSV; catálogo com fotos e validação; modelos com piloto; declarações e eficácia |
 | 2c — App da fase 2 | 25/10 | `a5871f4`, `de9aa06` | Qualidade da foto, várias fotos, seguimento aos 7 dias, «Como reconhecer», piloto do modelo; 11 testes da app |
+| 2d — Perfis finos e aviso da declaração obrigatória | 04/11 | ver `git log` | Coordenador provincial e investigador (anonimizado); notificações no painel; migração 0004; 52 testes na API |
 
-**Testes automáticos:** 44 na API (`pytest`) e 11 na app (`flutter test`), todos aprovados.
+**Testes automáticos:** 52 na API (`pytest`) e 11 na app (`flutter test`), todos aprovados.
 O painel compila sem erros (`npm run build`) e foi testado no Edge com Puppeteer.
 
 ### Estado das 24 funcionalidades
@@ -89,12 +90,12 @@ O painel compila sem erros (`npm run build`) e foi testado no Edge com Puppeteer
 | 2b | Exactidão em campo | Feito (1a, 1c) |
 | 2c | Conjunto de retreino local | Feito (1a, 1c) |
 | 3 | Alertas por zona | Feito (1a, 1c, 1d) |
-| 3b | Pragas de declaração obrigatória | **Parcial** (2a, 2b): os casos são marcados e listados na Vigilância e no boletim. **Falta:** avisar logo o coordenador e o administrador quando um caso é confirmado |
+| 3b | Pragas de declaração obrigatória | Feito (2a, 2b, 2d): marcadas no catálogo, listadas na Vigilância e no boletim; um caso confirmado avisa logo o coordenador da província e o administrador (sino no painel) |
 | 4 | Pedido de visita técnica | Feito (1a, 1c, 1d) |
 | 4b | Seguimento do tratamento | Feito (2a, 2b, 2c); **falta ver no telemóvel** |
 | 5 | Boletim fitossanitário | Feito (2a, 2b) |
 | 6 | Registo de auditoria | Feito (1a, 1c) |
-| 6b | Perfis finos (coordenador, investigador) | **Por fazer** (fase 2) |
+| 6b | Perfis finos (coordenador, investigador) | Feito (2d) |
 | 6c | Organizações | Fase 4 (trabalho futuro) |
 | 7 | Catálogo enriquecido | Feito (2a, 2b, 2c) |
 | 8 | Modelos com piloto e deriva | Feito (2a, 2b, 2c) |
@@ -128,8 +129,6 @@ O painel compila sem erros (`npm run build`) e foi testado no Edge com Puppeteer
 | Confirmação visual da **2c** no telemóvel: cartão de seguimento, resposta e envio, aviso de qualidade, «Juntar outra foto», «Como reconhecer» | R80 carregado e desbloqueado; na app, Definições → Servidor = IP do PC (hoje `http://192.168.109.58:8000`) | O APK novo (arm64, 33,4 MB) já está instalado |
 | Confirmação visual da **1d** no telemóvel: alerta no ecrã inicial, ecrã de alertas, «Corrigido pelo técnico», visita agendada, listas no registo | O mesmo | Adiada desde 25/10 |
 | **Apagar a foto de referência de teste** do Gafanhoto (id 1, «foto de teste») | Depois do teste da 2c | Foi posta na base real só para o telemóvel a descarregar |
-| **Perfis finos (6b)**: coordenador provincial (vê e gere a província) e investigador (só leitura, dados anonimizados) | — | Cerca de 1 dia (API, painel e testes) |
-| **Declaração obrigatória (3b)**: aviso ao coordenador e ao administrador quando um caso é confirmado | Perfis finos | Por exemplo, um aviso no painel e no registo |
 
 ### 3.2 Fase 3 — contexto agrícola
 
