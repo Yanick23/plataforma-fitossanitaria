@@ -156,7 +156,7 @@ Reescrever:
   - testes da app (`flutter test`);
   - painel testado num browser automatizado (Puppeteer), contra uma API de teste;
   - casos de teste funcionais no telemóvel SOTEN R80.
-- **Tabela 4.4:** juntar o painel (React 18, Vite, TypeScript, TanStack Query), o Alembic e a
+- **Tabela 4.4:** juntar o painel (React 18.3, Vite 5.4, TypeScript 5.6, TanStack Query 5.62), o Alembic e a
   Open-Meteo.
 
 ### Cap. V — Resultados (41 → ~44 páginas; prosa 3 700 → ~4 300)

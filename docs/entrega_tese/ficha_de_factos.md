@@ -1,0 +1,201 @@
+# Ficha de factos da plataforma (para a versão 2 do PFC)
+
+**Fonte de verdade para o texto.** Os factos vêm do código e dos testes a 04/11/2026.
+**Regra para quem escreve:** se um número, nome ou funcionalidade não estiver aqui nem em
+`03_resultados_plataforma.md`, **não o suponha**: pergunte ao Yanick. No fim, o Claude Code
+confirma o texto contra o código.
+
+---
+
+## 1. Componentes
+
+| Componente | Tecnologia | Tamanho (linhas de código) | Papel |
+|---|---|---|---|
+| App Android «Diagnóstico de culturas» | Flutter 3.38 / Dart 3.10; tflite_flutter 0.12.1; sqflite | ~5 200 (Dart, `app/lib`) | Diagnóstico sem internet, historial, sincronização, alertas, visitas, seguimento |
+| API REST | FastAPI 0.115.6, Uvicorn, SQLAlchemy 2 (assíncrono), PostgreSQL (SQLite nos testes), Alembic 1.14, PyJWT, bcrypt, TensorFlow 2.17.1 / Keras (Grad-CAM), httpx (Open-Meteo) | ~4 000 (Python, `api/app`) | Dados, regras, permissões, Grad-CAM, previsão do tempo |
+| Painel web | React 18.3, Vite 5.4, TypeScript 5.6, TanStack Query 5.62, padrão MVVM | ~4 900 (TS/TSX, `admin/src`) | Trabalho da equipa: validação, vigilância, alertas, visitas, boletim, gestão |
+| Modelo | EfficientNetB0 por cultura, TFLite INT8 dinâmica (4,35 MB cada) | — | Classificação no telemóvel |
+
+**Arquitectura da API em camadas:** `rotas/` (HTTP, validação e permissões) → `servicos/` (regras de
+negócio) → `repositorios/` (consultas).
+
+**Painel em MVVM:**
+- Model = `model/repositorios.ts` (uma função por rota da API);
+- ViewModel = `viewmodels/use*ViewModel.ts` (*hooks*);
+- View = `views/*View.tsx`.
+
+**Base de dados:** 17 tabelas, migrações Alembic aplicadas no arranque:
+
+| Migração | Conteúdo |
+|---|---|
+| 0001 | Base |
+| 0002 | Plataforma |
+| 0003 | Fase 2 |
+| 0004 | Perfis e notificações |
+| 0005 | Previsões do tempo |
+
+---
+
+## 2. Perfis (controlo de acesso por perfil e por zona)
+
+| Perfil | Zona | Pode |
+|---|---|---|
+| Agricultor | o seu distrito | diagnosticar (app), ver o seu historial e as validações, receber alertas, pedir visita, responder ao seguimento |
+| Técnico | um distrito (ou uma província, sem distrito) | validar diagnósticos, enviar alertas para a sua zona, agendar e resolver visitas, ver a vigilância e o boletim, validar o texto do catálogo, ver os agricultores da zona |
+| Coordenador provincial | a província (obrigatória) | o mesmo que o técnico, na província toda, mais criar e alterar contas de técnicos e agricultores da província (e só esses dois perfis); recebe os avisos de declaração obrigatória |
+| Investigador | o país todo, **só leitura** | painel, vigilância, boletim, exactidão em campo, exportação do conjunto de retreino; os agricultores aparecem com um pseudónimo («Agricultor 1EFC54», HMAC estável) e sem telefone |
+| Administrador | o país todo | tudo, incluindo o catálogo, os modelos (piloto e publicação), as contas de qualquer perfil e a auditoria |
+
+**Zonas:** as 11 províncias e os 157 distritos de Moçambique (geoBoundaries, INE/OCHA 2019).
+
+---
+
+## 3. Funcionalidades implementadas (por iteração)
+
+| Iteração | Funcionalidades |
+|---|---|
+| 0 (v1 do PFC) | Diagnóstico offline, historial, sincronização sem duplicados (UUID), catálogo, publicação de modelo com SHA-256, Grad-CAM |
+| 1a–1d | Regiões e zonas; validação pelo técnico; exactidão em campo; conjunto de retreino (ZIP + CSV); mapa de ocorrências; sinais de surto; alertas por zona com alcance e taxa de leitura; pedidos de visita; auditoria; gestão de contas; **painel web**; a app recebe alertas, validações, visitas e o distrito no registo |
+| 2a–2c | Boletim fitossanitário (PDF e CSV); catálogo enriquecido (sintomas, prevenção, fotos de referência, validação do texto, versão); modelos em **piloto** por distrito, **porta de qualidade** e sinal de deriva; seguimento do tratamento aos 7 dias; pragas de declaração obrigatória; na app, verificação da qualidade da foto (nitidez e luz), várias fotos por caso (média das probabilidades) e «Como reconhecer» |
+| 2d | Perfis de coordenador e investigador; **aviso imediato** ao coordenador da província e ao administrador quando se confirma um caso de declaração obrigatória (sino no painel) |
+| 3a | **Risco meteorológico**: previsão Open-Meteo de 7 dias por distrito, 4 regras com fontes, cartão na Vigilância e alerta preventivo |
+
+**Não implementadas (decisão do Yanick):** severidade, inspecção FAMEWS, armadilhas, dados
+abertos, segurança de produção (HTTPS, limite de tentativas, cópias de segurança), privacidade
+(consentimento, apagar a conta). **Ficam para trabalho futuro:** calendário agrícola, campanhas de
+vigilância, machambas com GPS, notificações *push*, SMS, organizações, «não reconhecido».
+
+---
+
+## 4. Requisitos propostos para a v2
+
+Os RF01 a RF12 e os RNF01 a RNF07 são os da v1.
+
+| Código | Requisito | Actor |
+|---|---|---|
+| RF11 (actualizado) | Gerir o catálogo enriquecido: sintomas, prevenção, fotos de referência, validação do texto por um técnico, versão | Administrador; técnico valida |
+| RF12 (actualizado) | Publicar modelo em piloto por distrito, promover a publicado ou retirar; porta de qualidade | Administrador |
+| RF13 | Validar um diagnóstico: confirmar ou corrigir a classe, com nota ao agricultor | Técnico, coordenador |
+| RF14 | Calcular a exactidão em campo (modelo × técnico), por classe e por versão | Técnico, investigador |
+| RF15 | Mostrar o mapa de ocorrências por distrito | Equipa |
+| RF16 | Detectar sinais de surto (subida acima do habitual por distrito e praga) | Equipa |
+| RF17 | Enviar alertas por zona (distrito, província, país), com alcance previsto e taxa de leitura | Técnico, coordenador, administrador |
+| RF18 | Pedir visita técnica a partir de um diagnóstico; o técnico agenda e resolve | Agricultor, técnico |
+| RF19 | Perguntar aos 7 dias se seguiu a recomendação e se a planta melhorou | Agricultor |
+| RF20 | Marcar pragas de declaração obrigatória e avisar logo o coordenador e o administrador quando um caso é confirmado | Administrador; sistema |
+| RF21 | Mostrar o risco meteorológico dos próximos 7 dias por distrito | Equipa; Open-Meteo |
+| RF22 | Gerar o boletim fitossanitário da zona (PDF e CSV) | Equipa |
+| RF23 | Gerir contas, perfis e zonas de actuação | Administrador, coordenador |
+| RF24 | Registar a auditoria (quem fez o quê, quando, com o antes e o depois) | Sistema; administrador consulta |
+| RF25 | Exportar o conjunto de retreino (fotos validadas e rótulos) | Administrador, investigador |
+| RF26 | Verificar a nitidez e a luz da foto antes de diagnosticar | Sistema (app) |
+| RF27 | Combinar 2 a 3 fotos da mesma planta num só diagnóstico | Agricultor (app) |
+| RNF08 | Controlo de acesso por perfil e por zona em todas as rotas | — |
+| RNF09 | O investigador nunca vê nomes nem telefones de agricultores | — |
+| RNF10 | Todas as alterações relevantes ficam na auditoria, no mesmo commit da alteração | — |
+| RNF11 | Sem internet no servidor, o risco meteorológico usa a última previsão guardada e diz que não é recente | — |
+
+---
+
+## 5. Base de dados (17 tabelas, para o diagrama de classes)
+
+| Tabela | Campos principais |
+|---|---|
+| Provincia | codigo (ISO 3166-2), nome |
+| Distrito | id, nome, provincia_codigo |
+| Utilizador | id, nome, telefone, hash_palavra_passe, perfil, area, distrito_id, provincia_codigo, activo, criado_em |
+| Cultura | id, nome, nome_cientifico |
+| Patologia | id, cultura_id, codigo, nome_local, nome_cientifico, tipo (DOENCA, PRAGA, SAUDAVEL), recomendacao, sintomas, prevencao, declaracao_obrigatoria, versao_conteudo, validado_por_id, validado_em |
+| FotoReferencia | id, patologia_id, caminho_ficheiro, legenda |
+| ModeloML | id, cultura_id, versao, caminho_tflite, classes, acuracia_teste, tamanho_bytes, sha256, estado (PILOTO, PUBLICADO, RETIRADO), distritos_piloto, notas |
+| Diagnostico | id (UUID do telemóvel), utilizador_id, cultura_id, classe_prevista, confianca, data, versao_modelo, tempo_inferencia_ms, recebido_em, distrito_id |
+| Imagem | id, diagnostico_id, caminho_ficheiro, data_captura |
+| Validacao | diagnostico_id, tecnico_id, classe_confirmada, correcto, nota |
+| Seguimento | diagnostico_id, seguiu (SIM, PARCIAL, NAO), resultado (MELHOROU, IGUAL, PIOROU, NAO_SEI), comentario |
+| PedidoVisita | id, diagnostico_id, agricultor_id, tecnico_id, distrito_id, estado (PENDENTE, AGENDADA, RESOLVIDA, CANCELADA), data_agendada, notas_tecnico |
+| Alerta | id, titulo, mensagem, nivel (INFORMACAO, AVISO, URGENTE), patologia_id, provincia_codigo, distrito_id, autor_id, expira_em, arquivado |
+| AlertaLeitura | alerta_id, utilizador_id, lido_em |
+| Notificacao | id, utilizador_id, tipo, titulo, mensagem, diagnostico_id, lida_em |
+| RegistoAuditoria | id, utilizador_id, accao, entidade, entidade_id, detalhes (antes e depois, em JSON) |
+| PrevisaoMeteo | distrito_id, obtida_em, dados (previsão horária em JSON) |
+
+**Diferença face à v1:** o modelo **passou a ser uma entidade persistida** (ModeloML). A frase da
+v1 «o modelo de classificação não é uma entidade persistida» tem de sair.
+
+---
+
+## 6. API: 61 endpoints (mais `/saude`)
+
+| Grupo | N.º | Exemplos |
+|---|---|---|
+| Autenticação e contas | 5 | `POST /auth/registar`, `/auth/login`, `/auth/renovar`, `GET /auth/eu`, `POST /utilizadores` |
+| Diagnósticos | 6 | `POST /diagnosticos` (lote), `POST /diagnosticos/{id}/imagem`, `GET /diagnosticos/{id}/gradcam`, `POST /diagnosticos/{id}/seguimento` |
+| Catálogo | 11 | culturas, patologias, `POST /patologias/{id}/validar`, fotos de referência |
+| Modelos | 7 | `GET /modelos/{cultura}/ultima-versao`, `/monitorizacao`, `/{versao}/porta-qualidade`, `POST /modelos/{cultura}`, `PATCH /modelos/{cultura}/{versao}` |
+| Regiões | 2 | `GET /provincias`, `GET /distritos` |
+| Validação | 3 | `PUT /diagnosticos/{id}/validacao`, `GET /validacoes/exactidao`, `GET /validacoes/exportar` |
+| Alertas | 6 | `GET /alertas/alcance`, `POST /alertas`, `GET /alertas/meus`, `POST /alertas/{id}/lido` |
+| Visitas | 5 | `POST /visitas`, `GET /visitas/minhas`, `PATCH /visitas/{id}` |
+| Gestão | 12 | `/gestao/resumo`, `/gestao/diagnosticos`, `/gestao/utilizadores`, `/gestao/auditoria`, `/gestao/boletim` (+ `.csv`), `/gestao/eficacia`, `/gestao/notificacoes` |
+| Vigilância | 4 | `/vigilancia/ocorrencias`, `/surtos`, `/declaracoes`, `/risco-meteorologico` |
+
+Documentação automática em `/docs` (Swagger UI) e `/redoc`.
+
+---
+
+## 7. Testes
+
+| O quê | Resultado |
+|---|---|
+| API (pytest + httpx, SQLite temporária) | **59 testes aprovados** (v1: 23). Cobrem autenticação, sincronização sem duplicados, permissões por perfil e zona, catálogo, modelos (piloto, porta de qualidade, deriva), Grad-CAM, alertas, visitas, vigilância e surtos, boletim, perfis finos, notificações, risco meteorológico (com a Open-Meteo simulada) e migração de uma base antiga |
+| App (`flutter test`) | 11 testes: qualidade da foto (com fotos reais), combinação de fotos, seguimento, catálogo, sincronização com UUID |
+| Painel | `npm run build` sem erros; testado no Chrome com Puppeteer, contra uma API de teste (porta 8001, base temporária, **nunca a base real**), sem erros na consola |
+| Migrações | 0003 → 0004 → 0003 → 0004 num PostgreSQL 16 temporário (Docker), sem erros |
+| Telemóvel (SOTEN R80, Android 13) | T01 a T12 aprovados (v1). **T13 (Grad-CAM) aprovado em 25/10:** 2,4 s no 1.º pedido do milho, 2,1 s na mandioca, 0,8 s com o modelo já carregado. **Por fazer:** a confirmação no ecrã das iterações 1d e 2c (alertas, validação, visitas, qualidade da foto, várias fotos, seguimento) |
+
+---
+
+## 8. Resultados do modelo que ficam no texto (iguais aos da v1)
+
+**Dados (CCMT, Gana):**
+- milho: 5 288 imagens, 7 classes;
+- mandioca: 7 508 imagens, 5 classes;
+- divisão 70/15/15, com semente 42.
+
+**Treino:** EfficientNetB0 em duas fases (cabeça, depois ajuste fino); o milho usa a configuração
+E0b e a mandioca a E0.
+
+**Teste:**
+
+| Cultura | Exactidão | F1 mínimo | H1 |
+|---|---|---|---|
+| Mandioca | **93,1%** (1 049 de 1 127) | 0,885 | confirma |
+| Milho | **87,0%** (691 de 794) | 3 classes abaixo de 0,85 (mancha 0,789, queima 0,779, saudável 0,820) | não confirma |
+
+**Teste externo (iCassava, Uganda, 80 imagens):** **26,2%** (mudança de domínio).
+
+**TFLite INT8:**
+- 4,35 MB por modelo;
+- milho 86,3%, mandioca 93,1%;
+- inferência no telemóvel de cerca de 0,16 a 0,17 s;
+- diagnóstico completo em cerca de 0,4 s, muito abaixo dos 3 s do RNF03.
+
+---
+
+## 9. Regras do risco meteorológico
+
+Os limiares de dias e de chuva são **limiares de projecto, a calibrar**.
+
+| Praga ou doença | Dia favorável | Médio / alto |
+|---|---|---|
+| Queima da folha (milho) | média 15–30 °C e ≥ 9 h com HR ≥ 90% | 2 / ≥ 3 dias |
+| Mancha cinzenta (milho) | ≥ 12 h com HR ≥ 90% entre 22 e 30 °C | 1 / ≥ 2 dias seguidos |
+| Mancha castanha (mandioca), evidência fraca | média ≥ 20 °C e ≥ 12 h com HR ≥ 95% | 2 / ≥ 4 dias |
+| Ácaro verde (mandioca) | pouca chuva na semana | < 10 mm / < 2 mm em 7 dias |
+
+**Exemplo real (04/11/2026):**
+- risco médio de mancha cinzenta em Manhiça;
+- risco médio de ácaro verde em Chokwe (9,9 mm de chuva prevista);
+- nenhum risco em Boane (33,7 mm de chuva prevista).
+
+As fontes, que é preciso confirmar, estão na secção 7 do `roteiro_pfc_v2.md`.
