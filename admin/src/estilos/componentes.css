@@ -1018,3 +1018,128 @@ select.entrada {
   gap: 6px;
   cursor: pointer;
 }
+
+/* --- Sino de notificações (barra de topo) ------------------------------------ */
+.sino {
+  position: relative;
+}
+
+.sino > button {
+  position: relative;
+}
+
+.sino-contador {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--critico);
+  color: #fff;
+  font-size: var(--t-11);
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.sino-painel {
+  position: absolute;
+  top: calc(100% + var(--e-2));
+  right: 0;
+  z-index: 30;
+  width: min(380px, calc(100vw - 32px));
+  max-height: min(480px, 70vh);
+  overflow-y: auto;
+  background: var(--superficie-elevada);
+  border-radius: var(--raio-g);
+  box-shadow: var(--sombra-flutuante);
+}
+
+.sino-cabecalho {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+  padding: var(--e-3) var(--e-4);
+  background: var(--superficie-elevada);
+  border-bottom: 1px solid var(--linha);
+}
+
+.sino-vazio {
+  margin: 0;
+  padding: var(--e-4);
+  color: var(--tinta-2);
+  font-size: var(--t-13);
+}
+
+.sino-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sino-lista li {
+  display: flex;
+  gap: var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border-bottom: 1px solid var(--linha);
+}
+
+.sino-lista li:last-child {
+  border-bottom: 0;
+}
+
+.sino-lista li strong {
+  display: block;
+  font-size: var(--t-14);
+  font-weight: 600;
+}
+
+.sino-lista li p {
+  margin: 2px 0 6px;
+  color: var(--tinta-2);
+  font-size: var(--t-13);
+  line-height: 1.45;
+}
+
+.sino-lista li.lida strong {
+  font-weight: 500;
+  color: var(--tinta-2);
+}
+
+.sino-icone {
+  flex: none;
+  margin-top: 2px;
+  color: var(--critico-texto);
+}
+
+.sino-lista li.lida .sino-icone {
+  color: var(--tinta-3);
+}
+
+.sino-accoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-3);
+  font-size: var(--t-12);
+}
+
+.sino-accoes .ligacao {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--marca-texto);
+  font: inherit;
+  cursor: pointer;
+}
+
+.sino-accoes .ligacao:hover,
+.sino-accoes a:hover {
+  text-decoration: underline;
+}

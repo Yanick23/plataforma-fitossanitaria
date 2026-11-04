@@ -7,7 +7,7 @@ import { useNotificar } from '@/nucleo/notificacoes'
 import { useSessao } from '@/nucleo/sessao'
 
 export function useValidacaoViewModel() {
-  const { eAdministrador } = useSessao()
+  const { eAdministrador, eInvestigador } = useSessao()
   const cliente = useQueryClient()
   const notificar = useNotificar()
   const [cultura, setCultura] = useState('')
@@ -53,7 +53,7 @@ export function useValidacaoViewModel() {
   const e = exactidao.data
   const correccoes = e ? e.validados - e.correctos : 0
   return {
-    eAdministrador, cultura, setCultura,
+    eAdministrador, podeExportar: eAdministrador || eInvestigador, cultura, setCultura,
     fila: fila.data?.itens ?? [], totalFila: fila.data?.total ?? 0, aCarregarFila: fila.isLoading,
     exactidao: e, aCarregarExactidao: exactidao.isLoading, correccoes,
     aberto, abrir: setAberto, fechar: () => setAberto(null),

@@ -40,7 +40,7 @@ const paraEnviar = (r: RascunhoPatologia): PatologiaEscrita => ({
 export const conteudoValidado = (p: Patologia) => Boolean(p.validado_por_nome)
 
 export function useCatalogoViewModel() {
-  const { eAdministrador } = useSessao()
+  const { eAdministrador, podeOperar } = useSessao()
   const catalogo = useCatalogo()
   const cliente = useQueryClient()
   const notificar = useNotificar()
@@ -130,7 +130,7 @@ export function useCatalogoViewModel() {
   ].filter(Boolean) as string[]
 
   return {
-    eAdministrador, culturas: catalogo.culturas, aCarregar: catalogo.aCarregar, nomeCultura: catalogo.nomeCultura,
+    eAdministrador, podeValidar: podeOperar, culturas: catalogo.culturas, aCarregar: catalogo.aCarregar, nomeCultura: catalogo.nomeCultura,
     cultura, setCultura, pesquisa, setPesquisa, filtro, setFiltro, patologias, porValidar, total: daCultura.length, emFalta,
     edicao, guardada, textoAlterado, porGuardar,
     editar: (p: Patologia) => setEdicao(rascunhoDe(p)),

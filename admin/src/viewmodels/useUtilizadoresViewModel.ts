@@ -20,8 +20,16 @@ export interface FormularioConta {
 
 const VAZIO: FormularioConta = { id: null, nome: '', telefone: '', palavra_passe: '', perfil: 'TECNICO', provincia: '', distrito: '', activo: true }
 
+/** Que perfis cada gestor atribui (o coordenador só agricultor e técnico, como na API). */
+const PERFIS_ADMIN: Perfil[] = ['AGRICULTOR', 'TECNICO', 'COORDENADOR', 'INVESTIGADOR', 'ADMINISTRADOR']
+const PERFIS_COORDENADOR: Perfil[] = ['AGRICULTOR', 'TECNICO']
+
+/** Perfis sem zona: actuam (ou lêem) no país todo. */
+export const semZona = (p: Perfil) => p === 'ADMINISTRADOR' || p === 'INVESTIGADOR'
+
 export function useUtilizadoresViewModel() {
-  const { eAdministrador, utilizador: eu } = useSessao()
+  const { eAdministrador, eCoordenador, eGestor, utilizador: eu } = useSessao()
+  const provinciaFixa = eCoordenador ? eu?.provincia_codigo ?? '' : ''
   const cliente = useQueryClient()
   const notificar = useNotificar()
   const [filtros, setFiltros] = useState({ q: '', perfil: '' as Perfil | '', provincia: '', distrito: '', estado: '' as '' | 'activo' | 'inactivo' })
@@ -52,10 +60,11 @@ export function useUtilizadoresViewModel() {
   }
   const aoErro = (e: Error) => notificar(e.message, 'erro')
 
-  const zonaDe = (f: FormularioConta) => ({
-    distrito_id: f.distrito ? Number(f.distrito) : null,
-    provincia_codigo: f.distrito ? null : f.provincia || null,
-  })
+  const zonaDe = (f: FormularioConta) => {
+    if (semZona(f.perfil)) return { distrito_id: null, provincia_codigo: null }
+    if (f.perfil === 'COORDENADOR') return { distrito_id: null, provincia_codigo: f.provincia || null }
+    return { distrito_id: f.distrito ? Number(f.distrito) : null, provincia_codigo: f.distrito ? null : f.provincia || null }
+  }
 
   const guardar = useMutation({
     mutationFn: async (f: FormularioConta) => {
@@ -82,14 +91,16 @@ export function useUtilizadoresViewModel() {
   const alterar = <K extends keyof FormularioConta>(k: K, v: FormularioConta[K]) =>
     setForm((f) => (f ? { ...f, [k]: v, ...(k === 'provincia' ? { distrito: '' } : {}) } : f))
 
-  const valido = Boolean(form && form.nome.trim().length >= 2 && (form.id !== null
-    || (/^\+?\d{9,15}$/.test(form.telefone.replace(/\s+/g, '')) && form.palavra_passe.length >= 6)))
+  const valido = Boolean(form && form.nome.trim().length >= 2
+    && (form.perfil !== 'COORDENADOR' || form.provincia)
+    && (form.id !== null || (/^\+?\d{9,15}$/.test(form.telefone.replace(/\s+/g, '')) && form.palavra_passe.length >= 6)))
 
   return {
-    eAdministrador, euId: eu?.id,
+    eAdministrador, eCoordenador, eGestor, euId: eu?.id, provinciaFixa,
+    perfisAtribuiveis: eAdministrador ? PERFIS_ADMIN : PERFIS_COORDENADOR,
     pesquisa, setPesquisa, filtros, alterarFiltro,
     pagina: lista.data, aCarregar: lista.isLoading, erro: lista.error as Error | null, limite: LIMITE, deslocamento, setDeslocamento,
-    form, abrir, nova: () => setForm({ ...VAZIO }), fechar: () => { setForm(null); setNovaPalavraPasse('') }, alterar, valido,
+    form, abrir, nova: () => setForm({ ...VAZIO, provincia: provinciaFixa }), fechar: () => { setForm(null); setNovaPalavraPasse('') }, alterar, valido,
     guardar: () => form && guardar.mutate(form), aGuardar: guardar.isPending,
     novaPalavraPasse, setNovaPalavraPasse,
     repor: () => form?.id && novaPalavraPasse.length >= 6 && repor.mutate({ id: form.id, palavra: novaPalavraPasse }), aRepor: repor.isPending,

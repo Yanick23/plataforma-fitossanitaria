@@ -3,8 +3,16 @@ import type { Perfil } from '@/model/tipos'
 import { data, numero } from '@/nucleo/formatos'
 import { PERFIL } from '@/nucleo/rotulos'
 import { Botao, CabecalhoPagina, Campo, Cartao, Esqueleto, Etiqueta, Gaveta, Paginacao, Segmentos, Seleccao, Vazio } from '@/ui/componentes'
-import { useUtilizadoresViewModel } from '@/viewmodels/useUtilizadoresViewModel'
+import { semZona, useUtilizadoresViewModel } from '@/viewmodels/useUtilizadoresViewModel'
 import { useRegioes } from '@/viewmodels/referencias'
+
+const DESCRICAO_PERFIL: Record<Perfil, string> = {
+  AGRICULTOR: 'Usa a app: diagnostica, recebe alertas e pede visitas.',
+  TECNICO: 'Valida diagnósticos, envia alertas e agenda visitas no seu distrito (ou província, sem distrito).',
+  COORDENADOR: 'O que o técnico faz, em toda a província, mais gerir as contas de técnicos e agricultores. Recebe os avisos de declaração obrigatória.',
+  INVESTIGADOR: 'Só leitura, no país todo: indicadores, vigilância, boletim e exportação, sem nomes nem telefones dos agricultores.',
+  ADMINISTRADOR: 'Tudo, no país todo: catálogo, modelos, contas e auditoria.',
+}
 
 export function UtilizadoresView() {
   const vm = useUtilizadoresViewModel()
@@ -17,9 +25,11 @@ export function UtilizadoresView() {
       <CabecalhoPagina
         titulo="Utilizadores"
         descricao={vm.eAdministrador
-          ? 'Agricultores, técnicos e administradores. A zona de cada conta decide o que vê e para onde pode enviar alertas.'
-          : 'Os agricultores registados na sua zona de actuação.'}
-        accoes={vm.eAdministrador && <Botao variante="primario" onClick={vm.nova}><UserPlus size={16} />Nova conta</Botao>}
+          ? 'Todas as contas. O perfil e a zona de cada conta decidem o que vê, o que pode alterar e para onde pode enviar alertas.'
+          : vm.eCoordenador
+            ? 'Os agricultores e técnicos da sua província. Pode criar contas de técnico, mudar a zona e desactivar contas.'
+            : 'Os agricultores registados na sua zona de actuação.'}
+        accoes={vm.eGestor && <Botao variante="primario" onClick={vm.nova}><UserPlus size={16} />Nova conta</Botao>}
       />
       <Cartao semMargem>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--linha)' }}>
@@ -31,18 +41,20 @@ export function UtilizadoresView() {
                 <input className="entrada" style={{ paddingLeft: 32 }} placeholder="Nome ou telefone" value={vm.pesquisa} onChange={(e) => vm.setPesquisa(e.target.value)} />
               </div>
             </label>
-            {vm.eAdministrador && (
+            {vm.eGestor && (
               <Campo rotulo="Perfil">
                 <Seleccao vazio="Todos" value={vm.filtros.perfil} onChange={(e) => vm.alterarFiltro('perfil', e.target.value as Perfil | '')}
-                  opcoes={Object.entries(PERFIL).map(([v, p]) => ({ valor: v, nome: p.nome }))} />
+                  opcoes={vm.perfisAtribuiveis.map((p) => ({ valor: p, nome: PERFIL[p].nome }))} />
               </Campo>
             )}
-            <Campo rotulo="Província">
-              <Seleccao vazio="Todas" value={vm.filtros.provincia} onChange={(e) => vm.alterarFiltro('provincia', e.target.value)} opcoes={regioes.opcoesProvincias} />
-            </Campo>
+            {!vm.eCoordenador && (
+              <Campo rotulo="Província">
+                <Seleccao vazio="Todas" value={vm.filtros.provincia} onChange={(e) => vm.alterarFiltro('provincia', e.target.value)} opcoes={regioes.opcoesProvincias} />
+              </Campo>
+            )}
             <Campo rotulo="Distrito">
               <Seleccao vazio="Todos" value={vm.filtros.distrito} onChange={(e) => vm.alterarFiltro('distrito', e.target.value)}
-                opcoes={regioes.distritosDe(vm.filtros.provincia).map((d) => ({ valor: String(d.id), nome: d.nome }))} />
+                opcoes={regioes.distritosDe(vm.eCoordenador ? vm.provinciaFixa : vm.filtros.provincia).map((d) => ({ valor: String(d.id), nome: d.nome }))} />
             </Campo>
             <Campo rotulo="Estado">
               <Seleccao vazio="Todos" value={vm.filtros.estado} onChange={(e) => vm.alterarFiltro('estado', e.target.value as '' | 'activo' | 'inactivo')}
@@ -59,11 +71,11 @@ export function UtilizadoresView() {
                     <thead><tr><th>Nome</th><th>Perfil</th><th>Zona</th><th className="numero">Diagnósticos</th><th>Registo</th><th>Estado</th></tr></thead>
                     <tbody>
                       {vm.pagina.itens.map((u) => (
-                        <tr key={u.id} className={vm.eAdministrador ? 'clicavel' : undefined} onClick={() => vm.eAdministrador && vm.abrir(u)}>
+                        <tr key={u.id} className={vm.eGestor ? 'clicavel' : undefined} onClick={() => vm.eGestor && vm.abrir(u)}>
                           <td className="celula-principal"><strong>{u.nome}</strong><span className="mono">{u.telefone}</span></td>
                           <td><Etiqueta tom={PERFIL[u.perfil].tom}>{PERFIL[u.perfil].nome}</Etiqueta></td>
                           <td className="celula-principal">
-                            <strong style={{ fontWeight: 400 }}>{u.perfil === 'ADMINISTRADOR' ? 'Todo o país' : u.distrito_nome ?? (u.provincia_nome ? `Província de ${u.provincia_nome}` : '—')}</strong>
+                            <strong style={{ fontWeight: 400 }}>{semZona(u.perfil) ? 'Todo o país' : u.perfil === 'COORDENADOR' && u.provincia_nome ? `Província de ${u.provincia_nome}` : u.distrito_nome ?? (u.provincia_nome ? `Província de ${u.provincia_nome}` : '—')}</strong>
                             {u.distrito_nome && <span>{u.provincia_nome}</span>}
                           </td>
                           <td className="numero">{numero(u.diagnosticos)}</td>
@@ -82,7 +94,9 @@ export function UtilizadoresView() {
       <Gaveta
         aberta={Boolean(f)}
         titulo={f?.id === null ? 'Nova conta' : f?.nome ?? ''}
-        subtitulo={f?.id === null ? 'Contas de técnico e de administrador só podem ser criadas aqui.' : f?.telefone}
+        subtitulo={f?.id === null
+          ? vm.eCoordenador ? 'A conta fica na sua província.' : 'As contas da equipa (técnico, coordenador, investigador, administrador) só se criam aqui.'
+          : f?.telefone}
         aoFechar={vm.fechar}
         rodape={
           <>
@@ -100,19 +114,26 @@ export function UtilizadoresView() {
                 <Campo rotulo="Palavra-passe inicial" ajuda="Mínimo 6 caracteres"><input className="entrada" type="text" value={f.palavra_passe} onChange={(e) => vm.alterar('palavra_passe', e.target.value)} /></Campo>
               </div>
             )}
-            <Campo rotulo="Perfil" ajuda={proprio ? 'Não pode alterar o perfil da sua própria conta.' : undefined}>
-              <Segmentos rotulo="Perfil" valor={f.perfil} aoMudar={(v: Perfil) => !proprio && vm.alterar('perfil', v)}
-                opcoes={(['AGRICULTOR', 'TECNICO', 'ADMINISTRADOR'] as Perfil[]).map((p) => ({ valor: p, nome: PERFIL[p].nome }))} />
+            <Campo rotulo="Perfil" ajuda={proprio ? 'Não pode alterar o perfil da sua própria conta.' : DESCRICAO_PERFIL[f.perfil]}>
+              {proprio
+                ? <div><Etiqueta tom={PERFIL[f.perfil].tom}>{PERFIL[f.perfil].nome}</Etiqueta></div>
+                : vm.perfisAtribuiveis.length <= 3
+                  ? <Segmentos rotulo="Perfil" valor={f.perfil} aoMudar={(v: Perfil) => vm.alterar('perfil', v)}
+                      opcoes={vm.perfisAtribuiveis.map((p) => ({ valor: p, nome: PERFIL[p].nome }))} />
+                  : <Seleccao value={f.perfil} onChange={(e) => vm.alterar('perfil', e.target.value as Perfil)}
+                      opcoes={vm.perfisAtribuiveis.map((p) => ({ valor: p, nome: PERFIL[p].nome }))} />}
             </Campo>
-            {f.perfil !== 'ADMINISTRADOR' && (
+            {!semZona(f.perfil) && (
               <div className="linha">
-                <Campo rotulo="Província">
-                  <Seleccao vazio="—" value={f.provincia} onChange={(e) => vm.alterar('provincia', e.target.value)} opcoes={regioes.opcoesProvincias} />
+                <Campo rotulo="Província" ajuda={vm.eCoordenador ? 'A sua província.' : f.perfil === 'COORDENADOR' && !f.provincia ? 'Obrigatória para o coordenador.' : undefined}>
+                  <Seleccao vazio="—" value={f.provincia} disabled={vm.eCoordenador} onChange={(e) => vm.alterar('provincia', e.target.value)} opcoes={regioes.opcoesProvincias} />
                 </Campo>
-                <Campo rotulo="Distrito" ajuda={f.perfil === 'TECNICO' && !f.distrito && f.provincia ? 'Sem distrito: técnico provincial (toda a província).' : undefined}>
-                  <Seleccao vazio="—" value={f.distrito} onChange={(e) => vm.alterar('distrito', e.target.value)}
-                    opcoes={regioes.distritosDe(f.provincia).map((d) => ({ valor: String(d.id), nome: d.nome }))} />
-                </Campo>
+                {f.perfil !== 'COORDENADOR' && (
+                  <Campo rotulo="Distrito" ajuda={f.perfil === 'TECNICO' && !f.distrito && f.provincia ? 'Sem distrito: técnico provincial (toda a província).' : undefined}>
+                    <Seleccao vazio="—" value={f.distrito} onChange={(e) => vm.alterar('distrito', e.target.value)}
+                      opcoes={regioes.distritosDe(f.provincia).map((d) => ({ valor: String(d.id), nome: d.nome }))} />
+                  </Campo>
+                )}
               </div>
             )}
             {f.id !== null && (

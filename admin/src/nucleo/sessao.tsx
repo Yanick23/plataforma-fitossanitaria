@@ -8,13 +8,21 @@ interface Sessao {
   utilizador: Utilizador | null
   aVerificar: boolean
   eAdministrador: boolean
+  /** Coordenador provincial: gere as contas de técnicos e agricultores da sua província. */
+  eCoordenador: boolean
+  /** Investigador: só lê, com os agricultores anonimizados. */
+  eInvestigador: boolean
+  /** Administrador ou coordenador: cria e altera contas. */
+  eGestor: boolean
+  /** Técnico, coordenador ou administrador: valida, envia alertas, agenda visitas. */
+  podeOperar: boolean
   entrar: (telefone: string, palavraPasse: string) => Promise<void>
   sair: () => void
 }
 
 const Contexto = createContext<Sessao | null>(null)
 
-/** ViewModel da sessão: guarda o token, confirma a conta e expõe o perfil. Só o pessoal entra. */
+/** ViewModel da sessão: guarda o token, confirma a conta e expõe o perfil. Só a equipa entra (não os agricultores). */
 export function FornecedorSessao({ children }: { children: ReactNode }) {
   const cliente = useQueryClient()
   const [utilizador, setUtilizador] = useState<Utilizador | null>(null)
@@ -45,9 +53,17 @@ export function FornecedorSessao({ children }: { children: ReactNode }) {
     setUtilizador(r.utilizador)
   }, [])
 
-  const valor = useMemo<Sessao>(() => ({
-    utilizador, aVerificar, entrar, sair, eAdministrador: utilizador?.perfil === 'ADMINISTRADOR',
-  }), [utilizador, aVerificar, entrar, sair])
+  const valor = useMemo<Sessao>(() => {
+    const perfil = utilizador?.perfil
+    return {
+      utilizador, aVerificar, entrar, sair,
+      eAdministrador: perfil === 'ADMINISTRADOR',
+      eCoordenador: perfil === 'COORDENADOR',
+      eInvestigador: perfil === 'INVESTIGADOR',
+      eGestor: perfil === 'ADMINISTRADOR' || perfil === 'COORDENADOR',
+      podeOperar: perfil === 'TECNICO' || perfil === 'COORDENADOR' || perfil === 'ADMINISTRADOR',
+    }
+  }, [utilizador, aVerificar, entrar, sair])
 
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>
 }

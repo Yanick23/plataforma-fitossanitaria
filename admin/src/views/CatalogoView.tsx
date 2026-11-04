@@ -36,7 +36,9 @@ export function CatalogoView() {
       />
       {!vm.eAdministrador && (
         <div className="aviso-caixa info"><Lock size={16} style={{ flex: 'none', marginTop: 2 }} />
-          Só o administrador altera o catálogo. Como técnico, pode rever e validar o texto que os agricultores lêem.</div>
+          {vm.podeValidar
+            ? 'Só o administrador altera o catálogo. Como técnico, pode rever e validar o texto que os agricultores lêem.'
+            : 'Consulta: só o administrador altera o catálogo e só os técnicos validam o texto.'}</div>
       )}
       {vm.aCarregar ? <Esqueleto altura={300} /> : (
         <>
@@ -162,7 +164,7 @@ export function CatalogoView() {
                   {vm.textoAlterado && conteudoValidado(g) && (
                     <div className="aviso-caixa aviso"><CircleAlert size={16} style={{ flex: 'none', marginTop: 2 }} />Ao guardar, o texto passa à versão {g.versao_conteudo + 1} e deixa de estar validado.</div>
                   )}
-                  {!conteudoValidado(g) && (
+                  {!conteudoValidado(g) && vm.podeValidar && (
                     <div>
                       <Botao variante="primario" onClick={vm.validar} disabled={vm.aValidar || vm.porGuardar}>
                         <CircleCheck size={16} />{vm.aValidar ? 'A validar…' : 'Validar este texto'}
