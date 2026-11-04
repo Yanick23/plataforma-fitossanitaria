@@ -367,3 +367,71 @@ o brilho difere menos de 3 pontos do cálculo de referência em Python.
   Esse caso continua a ser apanhado, em parte, pela confiança baixa.
 - O seguimento depende de o agricultor abrir a app; sem notificações (fase 4), a pergunta só
   aparece quando a usa.
+
+## Entrega 2d — Perfis finos e aviso imediato da declaração obrigatória (04/11/2026)
+
+### O que foi implementado
+
+**Perfis finos (funcionalidade 6b).** Aos perfis de agricultor, técnico e administrador
+juntaram-se dois:
+
+| Perfil | Zona | O que pode fazer |
+|---|---|---|
+| Técnico | distrito (ou província, sem distrito) | validar, enviar alertas, agendar visitas; vê os agricultores da sua zona |
+| **Coordenador provincial** | província (obrigatória) | o mesmo que o técnico, em toda a província, mais criar contas de técnico e agricultor, mudar a zona, desactivar e repor a palavra-passe dessas contas, sempre dentro da província |
+| **Investigador** | país todo | só leitura: painel, vigilância, boletim, exactidão em campo e exportação do conjunto de retreino; os agricultores aparecem com um pseudónimo («Agricultor 1EFC54») e sem telefone |
+| Administrador | país todo | tudo, incluindo catálogo, modelos e auditoria |
+
+O coordenador não atribui perfis acima de técnico nem coloca contas fora da sua província. O
+pseudónimo do investigador é estável (um HMAC do identificador da conta com a chave do servidor),
+o que permite contar casos por agricultor sem saber quem é.
+
+**Aviso imediato de declaração obrigatória (funcionalidade 3b, que estava parcial).** Quando um
+técnico confirma (ou corrige para) uma praga ou doença marcada no catálogo como de declaração
+obrigatória, a API cria uma notificação para cada administrador activo e para os coordenadores
+activos da província do caso. Quem validou não é avisado do próprio caso, e validar outra vez
+com a mesma classe não repete o aviso. O envio fica no registo de auditoria
+(`declaracao.notificar`, com a lista de destinatários).
+
+No painel, um sino na barra de topo mostra as notificações por ler e actualiza-se a cada minuto.
+O menu e as acções seguem o perfil: o investigador não vê Alertas, Visitas nem Utilizadores, e
+a gaveta do diagnóstico não mostra o formulário de validação.
+
+Na base de dados, a migração Alembic 0004 acrescenta os dois valores ao tipo `perfil` (em
+PostgreSQL) e cria a tabela `notificacoes`.
+
+### Como foi testado
+
+- `pytest`: **52 testes aprovados** (44 anteriores e 8 novos em `test_plataforma_perfis.py`):
+  - o coordenador sem província é recusado;
+  - o coordenador vê e valida na província toda e não noutra;
+  - o coordenador gere só as contas da sua província e não dá perfis acima de técnico;
+  - o técnico continua sem gerir contas;
+  - o investigador lê os dados anonimizados (nos diagnósticos, nas declarações e no boletim) e
+    não escreve nada;
+  - o aviso chega ao coordenador e ao administrador certos, não se repete, e só o destinatário
+    o pode marcar como lido.
+- Migração 0003 → 0004 → 0003 → 0004 num PostgreSQL 16 temporário (Docker): sem erros, e uma
+  conta passou a `COORDENADOR`.
+- Painel: `npm run build` sem erros. Teste no Chrome (Puppeteer), contra uma API de teste na
+  porta 8001 com base SQLite temporária e o painel na porta 5175, nunca a base real. Com dois
+  casos confirmados de lagarta-do-cartucho em Boane e Manhiça, a coordenadora de Maputo e o
+  administrador receberam 2 avisos e o coordenador de Gaza nenhum. Não houve erros na consola.
+
+| Figura | Ficheiro |
+|---|---|
+| Sino com os avisos de declaração obrigatória (coordenadora de Maputo) | `dados_web/6b_01_coordenador_notificacoes.png` |
+| Utilizadores vistos pela coordenadora (só a província) | `dados_web/6b_02_coordenador_utilizadores.png` |
+| Nova conta pela coordenadora (só agricultor ou técnico, província fixa) | `dados_web/6b_03_coordenador_nova_conta.png` |
+| Diagnósticos vistos pelo investigador (menu reduzido) | `dados_web/6b_04_investigador_diagnosticos.png` |
+| Detalhe anonimizado e sem validação (investigador) | `dados_web/6b_05_investigador_detalhe.png` |
+| Nova conta de coordenador pelo administrador | `dados_web/6b_06_admin_nova_conta_coordenador.png` |
+
+### Limitações da entrega 2d
+
+- O aviso só aparece no painel. Não há SMS, e-mail nem notificação push (fase 4).
+- O investigador vê as fotografias. Normalmente são folhas, mas podem mostrar pessoas ou
+  casas; antes de abrir o acesso a parceiros externos convém rever esta regra (privacidade, 24).
+- A auditoria continua só visível ao administrador; o coordenador não vê o registo da sua
+  província.
+- A app não muda: os perfis novos são só da equipa e usam o painel.
