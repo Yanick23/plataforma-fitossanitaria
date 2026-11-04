@@ -76,8 +76,9 @@ fitossanitária**. O ciclo a fechar é diagnóstico → validação pelo técnic
 | 2b — Painel da fase 2 | 25/10 | `41c98aa`, `43768d5` | Boletim para imprimir, PDF e CSV; catálogo com fotos e validação; modelos com piloto; declarações e eficácia |
 | 2c — App da fase 2 | 25/10 | `a5871f4`, `de9aa06` | Qualidade da foto, várias fotos, seguimento aos 7 dias, «Como reconhecer», piloto do modelo; 11 testes da app |
 | 2d — Perfis finos e aviso da declaração obrigatória | 04/11 | ver `git log` | Coordenador provincial e investigador (anonimizado); notificações no painel; migração 0004; 52 testes na API |
+| 3a — Risco meteorológico | 04/11 | ver `git log` | Open-Meteo por distrito, regras com fontes, cartão na Vigilância; migração 0005; 59 testes na API |
 
-**Testes automáticos:** 52 na API (`pytest`) e 11 na app (`flutter test`), todos aprovados.
+**Testes automáticos:** 59 na API (`pytest`) e 11 na app (`flutter test`), todos aprovados.
 O painel compila sem erros (`npm run build`) e foi testado no Edge com Puppeteer.
 
 ### Estado das 24 funcionalidades
@@ -100,23 +101,23 @@ O painel compila sem erros (`npm run build`) e foi testado no Edge com Puppeteer
 | 7 | Catálogo enriquecido | Feito (2a, 2b, 2c) |
 | 8 | Modelos com piloto e deriva | Feito (2a, 2b, 2c) |
 | 8b | Porta de qualidade | Feito (2a, 2b) |
-| 9 | Risco meteorológico | Por fazer (fase 3) |
+| 9 | Risco meteorológico | Feito (3a): previsão Open-Meteo por distrito, 4 regras com fontes, cartão na Vigilância e alerta preventivo |
 | 10 | Calendário agrícola | Por fazer (fase 3) |
 | 11 | Machambas georreferenciadas | Por fazer (fase 3) |
 | 12 | Campanhas de vigilância activa | Por fazer (fase 3) |
 | 13 | Alertas por SMS | Fase 4 (trabalho futuro: exige contrato com operadora) |
 | 13b | Notificações push | Por fazer (fase 4) |
-| 14 | Línguas locais e áudio | Fase 4 (trabalho futuro: exige tradutores) |
+| 14 | Línguas locais e áudio | **A fazer** com a API de áudio em línguas locais do Yanick (falta a documentação da API) |
 | 15 | Verificação da fotografia | Feito (2c); **falta ver no telemóvel** |
 | 16 | Várias fotos por caso | Feito (2c); **falta ver no telemóvel** |
 | 17 | «Não reconhecido» | Por fazer (fase 4); depende da tarefa D4 |
-| 18 | Severidade | Trabalho futuro (precisa de um modelo de segmentação) |
-| 19 | Inspecção de campo (FAMEWS) | Por fazer (fase 3) |
-| 20 | Armadilhas de feromona | Por fazer (fase 3) |
+| 18 | Severidade | Não se faz (decisão de 04/11) |
+| 19 | Inspecção de campo (FAMEWS) | Não se faz (decisão de 04/11) |
+| 20 | Armadilhas de feromona | Não se faz (decisão de 04/11) |
 | 21 | Directório de apoio | Por fazer (fase 4, pequeno) |
-| 22 | Dados agregados abertos | Por fazer (fase 4) |
-| 23 | Segurança de produção | Por fazer (fase 4) |
-| 24 | Privacidade | Por fazer (fase 4) |
+| 22 | Dados agregados abertos | Não se faz (decisão de 04/11) |
+| 23 | Segurança de produção | Não se faz (decisão de 04/11) |
+| 24 | Privacidade | Não se faz (decisão de 04/11) |
 
 ---
 
