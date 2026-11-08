@@ -45,7 +45,7 @@ class _DiagnosticoTecnicoScreenState extends State<DiagnosticoTecnicoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Diagnóstico técnico', style: TextStyle(fontWeight: FontWeight.w800))),
+      appBar: AppBar(title: const Text('Diagnóstico técnico', style: TextStyle(fontWeight: FontWeight.w600))),
       body: ListenableBuilder(
         listenable: RegistoTecnico.instancia,
         builder: (context, _) {
@@ -92,9 +92,9 @@ class _DiagnosticoTecnicoScreenState extends State<DiagnosticoTecnicoScreen> {
     final e = _tempos == null ? null : Estatisticas(_tempos!);
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Cores.cartao, borderRadius: BorderRadius.circular(16), boxShadow: sombraSuave),
+      decoration: decoracaoCartao(),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Teste de desempenho', style: TextStyle(fontWeight: FontWeight.w800)),
+        const Text('Teste de desempenho', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         const Text('20 inferências seguidas com uma imagem sintética (a 1.ª, de aquecimento, é descartada).',
             style: TextStyle(fontSize: 12, color: Cores.textoSecundario)),
@@ -133,7 +133,7 @@ Widget _linha(String rotulo, String valor) => Padding(
         Flexible(
           child: Text(valor,
               textAlign: TextAlign.right,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, fontFeatures: [FontFeature.tabularFigures()])),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, fontFeatures: [FontFeature.tabularFigures()])),
         ),
       ]),
     );
@@ -148,9 +148,9 @@ class _Cartao extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Cores.cartao, borderRadius: BorderRadius.circular(16), boxShadow: sombraSuave),
+      decoration: decoracaoCartao(),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(titulo, style: const TextStyle(fontWeight: FontWeight.w800)),
+        Text(titulo, style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         for (final (r, v) in linhas) _linha(r, v),
       ]),

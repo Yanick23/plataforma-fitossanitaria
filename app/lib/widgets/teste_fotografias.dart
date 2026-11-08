@@ -122,9 +122,9 @@ class _TesteFotografiasState extends State<TesteFotografias> {
     final inf = Estatisticas(_linhas.map((l) => l.inferenciaMs).toList());
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Cores.cartao, borderRadius: BorderRadius.circular(16), boxShadow: sombraSuave),
+      decoration: decoracaoCartao(),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Teste com fotografias', style: TextStyle(fontWeight: FontWeight.w800)),
+        const Text('Teste com fotografias', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         Text(
           'Diagnostica todas as imagens da pasta de teste da app, com o pipeline completo. '
@@ -193,7 +193,7 @@ class _TesteFotografiasState extends State<TesteFotografias> {
         padding: const EdgeInsets.symmetric(vertical: 3),
         child: Row(children: [
           Expanded(child: Text(rotulo, style: const TextStyle(color: Cores.textoSecundario, fontSize: 13))),
-          Text(valor, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          Text(valor, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
         ]),
       );
 }

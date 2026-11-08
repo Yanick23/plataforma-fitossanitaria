@@ -13,7 +13,7 @@ import '../services/historial_db.dart';
 import '../services/visitas_locais.dart';
 import '../tema.dart';
 import '../widgets/anel_confianca.dart';
-import '../widgets/botao_ouvir.dart';
+import '../widgets/cartao.dart';
 import '../widgets/botoes.dart';
 import '../widgets/formatacao.dart';
 import '../widgets/informacao_patologia.dart';
@@ -125,7 +125,7 @@ class _DetalheDiagnosticoScreenState extends State<DetalheDiagnosticoScreen> {
           ]),
           const SizedBox(height: 16),
           ClipRRect(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(12),
             child: AspectRatio(
               aspectRatio: 16 / 10,
               child: _gradcam != null
@@ -141,25 +141,16 @@ class _DetalheDiagnosticoScreenState extends State<DetalheDiagnosticoScreen> {
                   style: TextStyle(fontSize: 12, color: Cores.textoSecundario)),
             ),
           const SizedBox(height: 16),
-          Text(pat.nomeLocal, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+          Text(pat.nomeLocal, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
           Text(pat.nomeCientifico, style: const TextStyle(fontStyle: FontStyle.italic, color: Cores.textoSecundario)),
           const SizedBox(height: 16),
-          Center(child: AnelConfianca(confianca: _d.confianca, baixa: _d.confianca < limiarConfianca)),
+          Cartao(child: MedidorConfianca(confianca: _d.confianca, baixa: _d.confianca < limiarConfianca)),
           const SizedBox(height: 16),
           if (_d.validacao != Validacao.pendente) ...[
             _CaixaValidacao(diagnostico: _d, nomePrevisto: prevista.nomeLocal),
             const SizedBox(height: 12),
           ],
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Cores.verdeClaro, borderRadius: BorderRadius.circular(16)),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Recomendação', style: TextStyle(fontWeight: FontWeight.w800, color: Cores.verdeEscuro)),
-              const SizedBox(height: 6),
-              Text(pat.recomendacao, style: const TextStyle(height: 1.4)),
-              if (pat.audios.isNotEmpty) ...[const SizedBox(height: 10), BotaoOuvir(audios: pat.audios)],
-            ]),
-          ),
+          CartaoRecomendacao(patologia: pat),
           const SizedBox(height: 12),
           ComoReconhecer(patologia: pat),
           const SizedBox(height: 12),
@@ -244,13 +235,13 @@ class _CaixaSeguimento extends StatelessWidget {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: Cores.cartao, borderRadius: BorderRadius.circular(16), boxShadow: sombraSuave),
+        decoration: decoracaoCartao(),
         child: Row(children: [
           const Icon(Icons.task_alt, color: Cores.verdeEscuro),
           const SizedBox(width: 10),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('A sua resposta ao seguimento', style: TextStyle(fontWeight: FontWeight.w800)),
+              const Text('A sua resposta ao seguimento', style: TextStyle(fontWeight: FontWeight.w600)),
               Text('Seguiu a recomendação: ${d.seguiu!.rotulo.toLowerCase()} · planta: ${d.resultadoTratamento!.rotulo.toLowerCase()}'
                   '${d.seguimentoEnviado ? '' : ' · por enviar'}',
                   style: const TextStyle(fontSize: 13, color: Cores.textoSecundario)),
@@ -278,9 +269,9 @@ class _CaixaValidacao extends StatelessWidget {
     final cor = confirmado ? Cores.verdeEscuro : Cores.avisoTexto;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: confirmado ? Cores.verdeClaro : Cores.avisoFundo,
-        borderRadius: BorderRadius.circular(16),
+      decoration: decoracaoCartao(
+        cor: confirmado ? Cores.marcaSuave : Cores.avisoFundo,
+        borda: confirmado ? const Color(0xFFBFD9C8) : const Color(0xFFF1D9A0),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -288,7 +279,7 @@ class _CaixaValidacao extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(confirmado ? 'Confirmado pelo técnico' : 'Corrigido pelo técnico',
-                style: TextStyle(fontWeight: FontWeight.w800, color: cor)),
+                style: TextStyle(fontWeight: FontWeight.w600, color: cor)),
           ),
         ]),
         if (!confirmado) ...[
@@ -316,12 +307,12 @@ class _CaixaVisita extends StatelessWidget {
     final resolvida = visita.estado == EstadoVisita.resolvida;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Cores.cartao, borderRadius: BorderRadius.circular(16), boxShadow: sombraSuave),
+      decoration: decoracaoCartao(),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Icon(resolvida ? Icons.task_alt : Icons.support_agent, color: Cores.verdeEscuro, size: 20),
           const SizedBox(width: 8),
-          Text(visita.estado.nome, style: const TextStyle(fontWeight: FontWeight.w800)),
+          Text(visita.estado.nome, style: const TextStyle(fontWeight: FontWeight.w600)),
         ]),
         if (visita.dataAgendada != null && !resolvida) ...[
           const SizedBox(height: 6),

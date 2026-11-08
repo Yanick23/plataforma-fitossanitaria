@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../models/diagnostico.dart';
+import '../models/resultado_classificacao.dart' show limiarConfianca;
 import '../services/catalogo.dart';
 import '../services/historial_db.dart';
 import '../services/sessao.dart';
@@ -34,62 +35,86 @@ class HistorialScreen extends StatelessWidget {
         builder: (context, versao, _) => FutureBuilder<List<Diagnostico>>(
           key: ValueKey(versao),
           future: HistorialDb.instancia.listar(utilizador.id),
-          builder: (context, snapshot) {
-            final itens = snapshot.data;
-            final pendentes = itens?.where((d) => d.estadoSinc == EstadoSinc.pendente).length ?? 0;
-            return RefreshIndicator(
-              onRefresh: () => _sincronizar(context),
-              child: CustomScrollView(physics: const AlwaysScrollableScrollPhysics(), slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 12, 4),
-                  sliver: SliverToBoxAdapter(
-                    child: Row(children: [
-                      const Expanded(
-                          child: Text('Historial', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800))),
-                      ListenableBuilder(
-                        listenable: Sincronizacao.instancia,
-                        builder: (context, _) => Sincronizacao.instancia.emCurso
-                            ? const Padding(
-                                padding: EdgeInsets.all(12),
-                                child: SizedBox(
-                                    width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5)))
-                            : IconButton(
-                                tooltip: 'Sincronizar agora',
-                                icon: const Icon(Icons.sync),
-                                onPressed: () => _sincronizar(context),
-                              ),
-                      ),
-                    ]),
-                  ),
-                ),
-                if (pendentes > 0)
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                    sliver: SliverToBoxAdapter(
-                      child: Text('$pendentes por sincronizar',
-                          style: const TextStyle(color: Cores.laranjaEscuro, fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                if (snapshot.hasError)
-                  SliverFillRemaining(child: Center(child: Text('Erro ao ler o historial: ${snapshot.error}')))
-                else if (itens == null)
-                  const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-                else if (itens.isEmpty)
-                  const SliverFillRemaining(child: _HistorialVazio())
-                else
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-                    sliver: SliverList.separated(
-                      itemCount: itens.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
-                      itemBuilder: (_, i) => _ItemHistorial(itens[i]),
-                    ),
-                  ),
-              ]),
-            );
-          },
+          builder: (context, snapshot) => ListaHistorial(
+            itens: snapshot.data,
+            erro: snapshot.error,
+            aoSincronizar: () => _sincronizar(context),
+          ),
         ),
       ),
+    );
+  }
+}
+
+/// A lista do historial (separada da leitura da base de dados, para se poder mostrar com dados de exemplo).
+class ListaHistorial extends StatelessWidget {
+  const ListaHistorial({super.key, required this.itens, this.erro, this.aoSincronizar});
+
+  final List<Diagnostico>? itens; // nulo = a carregar
+  final Object? erro;
+  final Future<void> Function()? aoSincronizar;
+
+  @override
+  Widget build(BuildContext context) {
+    final itens = this.itens;
+    final pendentes = itens?.where((d) => d.estadoSinc == EstadoSinc.pendente).length ?? 0;
+    final resumo = itens == null || itens.isEmpty
+        ? null
+        : '${itens.length == 1 ? '1 diagnóstico' : '${itens.length} diagnósticos'}'
+            '${pendentes == 0 ? ' · todos enviados' : ' · $pendentes por enviar'}';
+    return RefreshIndicator(
+      onRefresh: aoSincronizar ?? () async {},
+      child: CustomScrollView(physics: const AlwaysScrollableScrollPhysics(), slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 12, 14),
+          sliver: SliverToBoxAdapter(
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Historial', style: Theme.of(context).textTheme.headlineSmall),
+                  if (resumo != null) ...[
+                    const SizedBox(height: 4),
+                    Text(resumo,
+                        style: TextStyle(fontSize: 13.5, color: pendentes > 0 ? Cores.avisoTexto : Cores.textoSecundario)),
+                  ],
+                ]),
+              ),
+              ListenableBuilder(
+                listenable: Sincronizacao.instancia,
+                builder: (context, _) => Sincronizacao.instancia.emCurso
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.2)))
+                    : IconButton(tooltip: 'Enviar e actualizar agora', icon: const Icon(Icons.sync), onPressed: aoSincronizar),
+              ),
+            ]),
+          ),
+        ),
+        if (erro != null)
+          SliverFillRemaining(child: Center(child: Text('Erro ao ler o historial: $erro')))
+        else if (itens == null)
+          const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+        else if (itens.isEmpty)
+          const SliverFillRemaining(child: _HistorialVazio())
+        else
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            sliver: SliverToBoxAdapter(
+              child: Material(
+                color: Cores.cartao,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Cores.linha)),
+                child: Column(children: [
+                  for (final (i, d) in itens.indexed) ...[
+                    if (i > 0) const Divider(indent: 80),
+                    _ItemHistorial(d),
+                  ],
+                ]),
+              ),
+            ),
+          ),
+      ]),
     );
   }
 }
@@ -103,61 +128,65 @@ class _ItemHistorial extends StatelessWidget {
   Widget build(BuildContext context) {
     final pat = Catalogo.instancia.patologia(d.cultura, d.classeFinal);
     final pendente = d.estadoSinc == EstadoSinc.pendente;
-    return Material(
-      color: Cores.cartao,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.of(context)
-            .push(MaterialPageRoute(builder: (_) => DetalheDiagnosticoScreen(diagnostico: d))),
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Row(children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.file(
-                File(d.imagem.caminhoFicheiro),
-                width: 52,
-                height: 52,
-                fit: BoxFit.cover,
-                cacheWidth: 156,
-                errorBuilder: (_, _, _) => Container(
-                    width: 52, height: 52, color: Cores.verdeClaro, child: const Icon(Icons.image_not_supported)),
-              ),
+    final baixa = d.confianca < limiarConfianca;
+    return InkWell(
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => DetalheDiagnosticoScreen(diagnostico: d))),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.file(
+              File(d.imagem.caminhoFicheiro),
+              width: 52,
+              height: 52,
+              fit: BoxFit.cover,
+              cacheWidth: 156,
+              errorBuilder: (_, _, _) => Container(
+                  width: 52, height: 52, color: Cores.superficie2,
+                  child: const Icon(Icons.image_not_supported_outlined, color: Cores.textoTerciario)),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(pat.nomeLocal, style: const TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 2),
-                Text('${d.cultura.nome} · ${formatarDataHora(d.data)} · ${(d.confianca * 100).round()}%',
-                    style: const TextStyle(fontSize: 12, color: Cores.textoSecundario)),
-                if (d.validacao != Validacao.pendente) ...[
-                  const SizedBox(height: 4),
-                  _MarcaValidacao(d.validacao),
-                ],
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(pat.nomeLocal, style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, height: 1.3)),
+              const SizedBox(height: 2),
+              Text('${d.cultura.nome} · ${formatarDataHora(d.data)}',
+                  style: const TextStyle(fontSize: 13, color: Cores.textoSecundario)),
+              const SizedBox(height: 6),
+              Wrap(spacing: 12, runSpacing: 4, children: [
+                _Estado(
+                  icone: pendente ? Icons.schedule : Icons.cloud_done_outlined,
+                  texto: pendente ? 'Por enviar' : 'Enviado',
+                  cor: pendente ? Cores.avisoTexto : Cores.textoSecundario,
+                ),
+                if (d.validacao != Validacao.pendente) _MarcaValidacao(d.validacao),
               ]),
-            ),
-            Tooltip(
-              message: pendente ? 'Pendente' : 'Sincronizado',
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: pendente ? Cores.avisoFundo : Cores.verdeClaro,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  pendente ? Icons.cloud_upload_outlined : Icons.cloud_done_outlined,
-                  size: 18,
-                  color: pendente ? Cores.laranjaEscuro : Cores.verdeEscuro,
-                ),
-              ),
-            ),
-          ]),
-        ),
+            ]),
+          ),
+          const SizedBox(width: 8),
+          Text('${(d.confianca * 100).round()}%',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: baixa ? Cores.avisoTexto : Cores.texto)),
+        ]),
       ),
     );
   }
+}
+
+class _Estado extends StatelessWidget {
+  const _Estado({required this.icone, required this.texto, required this.cor});
+
+  final IconData icone;
+  final String texto;
+  final Color cor;
+
+  @override
+  Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icone, size: 14, color: cor),
+        const SizedBox(width: 4),
+        Text(texto, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: cor)),
+      ]);
 }
 
 /// «Confirmado pelo técnico» (verde) ou «Corrigido pelo técnico» (laranja).
@@ -169,12 +198,12 @@ class _MarcaValidacao extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final confirmado = v == Validacao.confirmado;
-    final cor = confirmado ? Cores.verdeEscuro : Cores.avisoTexto;
+    final cor = confirmado ? Cores.marca : Cores.avisoTexto;
     return Row(mainAxisSize: MainAxisSize.min, children: [
       Icon(confirmado ? Icons.verified_outlined : Icons.edit_note, size: 14, color: cor),
       const SizedBox(width: 4),
       Text(confirmado ? 'Confirmado pelo técnico' : 'Corrigido pelo técnico',
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: cor)),
+          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: cor)),
     ]);
   }
 }
@@ -185,12 +214,14 @@ class _HistorialVazio extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Padding(
-      padding: EdgeInsets.all(32),
+      padding: EdgeInsets.fromLTRB(40, 0, 40, 80),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.history, size: 48, color: Cores.textoSecundario),
-        SizedBox(height: 12),
-        Text('Ainda não há diagnósticos guardados.',
-            textAlign: TextAlign.center, style: TextStyle(color: Cores.textoSecundario)),
+        Icon(Icons.photo_library_outlined, size: 36, color: Cores.textoTerciario),
+        SizedBox(height: 14),
+        Text('Ainda sem diagnósticos', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+        SizedBox(height: 6),
+        Text('Os diagnósticos que guardar aparecem aqui e são enviados ao técnico quando houver rede.',
+            textAlign: TextAlign.center, style: TextStyle(fontSize: 14.5, color: Cores.textoSecundario, height: 1.45)),
       ]),
     );
   }

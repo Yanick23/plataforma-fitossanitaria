@@ -17,6 +17,7 @@ import '../services/sincronizacao.dart';
 import '../tema.dart';
 import '../widgets/botoes.dart';
 import '../widgets/campos.dart';
+import 'diagnostico_tecnico_screen.dart';
 
 /// Endereço da API, conta, versões dos modelos e sincronização manual.
 class DefinicoesScreen extends StatefulWidget {
@@ -94,7 +95,7 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
   Widget build(BuildContext context) {
     final utilizador = Sessao.instancia.utilizador.value;
     return Scaffold(
-      appBar: AppBar(title: const Text('Definições', style: TextStyle(fontWeight: FontWeight.w800))),
+      appBar: AppBar(title: const Text('Definições', style: TextStyle(fontWeight: FontWeight.w600))),
       body: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
         _seccao('Servidor (API)', [
           CampoTexto(
@@ -109,14 +110,14 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
           BotaoSecundario(texto: 'Guardar endereço', aoPremir: _guardarUrl),
         ]),
         if (!widget.apenasServidor && utilizador != null) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
           _seccao('Conta', [
             _linha('Nome', utilizador.nome),
             _linha('Telefone', utilizador.telefone),
             _linha('Perfil', utilizador.perfil.nome),
             if (utilizador.area != null) _linha('Distrito', utilizador.area!),
           ]),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
           _seccao('Ouvir as mensagens', [
             const Text('As recomendações e os alertas podem ter uma gravação na sua língua. '
                 'Toque em «Ouvir» para a escutar, mesmo sem rede.',
@@ -134,7 +135,7 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
             ),
             if (_aMudarLingua) const Padding(padding: EdgeInsets.only(top: 8), child: LinearProgressIndicator()),
           ]),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
           _seccao('Modelos de classificação', [
             FutureBuilder<List<ModeloML>>(
               future: _modelos,
@@ -160,10 +161,27 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
               ]);
             },
           ),
-          const SizedBox(height: 12),
-          BotaoSecundario(
-            texto: 'Terminar sessão',
-            aoPremir: () async {
+          const SizedBox(height: 20),
+          _seccao('Avançado', [
+            Material(
+              color: Colors.transparent,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.speed_outlined),
+                title: const Text('Desempenho no telemóvel'),
+                subtitle: const Text('Tempo e memória do modelo neste aparelho'),
+                trailing: const Icon(Icons.chevron_right, color: Cores.textoTerciario),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const DiagnosticoTecnicoScreen())),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 24),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.logout, size: 20),
+            label: const Text('Terminar sessão'),
+            style: OutlinedButton.styleFrom(foregroundColor: Cores.criticoTexto),
+            onPressed: () async {
               Navigator.of(context).popUntil((r) => r.isFirst);
               await Sessao.instancia.terminar();
               // Alertas e visitas pertencem à conta (e à zona) que saiu.
@@ -180,21 +198,20 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
     );
   }
 
-  Widget _seccao(String titulo, List<Widget> filhos) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Cores.cartao, borderRadius: BorderRadius.circular(16), boxShadow: sombraSuave),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text(titulo, style: const TextStyle(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 10),
-          ...filhos,
-        ]),
-      );
+  Widget _seccao(String titulo, List<Widget> filhos) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        TituloSeccao(titulo),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: decoracaoCartao(),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [...filhos]),
+        ),
+      ]);
 
   Widget _linha(String rotulo, String valor) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
+        padding: const EdgeInsets.symmetric(vertical: 5),
         child: Row(children: [
           Expanded(child: Text(rotulo, style: const TextStyle(color: Cores.textoSecundario))),
-          Text(valor, style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(valor, style: const TextStyle(fontWeight: FontWeight.w500)),
         ]),
       );
 }

@@ -7,6 +7,7 @@ import '../services/sincronizacao.dart';
 import '../tema.dart';
 import '../widgets/botoes.dart';
 import '../widgets/cartao_alerta.dart';
+import '../widgets/informacao_patologia.dart';
 import '../models/cultura.dart';
 
 /// Alertas enviados pelo técnico ou pelo administrador para a zona do agricultor.
@@ -24,32 +25,20 @@ class AlertasScreen extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Cores.fundo,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.7,
         maxChildSize: 0.95,
-        builder: (context, rolagem) => ListView(controller: rolagem, padding: const EdgeInsets.fromLTRB(20, 12, 20, 28), children: [
-          Center(
-            child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(2))),
-          ),
-          const SizedBox(height: 16),
+        builder: (context, rolagem) => ListView(controller: rolagem, padding: const EdgeInsets.fromLTRB(20, 0, 20, 28), children: [
           CartaoAlerta(alerta: a.comLido(true), completo: true),
           if (patologia != null) ...[
             const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Cores.verdeClaro, borderRadius: BorderRadius.circular(16)),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('${patologia.nomeLocal} (${Cultura.porId(a.culturaId!).nome.toLowerCase()})',
-                    style: const TextStyle(fontWeight: FontWeight.w800, color: Cores.verdeEscuro)),
-                Text(patologia.nomeCientifico, style: const TextStyle(fontStyle: FontStyle.italic, color: Cores.textoSecundario)),
-                const SizedBox(height: 8),
-                const Text('O que fazer', style: TextStyle(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(patologia.recomendacao, style: const TextStyle(height: 1.4)),
-              ]),
-            ),
+            Text('${patologia.nomeLocal} · ${Cultura.porId(a.culturaId!).nome}',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+            Text(patologia.nomeCientifico,
+                style: const TextStyle(fontStyle: FontStyle.italic, color: Cores.textoSecundario, fontSize: 13.5)),
+            const SizedBox(height: 10),
+            CartaoRecomendacao(patologia: patologia),
           ],
           const SizedBox(height: 18),
           BotaoSecundario(texto: 'Fechar', aoPremir: () => Navigator.of(context).pop()),
@@ -68,22 +57,23 @@ class AlertasScreen extends StatelessWidget {
             final alertas = AlertasLocais.instancia.alertas;
             return RefreshIndicator(
               onRefresh: () => Sincronizacao.instancia.sincronizar(),
-              child: ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 24), children: [
-                const Align(alignment: Alignment.centerLeft, child: BotaoVoltar()),
-                const SizedBox(height: 16),
-                const Text('Alertas', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 4),
+              child: ListView(padding: const EdgeInsets.fromLTRB(20, 4, 20, 24), children: [
+                // O ícone fica alinhado com o texto (o botão tem margem própria).
+                Align(alignment: Alignment.centerLeft, child: Transform.translate(offset: const Offset(-12, 0), child: const BotaoVoltar())),
+                const SizedBox(height: 8),
+                Text('Alertas da zona', style: Theme.of(context).textTheme.headlineSmall),
+                const SizedBox(height: 6),
                 const Text('Avisos dos técnicos para a sua zona. Puxe para baixo para actualizar.',
-                    style: TextStyle(color: Cores.textoSecundario)),
-                const SizedBox(height: 18),
+                    style: TextStyle(fontSize: 15, color: Cores.textoSecundario, height: 1.4)),
+                const SizedBox(height: 20),
                 if (alertas.isEmpty)
                   const Padding(
                     padding: EdgeInsets.only(top: 60),
                     child: Column(children: [
-                      Icon(Icons.notifications_none, size: 48, color: Cores.textoSecundario),
-                      SizedBox(height: 10),
-                      Text('Sem alertas para a sua zona', style: TextStyle(fontWeight: FontWeight.w700)),
-                      SizedBox(height: 4),
+                      Icon(Icons.notifications_none, size: 36, color: Cores.textoTerciario),
+                      SizedBox(height: 14),
+                      Text('Sem alertas para a sua zona', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                      SizedBox(height: 6),
                       Text('Quando um técnico enviar um aviso, aparece aqui.',
                           textAlign: TextAlign.center, style: TextStyle(color: Cores.textoSecundario)),
                     ]),

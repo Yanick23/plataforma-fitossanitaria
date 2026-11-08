@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../models/cultura.dart';
+import '../services/catalogo.dart';
 import '../tema.dart';
 import '../widgets/botoes.dart';
+import '../widgets/cartao.dart';
 import 'captura_screen.dart';
 
-/// Ecrã 2 — Selecção da cultura. A cultura escolhida define o modelo usado (RF02).
+/// Escolha da cultura. A cultura escolhida define o modelo usado (RF02).
 class CulturaScreen extends StatelessWidget {
   const CulturaScreen({super.key});
 
@@ -13,62 +15,60 @@ class CulturaScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const BotaoVoltar(),
-            const SizedBox(height: 24),
-            const Text('Escolha a Cultura', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            const Text('Que planta quer diagnosticar?', style: TextStyle(color: Cores.textoSecundario)),
-            const SizedBox(height: 20),
-            _CartaoCultura(cultura: Cultura.milho, cores: Cores.milho, icone: Icons.grass),
-            const SizedBox(height: 14),
-            _CartaoCultura(cultura: Cultura.mandioca, cores: Cores.mandioca, icone: Icons.spa),
-          ]),
-        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          const CabecalhoEcra(titulo: 'Nova fotografia'),
+          Expanded(
+            child: ListView(padding: const EdgeInsets.fromLTRB(20, 8, 20, 24), children: [
+              Text('Que planta quer diagnosticar?', style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 6),
+              const Text('A app usa um modelo próprio para cada cultura.',
+                  style: TextStyle(fontSize: 15, color: Cores.textoSecundario)),
+              const SizedBox(height: 20),
+              for (final (i, c) in Cultura.values.indexed) ...[
+                if (i > 0) const SizedBox(height: 10),
+                _CartaoCultura(cultura: c),
+              ],
+            ]),
+          ),
+        ]),
       ),
     );
   }
 }
 
 class _CartaoCultura extends StatelessWidget {
-  const _CartaoCultura({required this.cultura, required this.cores, required this.icone});
+  const _CartaoCultura({required this.cultura});
 
   final Cultura cultura;
-  final List<Color> cores;
-  final IconData icone;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Cores.cartao,
-      borderRadius: BorderRadius.circular(20),
-      elevation: 0,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => Navigator.of(context)
-            .push(MaterialPageRoute(
-                settings: const RouteSettings(name: CapturaScreen.rota), builder: (_) => CapturaScreen(cultura: cultura))),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 22),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), boxShadow: sombraSuave),
-          child: Column(children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: cores),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Icon(icone, color: Colors.white, size: 32),
-            ),
-            const SizedBox(height: 12),
-            Text(cultura.nome, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+    final cores = cultura == Cultura.milho ? Cores.milho : Cores.mandioca;
+    final n = Catalogo.instancia.problemasDe(cultura).length;
+    return Cartao(
+      aoTocar: () => Navigator.of(context).push(MaterialPageRoute(
+          settings: const RouteSettings(name: CapturaScreen.rota), builder: (_) => CapturaScreen(cultura: cultura))),
+      child: Row(children: [
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(color: cores[0], borderRadius: BorderRadius.circular(10)),
+          child: Icon(cultura == Cultura.milho ? Icons.grass : Icons.spa_outlined, color: cores[1], size: 26),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(cultura.nome, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+            Text(cultura.nomeCientifico,
+                style: const TextStyle(fontSize: 13.5, fontStyle: FontStyle.italic, color: Cores.textoSecundario)),
+            if (n > 0) ...[
+              const SizedBox(height: 4),
+              Text('Reconhece $n pragas e doenças', style: const TextStyle(fontSize: 13, color: Cores.textoSecundario)),
+            ],
           ]),
         ),
-      ),
+        const Icon(Icons.chevron_right, color: Cores.textoTerciario),
+      ]),
     );
   }
 }

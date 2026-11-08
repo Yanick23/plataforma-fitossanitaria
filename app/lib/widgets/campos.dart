@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../tema.dart';
-
 /// Campo de texto branco e arredondado, no estilo do protótipo.
 class CampoTexto extends StatelessWidget {
   const CampoTexto({
@@ -27,7 +25,6 @@ class CampoTexto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borda = OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none);
     return TextFormField(
       controller: controlador,
       keyboardType: teclado,
@@ -37,12 +34,8 @@ class CampoTexto extends StatelessWidget {
       decoration: InputDecoration(
         labelText: rotulo,
         helperText: dica,
-        prefixIcon: icone == null ? null : Icon(icone, color: Cores.textoSecundario),
-        filled: true,
-        fillColor: Cores.cartao,
-        border: borda,
-        enabledBorder: borda,
-        focusedBorder: borda.copyWith(borderSide: const BorderSide(color: Cores.verde, width: 2)),
+        helperMaxLines: 2,
+        prefixIcon: icone == null ? null : Icon(icone),
       ),
     );
   }

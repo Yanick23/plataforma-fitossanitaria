@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import '../models/alerta.dart';
 import '../tema.dart';
 import 'botao_ouvir.dart';
+import 'cartao.dart';
 import 'formatacao.dart';
 
 /// Cores e ícone de cada nível (o nível é sempre dito também por escrito).
 ({Color fundo, Color texto, IconData icone}) estiloNivel(NivelAlerta n) => switch (n) {
-      NivelAlerta.urgente => (fundo: const Color(0xFFFDE8E8), texto: const Color(0xFFB91C1C), icone: Icons.error_outline),
+      NivelAlerta.urgente => (fundo: Cores.criticoFundo, texto: Cores.criticoTexto, icone: Icons.error_outline),
       NivelAlerta.aviso => (fundo: Cores.avisoFundo, texto: Cores.avisoTexto, icone: Icons.warning_amber_rounded),
-      NivelAlerta.informacao => (fundo: const Color(0xFFE3EEFB), texto: const Color(0xFF1D4ED8), icone: Icons.info_outline),
+      NivelAlerta.informacao => (fundo: Cores.infoFundo, texto: Cores.info, icone: Icons.info_outline),
     };
 
 class EtiquetaNivel extends StatelessWidget {
@@ -21,12 +22,12 @@ class EtiquetaNivel extends StatelessWidget {
   Widget build(BuildContext context) {
     final e = estiloNivel(nivel);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: e.fundo, borderRadius: BorderRadius.circular(8)),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(color: e.fundo, borderRadius: BorderRadius.circular(6)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(e.icone, size: 14, color: e.texto),
         const SizedBox(width: 4),
-        Text(nivel.nome, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: e.texto)),
+        Text(nivel.nome, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: e.texto)),
       ]),
     );
   }
@@ -44,55 +45,34 @@ class CartaoAlerta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final e = estiloNivel(alerta.nivel);
-    return Material(
-      color: Cores.cartao,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: aoTocar,
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border(left: BorderSide(color: e.texto, width: alerta.lido ? 0 : 4)),
-          ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              EtiquetaNivel(alerta.nivel),
-              const Spacer(),
-              if (!alerta.lido)
-                const Padding(
-                  padding: EdgeInsets.only(right: 6),
-                  child: Text('Novo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Cores.verdeEscuro)),
-                ),
-              Text(formatarDataHora(alerta.criadoEm), style: const TextStyle(fontSize: 11, color: Cores.textoSecundario)),
-            ]),
-            const SizedBox(height: 8),
-            Text(alerta.titulo, style: TextStyle(fontSize: 16, fontWeight: alerta.lido ? FontWeight.w600 : FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text(
-              alerta.mensagem,
-              maxLines: completo ? null : 2,
-              overflow: completo ? null : TextOverflow.ellipsis,
-              style: const TextStyle(height: 1.4, color: Cores.texto),
-            ),
-            // Mensagem de voz só com o alerta aberto (na lista, tocar abre-o).
-            if (completo && alerta.audios.isNotEmpty) ...[const SizedBox(height: 10), BotaoOuvir(audios: alerta.audios)],
-            const SizedBox(height: 8),
-            Row(children: [
-              const Icon(Icons.place_outlined, size: 14, color: Cores.textoSecundario),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  alerta.expiraEm == null ? alerta.zona : '${alerta.zona} · válido até ${formatarData(alerta.expiraEm!)}',
-                  style: const TextStyle(fontSize: 12, color: Cores.textoSecundario),
-                ),
-              ),
-            ]),
-          ]),
+    return Cartao(
+      aoTocar: aoTocar,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          EtiquetaNivel(alerta.nivel),
+          const SizedBox(width: 8),
+          if (!alerta.lido)
+            const Text('Novo', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Cores.marca)),
+          const Spacer(),
+          TextoMeta(formatarDataHora(alerta.criadoEm)),
+        ]),
+        const SizedBox(height: 10),
+        Text(alerta.titulo, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, height: 1.3)),
+        const SizedBox(height: 4),
+        Text(
+          alerta.mensagem,
+          maxLines: completo ? null : 2,
+          overflow: completo ? null : TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 14.5, height: 1.45, color: Cores.textoSecundario),
         ),
-      ),
+        // Mensagem de voz só com o alerta aberto (na lista, tocar abre-o).
+        if (completo && alerta.audios.isNotEmpty) ...[const SizedBox(height: 12), BotaoOuvir(audios: alerta.audios)],
+        const SizedBox(height: 10),
+        TextoMeta(
+          alerta.expiraEm == null ? alerta.zona : '${alerta.zona} · válido até ${formatarData(alerta.expiraEm!)}',
+          icone: Icons.place_outlined,
+        ),
+      ]),
     );
   }
 }

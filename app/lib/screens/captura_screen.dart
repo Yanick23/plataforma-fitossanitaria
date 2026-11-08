@@ -95,21 +95,21 @@ class _CapturaScreenState extends State<CapturaScreen> {
               const BotaoVoltar(escuro: true),
               const Spacer(),
               Text(widget.cultura.nome,
-                  style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w700)),
+                  style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
             ]),
             const Spacer(),
             const SizedBox(width: 190, height: 190, child: CustomPaint(painter: _MolduraEnquadramento())),
             const Spacer(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(14)),
+              decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(10)),
               child: Text(
                 anterior != null
                     ? 'Fotografe outra folha da mesma planta, ou a mesma folha de outro ângulo.\n'
                         'Foto ${anterior.fotos.length + 1} de $maximoFotos.'
                     : 'Aponte a câmara para a folha afectada.\nUse luz natural e encha o enquadramento com a folha.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, height: 1.35),
+                style: const TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w500, height: 1.4),
               ),
             ),
             const SizedBox(height: 24),
@@ -123,16 +123,17 @@ class _CapturaScreenState extends State<CapturaScreen> {
                   child: Container(
                     width: 76,
                     height: 76,
+                    // Obturador clássico: anel branco e centro claro (sem gradientes).
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: const LinearGradient(colors: [Cores.verde, Cores.verdeEscuro]),
-                      border: Border.all(color: Colors.white70, width: 4),
+                      color: Colors.white,
+                      border: Border.all(color: Colors.white38, width: 6, strokeAlign: BorderSide.strokeAlignOutside),
                     ),
                     child: _ocupado
                         ? const Padding(
                             padding: EdgeInsets.all(22),
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-                        : const Icon(Icons.photo_camera, color: Colors.white, size: 30),
+                            child: CircularProgressIndicator(color: Cores.marca, strokeWidth: 3))
+                        : const Icon(Icons.photo_camera_outlined, color: Cores.texto, size: 30),
                   ),
                 ),
               ),
@@ -144,7 +145,7 @@ class _CapturaScreenState extends State<CapturaScreen> {
                     child: const Column(mainAxisSize: MainAxisSize.min, children: [
                       Icon(Icons.photo_library_outlined),
                       SizedBox(height: 4),
-                      Text('Galeria', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                      Text('Galeria', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                     ]),
                   ),
                 ),
@@ -185,12 +186,12 @@ class _AvisoQualidade extends StatelessWidget {
               SizedBox(width: 8),
               Expanded(
                 child: Text('Esta foto pode dar um resultado errado',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               ),
             ]),
             const SizedBox(height: 12),
             for (final p in problemas) ...[
-              Text(_textos[p]!.$1, style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text(_textos[p]!.$1, style: const TextStyle(fontWeight: FontWeight.w600)),
               Text(_textos[p]!.$2, style: const TextStyle(color: Cores.textoSecundario, height: 1.35)),
               const SizedBox(height: 10),
             ],

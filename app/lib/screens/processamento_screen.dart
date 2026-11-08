@@ -80,7 +80,7 @@ class _ProcessamentoScreenState extends State<ProcessamentoScreen> {
           child: CircularProgressIndicator(strokeWidth: 6, strokeCap: StrokeCap.round, color: Cores.verde),
         ),
         SizedBox(height: 26),
-        Text('A analisar imagem...', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        Text('A analisar imagem...', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         SizedBox(height: 6),
         Text('Isto pode demorar alguns segundos', style: TextStyle(color: Cores.textoSecundario)),
       ]);
@@ -89,7 +89,7 @@ class _ProcessamentoScreenState extends State<ProcessamentoScreen> {
         const Icon(Icons.error_outline, size: 56, color: Cores.laranjaEscuro),
         const SizedBox(height: 16),
         const Text('Não foi possível fazer o diagnóstico',
-            textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         const SizedBox(height: 10),
         Text(_erro!, textAlign: TextAlign.center, style: const TextStyle(color: Cores.textoSecundario, height: 1.4)),
         const SizedBox(height: 28),

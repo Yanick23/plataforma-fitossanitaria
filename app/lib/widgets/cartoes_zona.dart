@@ -4,6 +4,7 @@ import '../models/calendario.dart';
 import '../models/campanha.dart';
 import '../models/cultura.dart';
 import '../tema.dart';
+import 'cartao.dart';
 import 'formatacao.dart';
 
 /// «Nesta altura…» (funcionalidade 10): o mês actual do calendário agrícola da província.
@@ -17,65 +18,30 @@ class CartaoCalendario extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final m = calendario.mes(mes);
-    return Material(
-      color: Cores.cartao,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: aoTocar,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.calendar_month_outlined, size: 18, color: Cores.verdeEscuro),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Nesta altura · ${Calendario.nomesMeses[mes - 1]}, ${calendario.provincia}',
-                      style: const TextStyle(fontWeight: FontWeight.w800, color: Cores.verdeEscuro),
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right, color: Cores.textoSecundario),
-                ],
-              ),
-              if (m.actividades.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(m.actividades.join(' · '), style: const TextStyle(fontSize: 13, color: Cores.textoSecundario)),
-              ],
-              for (final a in m.avisos.take(2)) ...[
-                const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 2),
-                      child: Icon(Icons.visibility_outlined, size: 16, color: Cores.texto),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        '${Cultura.nomeDe(a.culturaId)}: ${a.texto}',
-                        style: const TextStyle(height: 1.35, color: Cores.texto),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              if (m.avisos.length > 2)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    'E mais ${m.avisos.length - 2}. Toque para ver o calendário.',
-                    style: const TextStyle(fontSize: 12, color: Cores.textoSecundario),
-                  ),
-                ),
-            ],
-          ),
+    return Cartao(
+      aoTocar: aoTocar,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        CabecalhoCartao(
+          icone: Icons.calendar_month_outlined,
+          texto: 'Nesta altura · ${Calendario.nomesMeses[mes - 1]}',
+          direita: const Icon(Icons.chevron_right, size: 20, color: Cores.textoTerciario),
         ),
-      ),
+        if (m.actividades.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(m.actividades.join(' · '), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, height: 1.3)),
+        ],
+        for (final a in m.avisos.take(2)) ...[
+          const SizedBox(height: 6),
+          Text('${Cultura.nomeDe(a.culturaId)}: ${a.texto}',
+              style: const TextStyle(fontSize: 14.5, height: 1.45, color: Cores.textoSecundario)),
+        ],
+        if (m.avisos.length > 2) ...[
+          const SizedBox(height: 6),
+          TextoMeta('E mais ${m.avisos.length - 2} no calendário.'),
+        ],
+        const SizedBox(height: 10),
+        TextoMeta('Província de ${calendario.provincia}', icone: Icons.place_outlined),
+      ]),
     );
   }
 }
@@ -90,67 +56,38 @@ class CartaoCampanha extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cultura = Cultura.talvez(campanha.culturaId);
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Cores.cartao,
-        borderRadius: BorderRadius.circular(16),
-        border: Border(
-          left: BorderSide(color: Cores.verdeEscuro, width: campanha.respondeu ? 0 : 4),
+    return Cartao(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        CabecalhoCartao(
+          icone: Icons.campaign_outlined,
+          texto: 'Campanha de vigilância',
+          direita: TextoMeta('até ${formatarData(campanha.fim)}'),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.campaign_outlined, size: 18, color: Cores.verdeEscuro),
-              const SizedBox(width: 6),
-              const Text(
-                'Campanha de vigilância',
-                style: TextStyle(fontWeight: FontWeight.w700, color: Cores.verdeEscuro),
-              ),
-              const Spacer(),
-              Text(
-                'até ${formatarData(campanha.fim)}',
-                style: const TextStyle(fontSize: 12, color: Cores.textoSecundario),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(campanha.titulo, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 4),
-          Text(
-            campanha.mensagem,
+        const SizedBox(height: 10),
+        Text(campanha.titulo, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, height: 1.3)),
+        const SizedBox(height: 4),
+        Text(campanha.mensagem,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(height: 1.4, color: Cores.texto),
-          ),
-          const SizedBox(height: 10),
-          if (campanha.respondeu)
-            const Row(
-              children: [
-                Icon(Icons.check_circle, size: 18, color: Cores.verdeEscuro),
-                SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'Obrigado! Já enviou um diagnóstico para esta campanha.',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: Cores.verdeEscuro),
-                  ),
-                ),
-              ],
-            )
-          else if (cultura != null)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FilledButton.icon(
-                onPressed: aoResponder,
-                icon: const Icon(Icons.photo_camera, size: 18),
-                label: Text('Fotografar ${cultura.nome.toLowerCase()}'),
-              ),
+            style: const TextStyle(fontSize: 14.5, height: 1.45, color: Cores.textoSecundario)),
+        const SizedBox(height: 12),
+        if (campanha.respondeu)
+          const Row(children: [
+            Icon(Icons.check_circle_outline, size: 18, color: Cores.marca),
+            SizedBox(width: 6),
+            Expanded(
+              child: Text('Obrigado. Já enviou um diagnóstico para esta campanha.',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Cores.marca)),
             ),
-        ],
-      ),
+          ])
+        else if (cultura != null)
+          OutlinedButton.icon(
+            onPressed: aoResponder,
+            icon: const Icon(Icons.photo_camera_outlined, size: 18),
+            label: Text('Fotografar ${cultura.nome.toLowerCase()}'),
+            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44), foregroundColor: Cores.marca),
+          ),
+      ]),
     );
   }
 }

@@ -6,6 +6,7 @@ import '../services/catalogo.dart';
 import '../services/sincronizacao.dart';
 import '../tema.dart';
 import 'botoes.dart';
+import 'cartao.dart';
 
 /// Abre as duas perguntas do seguimento. Devolve true se o agricultor respondeu.
 Future<bool> perguntarSeguimento(BuildContext context, Diagnostico d) async {
@@ -28,38 +29,30 @@ class CartaoSeguimento extends StatelessWidget {
   Widget build(BuildContext context) {
     final pat = Catalogo.instancia.patologia(diagnostico.cultura, diagnostico.classeFinal);
     final dias = DateTime.now().difference(diagnostico.data).inDays;
-    return Material(
-      color: Cores.cartao,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => perguntarSeguimento(context, diagnostico),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: const Border(left: BorderSide(color: Cores.verdeEscuro, width: 4)),
+    return Cartao(
+      aoTocar: () => perguntarSeguimento(context, diagnostico),
+      padding: const EdgeInsets.fromLTRB(16, 12, 4, 14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        CabecalhoCartao(
+          icone: Icons.eco_outlined,
+          texto: 'Seguimento do tratamento',
+          direita: IconButton(
+            tooltip: 'Agora não',
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.close, size: 18, color: Cores.textoSecundario),
+            onPressed: () => Acompanhamento.instancia.adiar(diagnostico),
           ),
-          child: Row(children: [
-            const Icon(Icons.eco_outlined, color: Cores.verdeEscuro),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Como está a sua planta?', style: TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 2),
-                Text('Há $dias dias a app encontrou ${pat.nomeLocal} no ${diagnostico.cultura.nome.toLowerCase()}. '
-                    'Conte-nos se o tratamento resultou.',
-                    style: const TextStyle(fontSize: 13, color: Cores.textoSecundario, height: 1.3)),
-              ]),
-            ),
-            IconButton(
-              tooltip: 'Agora não',
-              icon: const Icon(Icons.close, size: 18, color: Cores.textoSecundario),
-              onPressed: () => Acompanhamento.instancia.adiar(diagnostico),
-            ),
-          ]),
         ),
-      ),
+        const Text('Como está a sua planta?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: Text(
+              'Há $dias dias a app encontrou ${pat.nomeLocal} no ${diagnostico.cultura.nome.toLowerCase()}. '
+              'Conte-nos se o tratamento resultou.',
+              style: const TextStyle(fontSize: 14.5, height: 1.45, color: Cores.textoSecundario)),
+        ),
+      ]),
     );
   }
 }
@@ -94,7 +87,7 @@ class _PerguntasSeguimentoState extends State<_PerguntasSeguimento> {
               selected: v == escolhido,
               onSelected: (_) => aoEscolher(v),
               selectedColor: Cores.verdeClaro,
-              labelStyle: TextStyle(fontWeight: v == escolhido ? FontWeight.w700 : FontWeight.w500),
+              labelStyle: TextStyle(fontWeight: v == escolhido ? FontWeight.w600 : FontWeight.w500),
             ),
         ],
       );
@@ -107,15 +100,15 @@ class _PerguntasSeguimentoState extends State<_PerguntasSeguimento> {
       child: Padding(
         padding: EdgeInsets.fromLTRB(24, 20, 24, 20 + MediaQuery.viewInsetsOf(context).bottom),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(pat.nomeLocal, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          Text(pat.nomeLocal, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           Text('${d.cultura.nome} · diagnóstico de ${d.data.day}/${d.data.month}/${d.data.year}',
               style: const TextStyle(color: Cores.textoSecundario)),
           const SizedBox(height: 18),
-          const Text('Seguiu a recomendação?', style: TextStyle(fontWeight: FontWeight.w700)),
+          const Text('Seguiu a recomendação?', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           _opcoes(Seguiu.values, _seguiu, (s) => s.rotulo, (s) => setState(() => _seguiu = s)),
           const SizedBox(height: 18),
-          const Text('Como está a planta agora?', style: TextStyle(fontWeight: FontWeight.w700)),
+          const Text('Como está a planta agora?', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           _opcoes(ResultadoTratamento.values, _resultado, (r) => r.rotulo, (r) => setState(() => _resultado = r)),
           const SizedBox(height: 22),

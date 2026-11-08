@@ -75,7 +75,7 @@ class _BotaoOuvirState extends State<BotaoOuvir> {
                 foregroundColor: Cores.verdeEscuro,
                 side: const BorderSide(color: Cores.verdeEscuro),
                 minimumSize: const Size(0, 48), // alvo de toque grande
-                textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                textStyle: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ),

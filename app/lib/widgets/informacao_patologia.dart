@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/patologia.dart';
 import '../services/catalogo.dart';
 import '../tema.dart';
+import 'botao_ouvir.dart';
 
 /// «Como reconhecer»: sintomas e fotografias de referência, para o agricultor comparar com a sua planta.
 /// Não mostra nada se a patologia não tiver nem sintomas nem fotos descarregadas.
@@ -26,7 +27,7 @@ class ComoReconhecer extends StatelessWidget {
       titulo: 'Como reconhecer',
       icone: Icons.search,
       filhos: [
-        if (sintomas.isNotEmpty) Text(sintomas, style: const TextStyle(height: 1.4)),
+        if (sintomas.isNotEmpty) Text(sintomas, style: const TextStyle(fontSize: 15, height: 1.5)),
         if (fotos.isNotEmpty) ...[
           if (sintomas.isNotEmpty) const SizedBox(height: 12),
           const Text('Compare com a sua planta:', style: TextStyle(fontSize: 12, color: Cores.textoSecundario)),
@@ -45,7 +46,7 @@ class ComoReconhecer extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () => _ampliar(context, fotos.map((e) => e.$2).toList(), fotos.map((e) => e.$1.legenda).toList(), i),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                       child: Image.file(ficheiro, width: 128, height: 96, fit: BoxFit.cover, cacheWidth: 256),
                     ),
                   ),
@@ -66,6 +67,35 @@ class ComoReconhecer extends StatelessWidget {
   }
 }
 
+/// «O que fazer»: a recomendação (RF07), com a gravação na língua do agricultor quando existe.
+class CartaoRecomendacao extends StatelessWidget {
+  const CartaoRecomendacao({super.key, required this.patologia, this.aviso});
+
+  final Patologia patologia;
+
+  /// Nota sobre a recomendação ser básica (catálogo).
+  final String? aviso;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Cartao(
+      titulo: 'O que fazer',
+      icone: Icons.task_alt,
+      corIcone: Cores.marca,
+      filhos: [
+        Text(patologia.recomendacao, style: const TextStyle(fontSize: 15.5, height: 1.5)),
+        if (patologia.audios.isNotEmpty) ...[const SizedBox(height: 12), BotaoOuvir(audios: patologia.audios)],
+        if (aviso != null && aviso!.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 10),
+          Text(aviso!, style: const TextStyle(fontSize: 12.5, color: Cores.textoSecundario, height: 1.4)),
+        ],
+      ],
+    );
+  }
+}
+
 /// Prevenção: o que fazer na próxima campanha.
 class Prevencao extends StatelessWidget {
   const Prevencao({super.key, required this.patologia});
@@ -79,30 +109,31 @@ class Prevencao extends StatelessWidget {
     return _Cartao(
       titulo: 'Para não voltar a acontecer',
       icone: Icons.shield_outlined,
-      filhos: [Text(texto, style: const TextStyle(height: 1.4))],
+      filhos: [Text(texto, style: const TextStyle(fontSize: 15, height: 1.5))],
     );
   }
 }
 
 class _Cartao extends StatelessWidget {
-  const _Cartao({required this.titulo, required this.icone, required this.filhos});
+  const _Cartao({required this.titulo, required this.icone, required this.filhos, this.corIcone = Cores.textoSecundario});
 
   final String titulo;
   final IconData icone;
+  final Color corIcone;
   final List<Widget> filhos;
 
   @override
   Widget build(BuildContext context) => Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Cores.cartao, borderRadius: BorderRadius.circular(16), boxShadow: sombraSuave),
+        decoration: decoracaoCartao(),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Icon(icone, size: 18, color: Cores.textoSecundario),
-            const SizedBox(width: 6),
-            Text(titulo, style: const TextStyle(fontWeight: FontWeight.w800)),
+            Icon(icone, size: 18, color: corIcone),
+            const SizedBox(width: 8),
+            Text(titulo, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
           ]),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           ...filhos,
         ]),
       );

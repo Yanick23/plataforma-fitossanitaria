@@ -14,7 +14,7 @@ import '../services/sessao.dart';
 import '../services/sincronizacao.dart';
 import '../tema.dart';
 import '../widgets/anel_confianca.dart';
-import '../widgets/botao_ouvir.dart';
+import '../widgets/cartao.dart';
 import '../widgets/botoes.dart';
 import '../widgets/informacao_patologia.dart';
 import 'captura_screen.dart';
@@ -89,70 +89,68 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 24), children: [
-          Row(children: [
-            const BotaoVoltar(),
-            const SizedBox(width: 12),
-            const Text('Resultado do Diagnóstico',
-                style: TextStyle(color: Cores.textoSecundario, fontWeight: FontWeight.w600)),
-          ]),
-          const SizedBox(height: 16),
-          if (baixa) ...[_avisoBaixaConfianca(), const SizedBox(height: 14)],
-          ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: AspectRatio(
-              aspectRatio: 16 / 10,
-              child: Image.file(File(_r.caminhoImagem), fit: BoxFit.cover),
-            ),
-          ),
-          if (_r.fotos.length > 1) ...[const SizedBox(height: 10), _fotosCombinadas()],
-          const SizedBox(height: 16),
-          Row(children: [
-            _etiqueta(_r.cultura.nome),
-            const SizedBox(width: 8),
-            Text(entrada.rotuloTipo, style: const TextStyle(color: Cores.textoSecundario, fontSize: 12)),
-          ]),
-          const SizedBox(height: 6),
-          Text(
-            baixa ? 'Possível: ${entrada.nomeLocal}' : entrada.nomeLocal,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: baixa ? Cores.textoSecundario : Cores.texto,
-            ),
-          ),
-          Text(entrada.nomeCientifico,
-              style: const TextStyle(fontStyle: FontStyle.italic, color: Cores.textoSecundario)),
-          const SizedBox(height: 18),
-          Center(child: AnelConfianca(confianca: _r.confianca, baixa: baixa)),
-          const SizedBox(height: 18),
-          if (!baixa) ...[_cartaoRecomendacao(entrada), const SizedBox(height: 12)],
-          // Com dúvida, os sintomas e as fotos ajudam a comparar; a recomendação só com confiança.
-          if (entrada.tipo != TipoPatologia.saudavel) ...[ComoReconhecer(patologia: entrada), const SizedBox(height: 12)],
-          if (!baixa) ...[Prevencao(patologia: entrada), const SizedBox(height: 6)],
-          const SizedBox(height: 12),
-          if (baixa) ...[
-            if (_r.podeJuntarFoto) ...[
-              BotaoPrincipal(
-                texto: 'Juntar Outra Foto',
-                icone: Icons.add_a_photo,
-                cores: const [Cores.laranja, Cores.laranjaEscuro],
-                aoPremir: _aGuardar ? null : _juntarFoto,
+        child: Column(children: [
+          const CabecalhoEcra(titulo: 'Resultado'),
+          Expanded(
+            child: ListView(padding: const EdgeInsets.fromLTRB(20, 4, 20, 28), children: [
+              if (baixa) ...[
+                const CaixaAviso(
+                  titulo: 'A app não tem certeza',
+                  texto: 'Tire outra fotografia com boa luz, com a folha a encher o enquadramento.',
+                ),
+                const SizedBox(height: 14),
+              ],
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: AspectRatio(aspectRatio: 16 / 10, child: Image.file(File(_r.caminhoImagem), fit: BoxFit.cover)),
               ),
-              const SizedBox(height: 6),
-              const Text('Outra foto da mesma planta ajuda a app a decidir.',
-                  textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Cores.textoSecundario)),
+              if (_r.fotos.length > 1) ...[const SizedBox(height: 10), _fotosCombinadas()],
+              const SizedBox(height: 18),
+              Row(children: [
+                _etiqueta(_r.cultura.nome),
+                const SizedBox(width: 8),
+                Text(entrada.rotuloTipo, style: const TextStyle(color: Cores.textoSecundario, fontSize: 13.5)),
+              ]),
+              const SizedBox(height: 8),
+              Text(
+                baixa ? 'Talvez ${entrada.nomeLocal}' : entrada.nomeLocal,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 24),
+              ),
+              const SizedBox(height: 2),
+              Text(entrada.nomeCientifico,
+                  style: const TextStyle(fontStyle: FontStyle.italic, color: Cores.textoSecundario, fontSize: 14.5)),
+              const SizedBox(height: 18),
+              Cartao(child: MedidorConfianca(confianca: _r.confianca, baixa: baixa)),
               const SizedBox(height: 12),
-            ],
-            BotaoSecundario(texto: 'Guardar Mesmo Assim', aoPremir: _aGuardar ? null : _guardar),
-            TextButton(onPressed: _aGuardar ? null : _recomecar, child: const Text('Recomeçar com outra foto')),
-          ] else
-            BotaoPrincipal(texto: 'Guardar no Historial', aoPremir: _aGuardar ? null : _guardar),
-          const SizedBox(height: 14),
-          Text(
-            'Resultado em ${_r.medicao.tempoTotalMs} ms (inferência ${_r.medicao.inferenciaMs} ms, modelo v${_r.versaoModelo}, no telemóvel)',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, color: Cores.textoSecundario),
+              if (!baixa) ...[CartaoRecomendacao(patologia: entrada, aviso: Catalogo.instancia.aviso), const SizedBox(height: 12)],
+              // Com dúvida, os sintomas e as fotos ajudam a comparar; a recomendação só com confiança.
+              if (entrada.tipo != TipoPatologia.saudavel) ...[ComoReconhecer(patologia: entrada), const SizedBox(height: 12)],
+              if (!baixa) ...[Prevencao(patologia: entrada), const SizedBox(height: 12)],
+              const SizedBox(height: 8),
+              if (baixa) ...[
+                if (_r.podeJuntarFoto) ...[
+                  BotaoPrincipal(
+                    texto: 'Juntar outra fotografia',
+                    icone: Icons.add_a_photo_outlined,
+                    aoPremir: _aGuardar ? null : _juntarFoto,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('Outra fotografia da mesma planta ajuda a app a decidir.',
+                      textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Cores.textoSecundario)),
+                  const SizedBox(height: 12),
+                ],
+                BotaoSecundario(texto: 'Guardar mesmo assim', aoPremir: _aGuardar ? null : _guardar),
+                const SizedBox(height: 4),
+                TextButton(onPressed: _aGuardar ? null : _recomecar, child: const Text('Recomeçar com outra fotografia')),
+              ] else
+                BotaoPrincipal(texto: 'Guardar no historial', icone: Icons.check, aoPremir: _aGuardar ? null : _guardar),
+              const SizedBox(height: 16),
+              Text(
+                'Analisado no telemóvel em ${_r.medicao.tempoTotalMs} ms · modelo v${_r.versaoModelo}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12, color: Cores.textoTerciario),
+              ),
+            ]),
           ),
         ]),
       ),
@@ -188,39 +186,8 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
   }
 
   Widget _etiqueta(String texto) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(color: Cores.verdeClaro, borderRadius: BorderRadius.circular(8)),
-        child: Text(texto,
-            style: const TextStyle(color: Cores.verdeEscuro, fontWeight: FontWeight.w700, fontSize: 12)),
-      );
-
-  Widget _avisoBaixaConfianca() => Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: Cores.avisoFundo, borderRadius: BorderRadius.circular(14)),
-        child: const Row(children: [
-          Icon(Icons.warning_amber_rounded, color: Cores.laranjaEscuro),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Não temos certeza — tente tirar outra foto com melhor luz, com a folha a encher o enquadramento.',
-              style: TextStyle(color: Cores.avisoTexto, fontWeight: FontWeight.w700, height: 1.3),
-            ),
-          ),
-        ]),
-      );
-
-  Widget _cartaoRecomendacao(Patologia entrada) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Cores.verdeClaro, borderRadius: BorderRadius.circular(16)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Recomendação',
-              style: TextStyle(fontWeight: FontWeight.w800, color: Cores.verdeEscuro)),
-          const SizedBox(height: 6),
-          Text(entrada.recomendacao, style: const TextStyle(height: 1.4)),
-          if (entrada.audios.isNotEmpty) ...[const SizedBox(height: 10), BotaoOuvir(audios: entrada.audios)],
-          const SizedBox(height: 10),
-          Text(Catalogo.instancia.aviso,
-              style: const TextStyle(fontSize: 11, color: Cores.textoSecundario, height: 1.3)),
-        ]),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(color: Cores.marcaSuave, borderRadius: BorderRadius.circular(6)),
+        child: Text(texto, style: const TextStyle(color: Cores.marcaForte, fontWeight: FontWeight.w600, fontSize: 12.5)),
       );
 }

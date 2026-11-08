@@ -2,108 +2,45 @@ import 'package:flutter/material.dart';
 
 import '../tema.dart';
 
-/// Botão principal com gradiente (verde por omissão; laranja no aviso de baixa confiança).
+/// Acção principal do ecrã: verde da marca, plano, a toda a largura.
 class BotaoPrincipal extends StatelessWidget {
-  const BotaoPrincipal({
-    super.key,
-    required this.texto,
-    required this.aoPremir,
-    this.icone,
-    this.cores = const [Cores.verde, Cores.verdeEscuro],
-  });
+  const BotaoPrincipal({super.key, required this.texto, required this.aoPremir, this.icone});
 
   final String texto;
   final VoidCallback? aoPremir;
   final IconData? icone;
-  final List<Color> cores;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      enabled: aoPremir != null,
-      label: texto,
-      excludeSemantics: true,
-      child: Opacity(
-        opacity: aoPremir == null ? 0.5 : 1,
-        child: Container(
-          height: 56,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: cores),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: cores.last.withValues(alpha: 0.35),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: aoPremir,
-              child: Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (icone != null) ...[
-                      Icon(icone, color: Colors.white, size: 22),
-                      const SizedBox(width: 10),
-                    ],
-                    Text(
-                      texto,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Botão branco secundário ("Ver Historial", "Guardar Mesmo Assim").
-class BotaoSecundario extends StatelessWidget {
-  const BotaoSecundario({
-    super.key,
-    required this.texto,
-    required this.aoPremir,
-  });
-
-  final String texto;
-  final VoidCallback? aoPremir;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 52,
       width: double.infinity,
-      child: TextButton(
-        onPressed: aoPremir,
-        style: TextButton.styleFrom(
-          backgroundColor: Cores.cartao,
-          foregroundColor: Cores.texto,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-        ),
-        child: Text(texto),
-      ),
+      child: icone == null
+          ? FilledButton(onPressed: aoPremir, child: Text(texto))
+          : FilledButton.icon(onPressed: aoPremir, icon: Icon(icone, size: 20), label: Text(texto)),
     );
   }
 }
 
-/// Botão "voltar" quadrado e branco, como no protótipo.
+/// Acção secundária: branca, com contorno.
+class BotaoSecundario extends StatelessWidget {
+  const BotaoSecundario({super.key, required this.texto, required this.aoPremir, this.icone});
+
+  final String texto;
+  final VoidCallback? aoPremir;
+  final IconData? icone;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: icone == null
+          ? OutlinedButton(onPressed: aoPremir, child: Text(texto))
+          : OutlinedButton.icon(onPressed: aoPremir, icon: Icon(icone, size: 20), label: Text(texto)),
+    );
+  }
+}
+
+/// Voltar ao ecrã anterior. Sobre a câmara ([escuro]) leva um fundo para se ver sobre a imagem.
 class BotaoVoltar extends StatelessWidget {
   const BotaoVoltar({super.key, this.escuro = false});
 
@@ -111,21 +48,46 @@ class BotaoVoltar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: escuro ? Colors.black38 : Cores.cartao,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: () => Navigator.of(context).maybePop(),
-        child: SizedBox(
-          width: 36,
-          height: 36,
-          child: Icon(
-            Icons.chevron_left,
-            color: escuro ? Colors.white : Cores.texto,
-          ),
-        ),
-      ),
+    return IconButton(
+      tooltip: 'Voltar',
+      onPressed: () => Navigator.of(context).maybePop(),
+      icon: Icon(Icons.arrow_back, color: escuro ? Colors.white : Cores.texto),
+      style: escuro ? IconButton.styleFrom(backgroundColor: Colors.black45) : null,
     );
   }
+}
+
+/// Cabeçalho dos ecrãs sem barra de topo: voltar, título e (opcional) acções à direita.
+class CabecalhoEcra extends StatelessWidget {
+  const CabecalhoEcra({super.key, required this.titulo, this.accoes = const []});
+
+  final String titulo;
+  final List<Widget> accoes;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 4, 8, 4),
+      child: Row(children: [
+        const BotaoVoltar(),
+        const SizedBox(width: 4),
+        Expanded(child: Text(titulo, style: Theme.of(context).textTheme.titleLarge)),
+        ...accoes,
+      ]),
+    );
+  }
+}
+
+/// Título de uma secção dentro de um ecrã («Para si», «Mais»).
+class TituloSeccao extends StatelessWidget {
+  const TituloSeccao(this.texto, {super.key});
+
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 8, left: 2),
+        child: Text(texto,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Cores.textoSecundario, letterSpacing: 0.2)),
+      );
 }

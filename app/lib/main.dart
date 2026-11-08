@@ -94,16 +94,30 @@ class _NavegacaoPrincipalState extends State<NavegacaoPrincipal> {
       valueListenable: NavegacaoPrincipal.abaActual,
       builder: (context, aba, _) => Scaffold(
         body: IndexedStack(index: aba, children: const [InicioScreen(), HistorialScreen()]),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: aba,
-          backgroundColor: Cores.cartao,
-          indicatorColor: Cores.verdeClaro,
-          onDestinationSelected: (i) => NavegacaoPrincipal.abaActual.value = i,
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Início'),
-            NavigationDestination(icon: Icon(Icons.history), label: 'Historial'),
-          ],
-        ),
+        bottomNavigationBar: BarraNavegacao(aba: aba, aoEscolher: (i) => NavegacaoPrincipal.abaActual.value = i),
+      ),
+    );
+  }
+}
+
+/// Barra inferior: Início e Historial.
+class BarraNavegacao extends StatelessWidget {
+  const BarraNavegacao({super.key, required this.aba, required this.aoEscolher});
+
+  final int aba;
+  final ValueChanged<int> aoEscolher;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(border: Border(top: BorderSide(color: Cores.linha))),
+      child: NavigationBar(
+        selectedIndex: aba,
+        onDestinationSelected: aoEscolher,
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Início'),
+          NavigationDestination(icon: Icon(Icons.history), selectedIcon: Icon(Icons.history), label: 'Historial'),
+        ],
       ),
     );
   }

@@ -93,6 +93,10 @@ class Catalogo {
     return ficheiro.existsSync() ? ficheiro : null;
   }
 
+  /// As pragas e doenças que a app reconhece nesta cultura (sem a folha saudável).
+  List<Patologia> problemasDe(Cultura cultura) =>
+      [for (final p in (_entradas[cultura] ?? const {}).values) if (p.tipo != TipoPatologia.saudavel) p];
+
   /// Todas as gravações de voz do catálogo (a sincronização descarrega as da língua do agricultor).
   List<AudioVoz> get audios => [for (final e in _entradas.values) for (final pat in e.values) ...pat.audios];
 
