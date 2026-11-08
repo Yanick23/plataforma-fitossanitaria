@@ -239,7 +239,17 @@ export interface Ocorrencia {
   distrito: string
   provincia_codigo: string
   total: number
+  ultimos_7d: number
+  anteriores_7d: number
 }
+
+export interface SemanaContagem {
+  semana: string // segunda-feira, AAAA-MM-DD
+  total: number
+  pragas_doencas: number
+}
+
+export type DecisaoSurto = 'CONFIRMADO' | 'DESCARTADO'
 
 export interface Surto {
   distrito_id: number
@@ -253,6 +263,10 @@ export interface Surto {
   media_anterior: number
   razao: number | null
   nivel: NivelAlerta
+  decisao: DecisaoSurto | null
+  decisao_nota: string | null
+  decidido_por: string | null
+  decidido_em: string | null
 }
 
 export interface ExactidaoClasse {
@@ -286,6 +300,7 @@ export interface ExactidaoCampo {
   pendentes: number
   por_classe: ExactidaoClasse[]
   por_versao: ExactidaoVersao[]
+  por_distrito: { distrito_id: number | null; distrito: string; validados: number; correctos: number; exactidao: number | null }[]
   confusoes: Confusao[]
 }
 

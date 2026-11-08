@@ -4,7 +4,7 @@ import type { NivelAlerta } from '@/model/tipos'
 import { data, numero, percentagem, relativo, resumoSMS } from '@/nucleo/formatos'
 import { NIVEL } from '@/nucleo/rotulos'
 import { Botao, CabecalhoPagina, Campo, Cartao, Esqueleto, Etiqueta, Gaveta, Segmentos, Seleccao, Separadores, Vazio } from '@/ui/componentes'
-import { useAlertasViewModel, type Ambito, type Preenchimento } from '@/viewmodels/useAlertasViewModel'
+import { MODELOS_MENSAGEM, useAlertasViewModel, type Ambito, type ModeloMensagem, type Preenchimento } from '@/viewmodels/useAlertasViewModel'
 import { useCatalogo, useRegioes } from '@/viewmodels/referencias'
 
 const ICONE_NIVEL: Record<NivelAlerta, typeof Info> = { INFORMACAO: Info, AVISO: TriangleAlert, URGENTE: CircleAlert }
@@ -103,6 +103,10 @@ export function AlertasView() {
       >
         <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div className="formulario" style={{ flex: '1 1 340px', minWidth: 0 }}>
+            <Campo rotulo="Modelo de mensagem (opcional)" ajuda="Escolha primeiro a praga e a zona: o modelo usa-as, com a recomendação do catálogo. Pode editar o texto depois.">
+              <Seleccao vazio="Escrever de raiz" value="" onChange={(e) => e.target.value && vm.aplicarModelo(e.target.value as ModeloMensagem)}
+                opcoes={MODELOS_MENSAGEM} />
+            </Campo>
             <Campo rotulo="Título">
               <input className="entrada" maxLength={120} value={r.titulo} onChange={(e) => vm.alterar('titulo', e.target.value)}
                 placeholder="Ex.: Lagarta-do-funil em Marracuene" />

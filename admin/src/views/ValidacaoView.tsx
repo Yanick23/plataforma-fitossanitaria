@@ -94,6 +94,22 @@ export function ValidacaoView() {
               </table>
             </Cartao>
           )}
+          {e && e.por_distrito.length > 0 && (
+            <Cartao titulo="Por distrito" subtitulo="Onde o modelo acerta mais e menos, segundo os técnicos" semMargem>
+              <table className="tabela">
+                <thead><tr><th>Distrito</th><th className="numero">Validados</th><th className="numero">Exactidão</th></tr></thead>
+                <tbody>
+                  {e.por_distrito.map((d) => (
+                    <tr key={d.distrito_id ?? d.distrito}>
+                      <td>{d.distrito}</td>
+                      <td className="numero">{numero(d.correctos)} / {numero(d.validados)}</td>
+                      <td className="numero">{percentagem(d.exactidao, 1)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Cartao>
+          )}
         </div>
       </div>
       <DetalheDiagnostico diagnostico={vm.aberto} aoFechar={vm.fechar} aoValidar={vm.validar} aValidar={vm.aValidar} />

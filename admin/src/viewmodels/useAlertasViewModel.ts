@@ -4,6 +4,7 @@ import { alertasRepo } from '@/model/repositorios'
 import type { NivelAlerta } from '@/model/tipos'
 import { useNotificar } from '@/nucleo/notificacoes'
 import { useSessao } from '@/nucleo/sessao'
+import { useCatalogo } from './referencias'
 
 export type Ambito = 'distrito' | 'provincia' | 'pais'
 
@@ -30,6 +31,38 @@ export interface Preenchimento {
   validade?: string
 }
 
+/** Modelos de mensagem: preenchem título, mensagem e nível com a praga, a zona e o catálogo. */
+export type ModeloMensagem = 'confirmada' | 'urgente' | 'prevencao' | 'vigiar'
+export const MODELOS_MENSAGEM: { valor: ModeloMensagem; nome: string }[] = [
+  { valor: 'confirmada', nome: 'Praga confirmada na zona' },
+  { valor: 'urgente', nome: 'Surto: agir já' },
+  { valor: 'prevencao', nome: 'Medida preventiva' },
+  { valor: 'vigiar', nome: 'Pedido de vigilância' },
+]
+
+interface ContextoModelo { praga: string | null; cultura: string | null; zona: string; recomendacao: string | null; prevencao: string | null }
+
+export function textoDoModelo(m: ModeloMensagem, c: ContextoModelo): { titulo: string; mensagem: string; nivel: NivelAlerta } {
+  const praga = c.praga ?? 'pragas e doenças'
+  const plantas = c.cultura ? `as plantas de ${c.cultura.toLowerCase()}` : 'as suas plantas'
+  const ondeTitulo = c.zona ? ` em ${c.zona.replace(/^(Distrito|Província) de /, '')}` : ''
+  const conselho = (t: string | null) => (t ? ` ${t.trim()}` : '')
+  switch (m) {
+    case 'confirmada':
+      return { nivel: 'AVISO', titulo: `${c.praga ?? 'Praga'} confirmada${ondeTitulo}`.slice(0, 120),
+        mensagem: `O técnico confirmou casos de ${praga.toLowerCase()} na sua zona. Inspeccione ${plantas} nos próximos dias.${conselho(c.recomendacao)} Se tiver dúvidas, faça um diagnóstico na app ou peça uma visita.` }
+    case 'urgente':
+      return { nivel: 'URGENTE', titulo: `Urgente: ${(c.praga ?? 'surto').toLowerCase()}${ondeTitulo}`.slice(0, 120),
+        mensagem: `Há muitos casos de ${praga.toLowerCase()} na sua zona e estão a aumentar. Inspeccione ${plantas} hoje.${conselho(c.recomendacao)} Peça uma visita técnica na app se precisar de ajuda.` }
+    case 'prevencao':
+      return { nivel: 'INFORMACAO', titulo: `Como prevenir ${(c.praga ?? 'pragas e doenças').toLowerCase()}`.slice(0, 120),
+        mensagem: `Nesta altura, ${praga.toLowerCase()} pode aparecer na sua zona.${conselho(c.prevencao ?? c.recomendacao)}` }
+    case 'vigiar':
+      return { nivel: 'INFORMACAO', titulo: `Vigie ${(c.praga ?? 'as suas plantas').toLowerCase()} esta semana`.slice(0, 120),
+        mensagem: `Pedimos que observe ${plantas} esta semana. Se vir sinais de ${praga.toLowerCase()}, faça um diagnóstico na app e sincronize: ajuda o técnico a saber onde está a praga.` }
+  }
+}
+
 function dataDaqui(dias: number): string {
   const d = new Date()
   d.setDate(d.getDate() + dias)
@@ -40,6 +73,7 @@ export function useAlertasViewModel(preenchimento?: Preenchimento | null) {
   const { utilizador, eAdministrador } = useSessao()
   const cliente = useQueryClient()
   const notificar = useNotificar()
+  const catalogo = useCatalogo()
   const [arquivados, setArquivados] = useState(false)
   const lista = useQuery({ queryKey: ['alertas', arquivados], queryFn: () => alertasRepo.listar(arquivados) })
 
@@ -116,6 +150,15 @@ export function useAlertasViewModel(preenchimento?: Preenchimento | null) {
     onError: (e: Error) => notificar(e.message, 'erro'),
   })
 
+  const aplicarModelo = (m: ModeloMensagem) => {
+    const p = rascunho.patologia ? catalogo.patologias.find((x) => String(x.id) === rascunho.patologia) : undefined
+    const t = textoDoModelo(m, {
+      praga: p?.nome_local ?? null, cultura: p ? catalogo.nomeCultura(p.cultura_id) : null,
+      zona: alcance.data?.zona ?? '', recomendacao: p?.recomendacao ?? null, prevencao: p?.prevencao ?? null,
+    })
+    setRascunho((r) => ({ ...r, titulo: t.titulo, mensagem: t.mensagem.slice(0, 2000), nivel: t.nivel }))
+  }
+
   const alterar = <K extends keyof Rascunho>(k: K, v: Rascunho[K]) =>
     setRascunho((r) => ({ ...r, [k]: v, ...(k === 'provincia' && !tecnicoDistrito ? { distrito: '' } : {}) }))
 
@@ -125,7 +168,7 @@ export function useAlertasViewModel(preenchimento?: Preenchimento | null) {
     alertas: lista.data ?? [], aCarregar: lista.isLoading, erro: lista.error as Error | null,
     arquivados, setArquivados,
     aCompor, abrirComposicao: () => { setRascunho(vazio()); setACompor(true) }, fecharComposicao: () => setACompor(false),
-    rascunho, alterar, ambitos, tecnicoDistrito, tecnicoProvincia,
+    rascunho, alterar, aplicarModelo, ambitos, tecnicoDistrito, tecnicoProvincia,
     alcance: alcance.data, erroAlcance: alcance.error as Error | null, aCalcularAlcance: alcance.isFetching,
     valido, enviar: () => enviar.mutate(), aEnviar: enviar.isPending,
     arquivar: (id: number) => arquivar.mutate(id),
