@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 from ..database import obter_sessao
 from ..esquemas import AlcanceAlerta, AlertaAgricultorLer, AlertaCriar, AlertaLer
 from ..seguranca import Pessoal, UtilizadorActual
-from ..servicos import alertas as servico
+from ..servicos import alertas as servico, sms
 from ..tabelas import Alerta
 
 router = APIRouter(tags=["Alertas"])
@@ -23,13 +23,16 @@ async def alcance(utilizador: Pessoal, sessao: Sessao, provincia: str | None = N
     """Quantos agricultores recebem um alerta para esta zona (antes de o enviar)."""
     provincia, distrito_id = await servico.validar_destino(sessao, utilizador, provincia, distrito_id)
     zona, n = await servico.alcance(sessao, provincia, distrito_id)
-    return AlcanceAlerta(zona=zona, destinatarios=n)
+    return AlcanceAlerta(zona=zona, destinatarios=n, sms_simulacao=not sms.configurado())
 
 
 @router.post("/alertas", response_model=AlertaLer, status_code=status.HTTP_201_CREATED)
-async def criar(dados: AlertaCriar, utilizador: Pessoal, sessao: Sessao) -> AlertaLer:
-    """Técnico: só para a sua zona. Administrador: distrito, província ou país (sem zona = país todo)."""
+async def criar(dados: AlertaCriar, utilizador: Pessoal, sessao: Sessao, tarefas: BackgroundTasks) -> AlertaLer:
+    """Técnico: só para a sua zona. Administrador: distrito, província ou país (sem zona = país todo).
+    Com enviar_sms, os agricultores da zona recebem também um SMS (enviado depois da resposta)."""
     alerta = await servico.criar(sessao, utilizador, dados)
+    if dados.enviar_sms:
+        tarefas.add_task(sms.enviar_em_segundo_plano, alerta_id=alerta.id)
     alerta = await sessao.scalar(select(Alerta).where(Alerta.id == alerta.id)
                                  .options(selectinload(Alerta.autor), selectinload(Alerta.patologia)))
     return (await servico.para_ler(sessao, [alerta]))[0]

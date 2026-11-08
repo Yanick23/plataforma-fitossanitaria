@@ -107,7 +107,7 @@ def test_alertas_por_zona(cliente):
 
     # Alcance e permissões do técnico
     r = cliente.get("/alertas/alcance", headers=tecnico, params={"distrito_id": d_marracuene["id"]})
-    assert r.json() == {"zona": "Distrito de Marracuene", "destinatarios": 1}
+    assert r.json() == {"zona": "Distrito de Marracuene", "destinatarios": 1, "sms_simulacao": True}
     assert cliente.get("/alertas/alcance", headers=tecnico,
                        params={"distrito_id": d_manhica["id"]}).status_code == 403
     assert cliente.post("/alertas", headers=tecnico,
@@ -319,7 +319,7 @@ def test_migracao_de_base_antiga(tmp_path):
         assert {"distrito_id", "provincia_codigo", "activo"} <= colunas
         assert {"alertas", "validacoes", "pedidos_visita", "auditoria", "notificacoes"} <= set(inspect(ligacao).get_table_names())
         assert ligacao.execute(text("SELECT nome, activo FROM utilizadores")).one() == ("Antigo", 1)
-        assert ligacao.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0005"
+        assert ligacao.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0006"
     motor.dispose()
 
 
