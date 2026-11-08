@@ -3,7 +3,7 @@ import { CircleAlert, Download, Printer, ShieldAlert, TriangleAlert } from 'luci
 import { data, dataHora, numero, percentagem } from '@/nucleo/formatos'
 import { LIMIAR_CONFIANCA, NIVEL } from '@/nucleo/rotulos'
 import { useSessao } from '@/nucleo/sessao'
-import { Botao, Campo, Esqueleto, Etiqueta, Segmentos } from '@/ui/componentes'
+import { Botao, Campo, Esqueleto, Etiqueta, Segmentos, Seleccao } from '@/ui/componentes'
 import { BarrasHorizontais } from '@/ui/graficos'
 import { useCatalogo } from '@/viewmodels/referencias'
 import { useBoletimViewModel, type Predefinido } from '@/viewmodels/useBoletimViewModel'
@@ -49,7 +49,7 @@ export function BoletimView() {
       <div className="cabecalho-pagina nao-imprimir">
         <div>
           <h1>Boletim fitossanitário</h1>
-          <p>Resumo da situação das pragas e doenças na sua zona, pronto a imprimir ou guardar em PDF.</p>
+          <p>Resumo da situação das pragas e doenças na sua zona (ou numa província ou distrito dela), pronto a imprimir ou guardar em PDF.</p>
         </div>
         <div className="accoes">
           <Botao onClick={vm.descarregarCsv} disabled={vm.invalido || vm.aDescarregar}><Download size={16} />{vm.aDescarregar ? 'A preparar…' : 'CSV'}</Botao>
@@ -69,6 +69,16 @@ export function BoletimView() {
           <Campo rotulo="Até" erro={vm.invalido ? 'A data final é anterior à inicial' : null}>
             <input className="entrada" type="date" value={vm.periodo.fim} min={vm.periodo.inicio} onChange={(e) => vm.mudarData('fim', e.target.value)} />
           </Campo>
+          {vm.podeEscolher && vm.nacional && (
+            <Campo rotulo="Província">
+              <Seleccao vazio="Todo o país" value={vm.provincia} onChange={(e) => vm.escolherProvincia(e.target.value)} opcoes={vm.opcoesProvincias} />
+            </Campo>
+          )}
+          {vm.podeEscolher && vm.provincia && (
+            <Campo rotulo="Distrito">
+              <Seleccao vazio="Toda a província" value={vm.distrito} onChange={(e) => vm.setDistrito(e.target.value)} opcoes={vm.opcoesDistritos} />
+            </Campo>
+          )}
           {vm.aActualizar && b && <span className="suave pequeno" style={{ paddingBottom: 10 }}>A actualizar…</span>}
         </div>
       </div>
@@ -123,7 +133,7 @@ export function BoletimView() {
             <Seccao numero={5} titulo="Sinais de surto" nota="Casos dos últimos 7 dias do período contra a média semanal das 4 semanas anteriores.">
               {b.surtos.length === 0 ? <SemRegistos texto="Nenhuma praga ou doença subiu acima do habitual." /> : (
                 <div className="tabela-envolvente"><table className="tabela">
-                  <thead><tr><th>Praga ou doença</th><th>Distrito</th><th className="numero">Casos (7 dias)</th><th className="numero">Média anterior</th><th className="numero">Subida</th><th>Nível</th></tr></thead>
+                  <thead><tr><th>Praga ou doença</th><th>Distrito</th><th className="numero">Casos (7 dias)</th><th className="numero">Média anterior</th><th className="numero">Subida</th><th>Nível</th><th>Decisão do técnico</th></tr></thead>
                   <tbody>
                     {b.surtos.map((s) => (
                       <tr key={`${s.distrito_id}-${s.cultura_id}-${s.classe}`}>
@@ -133,6 +143,7 @@ export function BoletimView() {
                         <td className="numero">{numero(s.media_anterior)}</td>
                         <td className="numero">{s.razao === null ? 'novo' : `${numero(s.razao)}×`}</td>
                         <td><Etiqueta tom={NIVEL[s.nivel].tom} icone={<TriangleAlert size={12} />}>{NIVEL[s.nivel].nome}</Etiqueta></td>
+                        <td>{s.decisao === 'CONFIRMADO' ? 'Confirmado' : s.decisao === 'DESCARTADO' ? `Descartado${s.decisao_nota ? ` («${s.decisao_nota}»)` : ''}` : 'Por decidir'}</td>
                       </tr>
                     ))}
                   </tbody>

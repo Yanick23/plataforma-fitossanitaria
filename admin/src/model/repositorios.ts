@@ -2,7 +2,7 @@
 
 import { http } from './http'
 import type {
-  Alcance, Alerta, Boletim, Calendario, Campanha, ListaNotificacoes, NovaCampanha, RiscoMeteorologico, Cultura, Declaracao, EficaciaPatologia, Diagnostico, Distrito, EstadoModelo, EstadoValidacao, EstadoVisita, ExactidaoCampo, Modelo,
+  Alcance, Alerta, Boletim, Calendario, Campanha, DecisaoSurto, SemanaContagem, ListaNotificacoes, NovaCampanha, RiscoMeteorologico, Cultura, Declaracao, EficaciaPatologia, Diagnostico, Distrito, EstadoModelo, EstadoValidacao, EstadoVisita, ExactidaoCampo, Modelo,
   Monitorizacao, PortaQualidade,
   NovoAlerta, Ocorrencia, Pagina, Patologia, PatologiaEscrita, Perfil, Provincia, RegistoAuditoria, Resumo, Surto, TipoPatologia,
   Utilizador, UtilizadorAdmin, Visita,
@@ -135,8 +135,12 @@ export const alertasRepo = {
 }
 
 export const vigilanciaRepo = {
-  ocorrencias: (f: { cultura?: string; classe?: string; tipo?: TipoPatologia; desde?: string }) =>
+  ocorrencias: (f: { cultura?: string; classe?: string; tipo?: TipoPatologia; desde?: string; confianca?: 'alta' | 'baixa' }) =>
     dados(http.get<Ocorrencia[]>('/vigilancia/ocorrencias', { params: limpar(f) })),
+  tendencia: (f: { cultura?: string; classe?: string; confianca?: 'alta' | 'baixa'; semanas?: number }) =>
+    dados(http.get<SemanaContagem[]>('/vigilancia/tendencia', { params: limpar(f) })),
+  decidirSurto: (d: { distrito_id: number; cultura_id: string; classe: string; decisao: DecisaoSurto; nota: string | null }) =>
+    http.post('/vigilancia/surtos/decisao', d),
   surtos: (p: { janela_dias?: number; semanas_base?: number; min_casos?: number; factor?: number } = {}) =>
     dados(http.get<Surto[]>('/vigilancia/surtos', { params: limpar(p) })),
   riscoMeteorologico: () => dados(http.get<RiscoMeteorologico>('/vigilancia/risco-meteorologico')),
@@ -183,7 +187,14 @@ export interface PeriodoBoletim {
   fim: string
 }
 
+/** Zona do boletim dentro da zona de quem pede (vazio = a zona toda de quem pede). */
+export interface ZonaBoletim {
+  provincia?: string
+  distrito_id?: number
+}
+
 export const boletimRepo = {
-  obter: (p: PeriodoBoletim) => dados(http.get<Boletim>('/gestao/boletim', { params: p })),
-  caminhoCsv: (p: PeriodoBoletim) => `/gestao/boletim.csv?inicio=${p.inicio}&fim=${p.fim}`,
+  obter: (p: PeriodoBoletim, z: ZonaBoletim = {}) => dados(http.get<Boletim>('/gestao/boletim', { params: limpar({ ...p, ...z }) })),
+  caminhoCsv: (p: PeriodoBoletim, z: ZonaBoletim = {}) =>
+    `/gestao/boletim.csv?${new URLSearchParams(Object.entries(limpar({ ...p, ...z })).map(([k, v]) => [k, String(v)])).toString()}`,
 }

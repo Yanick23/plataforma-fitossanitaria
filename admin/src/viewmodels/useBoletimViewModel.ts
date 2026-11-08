@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { urlProtegido } from '@/model/http'
-import { boletimRepo, type PeriodoBoletim } from '@/model/repositorios'
+import { boletimRepo, type PeriodoBoletim, type ZonaBoletim } from '@/model/repositorios'
+import { useSessao } from '@/nucleo/sessao'
+import { useRegioes } from './referencias'
 import type { Boletim } from '@/model/tipos'
 import { numero, percentagem } from '@/nucleo/formatos'
 import { useNotificar } from '@/nucleo/notificacoes'
@@ -43,6 +45,13 @@ function sintese(b: Boletim): string[] {
   if (b.surtos.length) {
     frases.push(`${b.surtos.length === 1 ? 'Foi detectado 1 sinal' : `Foram detectados ${numero(b.surtos.length)} sinais`} de surto`
       + `${urgentes ? ` (${numero(urgentes)} de nível urgente)` : ''}.`)
+    const confirmados = b.surtos.filter((s) => s.decisao === 'CONFIRMADO').length
+    const descartados = b.surtos.filter((s) => s.decisao === 'DESCARTADO').length
+    if (confirmados || descartados) {
+      const pendentes = b.surtos.length - confirmados - descartados
+      frases.push(`O técnico confirmou ${numero(confirmados)} e descartou ${numero(descartados)}`
+        + (pendentes ? `; ${n(pendentes, 'continua', 'continuam')} por decidir.` : '.'))
+    }
   }
   if (b.declaracoes.length) {
     const confirmadas = b.declaracoes.filter((d) => d.estado === 'CONFIRMADO').length
@@ -60,6 +69,19 @@ export function useBoletimViewModel() {
   const [periodo, setPeriodo] = useState<PeriodoBoletim>(() => periodoDe('30'))
   const [aDescarregar, setADescarregar] = useState(false)
 
+  // Zona do boletim: dentro da zona de quem pede (administrador e investigador: o país todo;
+  // coordenador ou técnico provincial: um distrito da sua província; técnico distrital: só o seu).
+  const { utilizador, eAdministrador, eInvestigador } = useSessao()
+  const regioes = useRegioes()
+  const nacional = eAdministrador || eInvestigador
+  const provinciaPropria = !nacional && !utilizador?.distrito_id ? utilizador?.provincia_codigo ?? '' : ''
+  const podeEscolher = nacional || Boolean(provinciaPropria)
+  const [provinciaEscolhida, setProvinciaEscolhida] = useState('')
+  const [distrito, setDistrito] = useState('')
+  const provincia = nacional ? provinciaEscolhida : provinciaPropria
+  const zona: ZonaBoletim = distrito ? { distrito_id: Number(distrito) } : nacional && provincia ? { provincia } : {}
+  const escolherProvincia = (p: string) => { setProvinciaEscolhida(p); setDistrito('') }
+
   const escolher = (p: Predefinido) => {
     setPredefinido(p)
     if (p !== 'outro') setPeriodo(periodoDe(p))
@@ -71,8 +93,8 @@ export function useBoletimViewModel() {
   const invalido = !periodo.inicio || !periodo.fim || periodo.inicio > periodo.fim
 
   const consulta = useQuery({
-    queryKey: ['boletim', periodo],
-    queryFn: () => boletimRepo.obter(periodo),
+    queryKey: ['boletim', periodo, zona],
+    queryFn: () => boletimRepo.obter(periodo, zona),
     enabled: !invalido,
     placeholderData: keepPreviousData,
   })
@@ -90,7 +112,7 @@ export function useBoletimViewModel() {
   const descarregarCsv = async () => {
     setADescarregar(true)
     try {
-      const url = await urlProtegido(boletimRepo.caminhoCsv(periodo))
+      const url = await urlProtegido(boletimRepo.caminhoCsv(periodo, zona))
       const a = document.createElement('a')
       a.href = url
       a.download = `boletim_${periodo.inicio}_${periodo.fim}.csv`
@@ -105,6 +127,9 @@ export function useBoletimViewModel() {
 
   return {
     predefinido, escolher, periodo, mudarData, invalido,
+    podeEscolher, nacional, provincia, escolherProvincia, distrito, setDistrito,
+    opcoesProvincias: regioes.opcoesProvincias,
+    opcoesDistritos: regioes.distritosDe(provincia).map((d) => ({ valor: String(d.id), nome: d.nome })),
     boletim, paragrafos, aCarregar: consulta.isLoading, aActualizar: consulta.isFetching,
     erro: consulta.error as Error | null,
     imprimir: () => window.print(), descarregarCsv, aDescarregar,
