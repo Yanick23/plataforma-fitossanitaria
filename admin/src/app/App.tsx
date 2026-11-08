@@ -3,6 +3,8 @@ import { useSessao } from '@/nucleo/sessao'
 import { Esqueleto } from '@/ui/componentes'
 import { AlertasView } from '@/views/AlertasView'
 import { BoletimView } from '@/views/BoletimView'
+import { CalendarioView } from '@/views/CalendarioView'
+import { CampanhasView } from '@/views/CampanhasView'
 import { CatalogoView } from '@/views/CatalogoView'
 import { DiagnosticosView } from '@/views/DiagnosticosView'
 import { EntradaView } from '@/views/EntradaView'
@@ -28,7 +30,9 @@ export function App() {
           <Route index element={<PainelView />} />
           <Route path="diagnosticos" element={<DiagnosticosView />} />
           {podeOperar && <Route path="alertas" element={<AlertasView />} />}
+          <Route path="campanhas" element={<CampanhasView />} />
           <Route path="catalogo" element={<CatalogoView />} />
+          <Route path="calendario" element={<CalendarioView />} />
           <Route path="modelos" element={<ModelosView />} />
           {podeOperar && <Route path="utilizadores" element={<UtilizadoresView />} />}
           <Route path="vigilancia" element={<VigilanciaView />} />

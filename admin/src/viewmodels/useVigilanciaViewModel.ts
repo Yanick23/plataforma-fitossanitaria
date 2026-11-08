@@ -71,6 +71,7 @@ export function useVigilanciaViewModel() {
       nivel: r.nivel === 'ALTO' ? 'AVISO' : 'INFORMACAO',
       patologia_id: r.patologia_id,
       distrito_id: r.distrito_id,
+      validade: r.ate, // o aviso vale até ao último dia da previsão (7 dias), não 14
     }
     navegar('/alertas', { state: { preencher } })
   }

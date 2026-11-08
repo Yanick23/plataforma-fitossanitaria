@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router-dom'
-import { Archive, BellRing, CircleAlert, Info, Megaphone, Send, TriangleAlert, Users } from 'lucide-react'
+import { Archive, BellRing, CircleAlert, Info, Megaphone, MessageSquareText, Send, TriangleAlert, Users } from 'lucide-react'
 import type { NivelAlerta } from '@/model/tipos'
-import { data, numero, percentagem, relativo } from '@/nucleo/formatos'
+import { data, numero, percentagem, relativo, resumoSMS } from '@/nucleo/formatos'
 import { NIVEL } from '@/nucleo/rotulos'
 import { Botao, CabecalhoPagina, Campo, Cartao, Esqueleto, Etiqueta, Gaveta, Segmentos, Seleccao, Separadores, Vazio } from '@/ui/componentes'
 import { useAlertasViewModel, type Ambito, type Preenchimento } from '@/viewmodels/useAlertasViewModel'
@@ -58,6 +58,11 @@ export function AlertasView() {
                       <td className="numero">
                         {numero(a.lidos)} / {numero(a.destinatarios)}
                         <div className="suave pequeno">{percentagem(taxa)}</div>
+                        {a.sms && (
+                          <div className="suave pequeno" title={a.sms.simulacao ? 'Sem fornecedor de SMS configurado: não saiu nenhum SMS' : undefined}>
+                            <MessageSquareText size={12} style={{ verticalAlign: -2 }} /> SMS: {resumoSMS(a.sms)}
+                          </div>
+                        )}
                       </td>
                       <td style={{ width: 1 }}>
                         {!a.arquivado && (
@@ -147,6 +152,17 @@ export function AlertasView() {
               <input className="entrada" type="date" value={r.validade} min={new Date().toISOString().slice(0, 10)}
                 onChange={(e) => vm.alterar('validade', e.target.value)} />
             </Campo>
+            <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <input type="checkbox" checked={r.sms} onChange={(e) => vm.alterar('sms', e.target.checked)} style={{ marginTop: 3 }} />
+              <span>
+                Enviar também por SMS
+                <span className="suave pequeno" style={{ display: 'block' }}>
+                  {vm.alcance?.sms_simulacao
+                    ? 'Modo de simulação: os SMS ficam registados, mas não saem (o fornecedor ainda não está configurado).'
+                    : `Para quem não abre a app. Cada agricultor da zona recebe um SMS${vm.alcance ? ` (${numero(vm.alcance.destinatarios)} no total)` : ''}; cada SMS tem custo.`}
+                </span>
+              </span>
+            </label>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>

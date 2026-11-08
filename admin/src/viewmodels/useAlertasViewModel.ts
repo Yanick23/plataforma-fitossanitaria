@@ -16,6 +16,7 @@ export interface Rascunho {
   provincia: string
   distrito: string
   validade: string // AAAA-MM-DD ou ''
+  sms: boolean // também por SMS
 }
 
 export interface Preenchimento {
@@ -25,6 +26,8 @@ export interface Preenchimento {
   patologia_id?: number
   distrito_id?: number
   provincia_codigo?: string
+  /** AAAA-MM-DD; por omissão, 14 dias a partir de hoje. */
+  validade?: string
 }
 
 function dataDaqui(dias: number): string {
@@ -48,6 +51,7 @@ export function useAlertasViewModel(preenchimento?: Preenchimento | null) {
   const vazio = (): Rascunho => ({
     titulo: '', mensagem: '', nivel: 'AVISO', patologia: '', ambito: ambitos[0],
     provincia: tecnicoProvincia, distrito: tecnicoDistrito, validade: dataDaqui(14),
+    sms: false,
   })
   const [aCompor, setACompor] = useState(false)
   const [rascunho, setRascunho] = useState<Rascunho>(vazio)
@@ -63,6 +67,7 @@ export function useAlertasViewModel(preenchimento?: Preenchimento | null) {
       ambito: preenchimento.distrito_id ? 'distrito' : preenchimento.provincia_codigo ? 'provincia' : ambitos[0],
       distrito: preenchimento.distrito_id ? String(preenchimento.distrito_id) : tecnicoDistrito,
       provincia: preenchimento.provincia_codigo ?? tecnicoProvincia,
+      validade: preenchimento.validade ?? dataDaqui(14),
     })
     setACompor(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -90,9 +95,10 @@ export function useAlertasViewModel(preenchimento?: Preenchimento | null) {
       provincia_codigo: destino.provincia,
       distrito_id: destino.distrito_id,
       expira_em: rascunho.validade ? new Date(`${rascunho.validade}T23:59:59`).toISOString() : null,
+      enviar_sms: rascunho.sms,
     }),
     onSuccess: (a) => {
-      notificar(`Alerta enviado a ${a.destinatarios} agricultor(es) — ${a.zona}`)
+      notificar(`Alerta enviado a ${a.destinatarios} agricultor(es) — ${a.zona}${a.sms ? ', também por SMS' : ''}`)
       setACompor(false)
       setRascunho(vazio())
       cliente.invalidateQueries({ queryKey: ['alertas'] })

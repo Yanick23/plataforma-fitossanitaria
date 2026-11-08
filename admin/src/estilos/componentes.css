@@ -1169,3 +1169,37 @@ select.entrada {
   color: var(--marca-texto);
   word-break: break-all;
 }
+
+/* --- Calendário agrícola ---------------------------------------------------------------- */
+.tabela.calendario tr.mes-actual td {
+  background: var(--marca-suave);
+}
+
+.avisos-mes {
+  display: grid;
+  gap: var(--e-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--t-13);
+  line-height: 1.45;
+}
+
+.avisos-mes li {
+  display: flex;
+  gap: var(--e-2);
+}
+
+.fontes-calendario {
+  display: grid;
+  gap: var(--e-2);
+  margin: 0;
+  padding-left: var(--e-5);
+  font-size: var(--t-13);
+  color: var(--tinta-2);
+}
+
+.fontes-calendario a {
+  color: var(--marca-texto);
+  word-break: break-all;
+}
