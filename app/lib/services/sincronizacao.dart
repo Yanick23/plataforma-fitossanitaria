@@ -9,8 +9,10 @@ import 'alertas_locais.dart';
 import 'api_cliente.dart';
 import 'catalogo.dart';
 import 'conectividade.dart';
+import 'dados_zona.dart';
 import 'gestor_modelos.dart';
 import 'historial_db.dart';
+import 'notificacoes_fundo.dart';
 import 'registo_tecnico.dart';
 import 'sessao.dart';
 import 'visitas_locais.dart';
@@ -24,6 +26,7 @@ class ResumoSincronizacao {
     this.validacoesNovas = 0,
     this.visitasActualizadas = 0,
     this.seguimentosEnviados = 0,
+    this.campanhasNovas = 0,
     this.erro,
   });
 
@@ -34,6 +37,7 @@ class ResumoSincronizacao {
   final int validacoesNovas;
   final int visitasActualizadas;
   final int seguimentosEnviados;
+  final int campanhasNovas;
   final String? erro;
 
   String get mensagem {
@@ -45,6 +49,7 @@ class ResumoSincronizacao {
       if (validacoesNovas > 0) '$validacoesNovas diagnóstico(s) revisto(s) pelo técnico',
       if (visitasActualizadas > 0) '$visitasActualizadas visita(s) actualizada(s)',
       if (seguimentosEnviados > 0) '$seguimentosEnviados resposta(s) de seguimento enviada(s)',
+      if (campanhasNovas > 0) '$campanhasNovas campanha(s) nova(s) na sua zona',
       for (final c in modelosActualizados) 'modelo de ${c.nome.toLowerCase()} actualizado',
     ];
     return partes.isEmpty ? 'Tudo sincronizado' : partes.join(' · ');
@@ -150,6 +155,17 @@ class Sincronizacao extends ChangeNotifier {
         seguimentos++;
       }
 
+      // 9. Campanhas de vigilância da zona e calendário agrícola da província (lêem-se sem rede).
+      final campanhas = await CampanhasLocais.instancia.actualizar(await ApiCliente.instancia.campanhas());
+      final calendario = await ApiCliente.instancia.calendario();
+      if (calendario != null) await CalendarioLocal.instancia.actualizar(calendario);
+
+      // 10. Com a app aberta, o agricultor já vê tudo: avança o ponto de partida das notificações em
+      // segundo plano, para não as repetir. Uma falha aqui não estraga a sincronização.
+      try {
+        await NotificacoesFundo.consultar(notificar: false);
+      } on ErroApi catch (_) {}
+
       return ultimo = ResumoSincronizacao(
         enviados: enviados,
         rejeitados: rejeitados,
@@ -158,6 +174,7 @@ class Sincronizacao extends ChangeNotifier {
         validacoesNovas: validacoes,
         visitasActualizadas: visitas,
         seguimentosEnviados: seguimentos,
+        campanhasNovas: campanhas,
       );
     } on ErroApi catch (e) {
       return ultimo = ResumoSincronizacao(enviados: enviados, erro: e.mensagem);

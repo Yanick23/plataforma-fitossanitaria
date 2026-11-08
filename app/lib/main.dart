@@ -8,6 +8,8 @@ import 'screens/login_screen.dart';
 import 'services/acompanhamento.dart';
 import 'services/alertas_locais.dart';
 import 'services/catalogo.dart';
+import 'services/dados_zona.dart';
+import 'services/notificacoes_fundo.dart';
 import 'services/sessao.dart';
 import 'services/sincronizacao.dart';
 import 'services/visitas_locais.dart';
@@ -20,6 +22,8 @@ Future<void> main() async {
   await Catalogo.instancia.carregar();
   await AlertasLocais.instancia.carregar();
   await VisitasLocais.instancia.carregar();
+  await CampanhasLocais.instancia.carregar();
+  await CalendarioLocal.instancia.carregar();
   await Acompanhamento.instancia.actualizar();
   runApp(const AgroDiagnosticoApp());
 }
@@ -68,6 +72,8 @@ class _NavegacaoPrincipalState extends State<NavegacaoPrincipal> {
       ..iniciarAutomatica()
       ..addListener(_aoSincronizar);
     Sincronizacao.instancia.sincronizar();
+    // Notificações em segundo plano (alertas, validações, visitas, campanhas), sem Firebase.
+    NotificacoesFundo.iniciar();
   }
 
   @override

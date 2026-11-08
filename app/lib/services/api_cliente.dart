@@ -7,6 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart' show MediaType;
 
 import '../models/alerta.dart';
+import '../models/calendario.dart';
+import '../models/campanha.dart';
 import '../models/cultura.dart';
 import '../models/diagnostico.dart';
 import '../models/visita.dart';
@@ -197,6 +199,30 @@ class ApiCliente {
             .cast<Map<String, dynamic>>())
           Visita.fromJson(v),
       ];
+
+  /// Campanhas de vigilância a decorrer na zona do agricultor (funcionalidade 12).
+  Future<List<Campanha>> campanhas() async => [
+        for (final c in (_json(await _enviar(() => _http.get(_uri('/campanhas/minhas'), headers: _cabecalhos))) as List)
+            .cast<Map<String, dynamic>>())
+          Campanha.fromJson(c),
+      ];
+
+  /// Calendário agrícola da província da conta (funcionalidade 10); null se a conta não tiver província.
+  Future<Calendario?> calendario() async {
+    try {
+      return Calendario.fromJson(
+          _json(await _enviar(() => _http.get(_uri('/calendario'), headers: _cabecalhos))) as Map<String, dynamic>);
+    } on ErroApi catch (e) {
+      if (e.codigo == 422 || e.codigo == 404) return null;
+      rethrow;
+    }
+  }
+
+  /// O que mudou desde [desde] (consulta em segundo plano, funcionalidade 13b). Sem [desde],
+  /// a API só devolve a hora actual (ponto de partida).
+  Future<Map<String, dynamic>> novidades(String? desde) async => _json(await _enviar(() => _http.get(
+      _uri('/novidades', desde == null ? null : {'desde': desde}),
+      headers: _cabecalhos))) as Map<String, dynamic>;
 
   Future<Visita> pedirVisita(String diagnosticoId, String? mensagem) async => Visita.fromJson(_json(await _enviar(
       () => _http.post(_uri('/visitas'),

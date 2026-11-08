@@ -8,6 +8,7 @@ import '../models/diagnostico.dart';
 import '../models/patologia.dart';
 import '../models/resultado_classificacao.dart';
 import '../services/catalogo.dart';
+import '../services/dados_zona.dart';
 import '../services/historial_db.dart';
 import '../services/sessao.dart';
 import '../services/sincronizacao.dart';
@@ -62,6 +63,7 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
         tempoInferenciaMs: _r.medicao.inferenciaMs,
         tempoTotalMs: _r.medicao.tempoTotalMs,
       ));
+      await CampanhasLocais.instancia.diagnosticoFeito(_r.cultura.id); // responde à campanha da zona, se houver
       Sincronizacao.instancia.sincronizar(); // envia já, se houver rede (RF09)
       if (!mounted) return;
       NavegacaoPrincipal.versaoHistorial.value++;

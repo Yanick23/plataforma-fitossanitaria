@@ -34,4 +34,10 @@ enum Cultura {
   final String classesEmbutidas;
 
   static Cultura porId(String id) => values.firstWhere((c) => c.id == id);
+
+  /// null se a app não tiver modelo para esta cultura (ex.: uma cultura nova criada no painel).
+  static Cultura? talvez(String id) => values.where((c) => c.id == id).firstOrNull;
+
+  /// Nome para mostrar, mesmo de uma cultura que a app ainda não diagnostica.
+  static String nomeDe(String id) => talvez(id)?.nome ?? (id.isEmpty ? id : id[0].toUpperCase() + id.substring(1));
 }
