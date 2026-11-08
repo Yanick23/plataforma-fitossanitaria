@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 from ..esquemas import AlertaAgricultorLer, AlertaCriar, AlertaLer
 from ..regioes import Zona, zona_contem, zona_de
 from ..tabelas import (Alerta, AlertaLeitura, Cultura, Distrito, Patologia, Perfil, Provincia, Utilizador)
+from . import sms
 from .auditoria import auditar, instantaneo
 
 
@@ -32,6 +33,12 @@ async def nome_zona(sessao: AsyncSession, provincia_codigo: str | None, distrito
         p = await sessao.get(Provincia, provincia_codigo)
         return f"Província de {p.nome}" if p else provincia_codigo
     return "Todo o país"
+
+
+async def destinatarios(sessao: AsyncSession, provincia_codigo: str | None, distrito_id: int | None) -> list[Utilizador]:
+    """Agricultores activos que recebem um alerta (ou campanha) para esta zona."""
+    return list(await sessao.scalars(select(Utilizador).where(_destinatarios(provincia_codigo, distrito_id))
+                                     .order_by(Utilizador.id)))
 
 
 async def alcance(sessao: AsyncSession, provincia_codigo: str | None, distrito_id: int | None) -> tuple[str, int]:
@@ -77,8 +84,12 @@ async def criar(sessao: AsyncSession, autor: Utilizador, dados: AlertaCriar) -> 
                     distrito_id=distrito_id, autor_id=autor.id, expira_em=dados.expira_em)
     sessao.add(alerta)
     await sessao.flush()
-    auditar(sessao, autor, "alerta.enviar", "alerta", alerta.id, depois=instantaneo(
-        alerta, ("titulo", "nivel", "patologia_id", "provincia_codigo", "distrito_id", "expira_em")))
+    depois = instantaneo(alerta, ("titulo", "nivel", "patologia_id", "provincia_codigo", "distrito_id", "expira_em"))
+    if dados.enviar_sms:
+        texto = sms.texto_sms("Alerta", alerta.titulo, alerta.mensagem)
+        depois["sms"] = sms.registar(sessao, await destinatarios(sessao, provincia_codigo, distrito_id), texto,
+                                     alerta_id=alerta.id)
+    auditar(sessao, autor, "alerta.enviar", "alerta", alerta.id, depois=depois)
     await sessao.commit()
     return alerta
 
@@ -107,7 +118,8 @@ async def para_ler(sessao: AsyncSession, alertas: list[Alerta]) -> list[AlertaLe
             patologia_id=a.patologia_id, patologia_nome=a.patologia.nome_local if a.patologia else None,
             provincia_codigo=a.provincia_codigo, distrito_id=a.distrito_id, zona=zona,
             autor_nome=a.autor.nome, criado_em=a.criado_em, expira_em=a.expira_em, arquivado=a.arquivado,
-            destinatarios=destinatarios, lidos=lidos.get(a.id, 0)))
+            destinatarios=destinatarios, lidos=lidos.get(a.id, 0),
+            sms=(r if (r := await sms.resumo(sessao, alerta_id=a.id)).total else None)))
     return resultado
 
 

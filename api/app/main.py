@@ -18,8 +18,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import definicoes
 from .database import SessaoLocal, migrar, motor
-from .rotas import (alertas, auth, catalogo, diagnosticos, gestao, modelos, regioes, validacoes, vigilancia,
-                    visitas)
+from .rotas import (alertas, auth, campanhas, catalogo, diagnosticos, gestao, modelos, regioes, validacoes,
+                    vigilancia, visitas)
 from .seed import semear
 
 
@@ -55,7 +55,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for modulo in (auth, diagnosticos, catalogo, modelos, regioes, gestao, alertas, validacoes, visitas, vigilancia):
+for modulo in (auth, diagnosticos, catalogo, modelos, regioes, gestao, alertas, validacoes, visitas, vigilancia,
+               campanhas):
     app.include_router(modulo.router)
 
 

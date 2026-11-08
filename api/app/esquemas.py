@@ -242,6 +242,16 @@ class AlertaCriar(Esquema):
     provincia_codigo: str | None = None
     distrito_id: int | None = None
     expira_em: datetime | None = None
+    enviar_sms: bool = False  # também por SMS, para quem não abre a app
+
+
+class ResumoSMS(Esquema):
+    total: int = 0
+    pendente: int = 0
+    enviado: int = 0
+    falhou: int = 0
+    simulado: int = 0
+    simulacao: bool = True  # sem fornecedor configurado: os SMS não saem
 
 
 class AlertaLer(Esquema):
@@ -261,6 +271,7 @@ class AlertaLer(Esquema):
     arquivado: bool
     destinatarios: int
     lidos: int
+    sms: ResumoSMS | None = None
 
 
 class AlertaAgricultorLer(Esquema):
@@ -280,6 +291,7 @@ class AlertaAgricultorLer(Esquema):
 class AlcanceAlerta(Esquema):
     zona: str
     destinatarios: int
+    sms_simulacao: bool = True  # sem fornecedor de SMS configurado, os SMS ficam simulados
 
 
 # --- Validação pelo técnico ---------------------------------------------------
@@ -574,3 +586,124 @@ class RiscoMeteorologico(Esquema):
     previsao_mais_antiga: datetime | None
     itens: list[RiscoDistrito]
     regras: list[RegraRisco]
+
+
+# --- Campanhas de vigilância activa ----------------------------------------------------
+
+class CampanhaCriar(Esquema):
+    titulo: str = Field(min_length=3, max_length=120)
+    mensagem: str = Field(min_length=3, max_length=1000)
+    cultura_id: str
+    patologia_id: int | None = None  # praga a procurar (opcional)
+    provincia_codigo: str | None = None
+    distrito_id: int | None = None
+    inicio: date
+    fim: date
+    enviar_sms: bool = False
+
+
+class CampanhaLer(Esquema):
+    id: int
+    titulo: str
+    mensagem: str
+    cultura_id: str
+    patologia_id: int | None
+    patologia_nome: str | None
+    provincia_codigo: str | None
+    distrito_id: int | None
+    zona: str
+    inicio: date
+    fim: date
+    estado: str  # AGENDADA, ACTIVA, TERMINADA, CANCELADA
+    autor_nome: str
+    criado_em: datetime
+    # Progresso: agricultores activos da zona e quantos enviaram pelo menos um diagnóstico da
+    # cultura no período (também conta «está saudável»).
+    agricultores: int
+    responderam: int
+    taxa_resposta: float | None
+    diagnosticos: int
+    casos_praga_doenca: int
+    casos_patologia: int | None  # diagnósticos da praga procurada (se houver)
+    sms: ResumoSMS | None = None
+
+
+class CampanhaAgricultorLer(Esquema):
+    id: int
+    titulo: str
+    mensagem: str
+    cultura_id: str
+    patologia_codigo: str | None
+    zona: str
+    inicio: date
+    fim: date
+    respondeu: bool
+
+
+# --- Novidades (consulta em segundo plano da app) ---------------------------------------
+
+class NovidadeAlerta(Esquema):
+    id: int
+    titulo: str
+    nivel: NivelAlerta
+
+
+class NovidadeValidacao(Esquema):
+    diagnostico_id: str
+    classe_confirmada: str
+    correcto: bool
+
+
+class NovidadeVisita(Esquema):
+    id: int
+    estado: EstadoVisita
+    data_agendada: datetime | None
+
+
+class NovidadeCampanha(Esquema):
+    id: int
+    titulo: str
+    fim: date
+
+
+class Novidades(Esquema):
+    """O que mudou para o agricultor desde `desde` (a app mostra notificações locais)."""
+
+    agora: datetime  # a app guarda este valor e envia-o como `desde` na consulta seguinte
+    alertas: list[NovidadeAlerta]
+    validacoes: list[NovidadeValidacao]
+    visitas: list[NovidadeVisita]
+    campanhas: list[NovidadeCampanha]
+
+
+# --- Calendário agrícola ---------------------------------------------------------------
+
+class FonteCalendario(Esquema):
+    id: str
+    referencia: str
+    url: str | None = None
+
+
+class AvisoCalendario(Esquema):
+    cultura_id: str
+    classe: str | None
+    patologia_nome: str | None
+    texto: str
+    confianca: str  # alta, media
+    fontes: list[str]
+
+
+class MesCalendario(Esquema):
+    mes: int  # 1 a 12
+    actividades: list[str]
+    avisos: list[AvisoCalendario]
+
+
+class Calendario(Esquema):
+    provincia_codigo: str
+    provincia: str
+    regiao: str
+    sementeira: str | None  # época habitual de sementeira na província (MASA)
+    meses: list[MesCalendario]
+    fontes: list[FonteCalendario]
+    aviso: str

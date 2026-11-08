@@ -1,0 +1,90 @@
+{
+  "aviso": "Calendário geral por região, construído a partir das fontes indicadas (não de dados próprios da plataforma). Não substitui o técnico e deve ser validado com o IIAM e com os serviços de agricultura de cada província.",
+  "fontes": {
+    "FEWS2013": {"referencia": "FEWS NET (2013), Mozambique Seasonal Calendar: Typical Year.", "url": "https://fews.net/southern-africa/mozambique/seasonal-calendar/december-2013"},
+    "MASA2018": {"referencia": "MASA (2018), Prognóstico da Estação Chuvosa 2018-2019, sua Interpretação para Agricultura e Recomendações Agro-Técnicas. Maputo: Ministério da Agricultura e Segurança Alimentar.", "url": "https://www.masa.gov.mz/wp-content/uploads/2018/10/9_Prognostico-Estacao-Chivosa-Recomendacoes-Agrotecnicas-20182019.pdf"},
+    "CANICO2020": {"referencia": "Caniço et al. (2020), Seasonal Dynamics of the Alien Invasive Insect Pest Spodoptera frugiperda Smith (Lepidoptera: Noctuidae) in Manica Province, Central Mozambique, Insects 11(8), 512.", "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7469179/"},
+    "SHEPHERD2010": {"referencia": "Shepherd et al. (2010), Maize streak virus: an old and complex 'emerging' pathogen, Molecular Plant Pathology 11(1).", "url": "https://open.uct.ac.za/items/f1e74106-0aa8-4172-a791-0cbd92e0d882"},
+    "NSIBO2024": {"referencia": "Nsibo, D. L., I. Barnes e D. K. Berger (2024), Recent Advances in the Population Biology and Management of Maize Foliar Fungal Pathogens Exserohilum turcicum, Cercospora zeina and Bipolaris maydis in Africa, Frontiers in Plant Science 15, 1404483.", "url": "https://doi.org/10.3389/fpls.2024.1404483"},
+    "AKINLOSOTU1982": {"referencia": "Akinlosotu, T. A. (1982), Seasonal trend of green spider mite, Mononychellus tanajoa, population on cassava and its relationship with weather factors at Moor Plantation (Nigéria).", "url": "https://www1.montpellier.inrae.fr/CBGP/spmweb/pdf/Authors_A/Akinlosotu_1982.pdf"},
+    "GUTIERREZ1988": {"referencia": "Gutierrez et al. (1988), Journal of Applied Ecology 25, 941-950.", "url": "https://wiki.pestinfo.org/wiki/Journal_of_Applied_Ecology_(1988)_25,_941-950"}
+  },
+  "regioes": {
+    "NORTE": {"nome": "Norte", "provincias": ["MZ-A", "MZ-P", "MZ-N"]},
+    "CENTRO_SUL": {"nome": "Centro e Sul", "provincias": ["MZ-Q", "MZ-T", "MZ-B", "MZ-S", "MZ-I", "MZ-G", "MZ-L", "MZ-MPM"]}
+  },
+  "nota_regioes": "Regiões da FEWS NET (Norte; Centro e Sul). As províncias do Norte são as do MASA (Niassa, Cabo Delgado, Nampula); a Zambézia fica no Centro, como no MASA.",
+  "actividades": {
+    "NORTE": {
+      "1": ["Sementeira (fim)", "Época de chuvas", "Época de fome"],
+      "2": ["Época de chuvas", "Época de fome"],
+      "3": ["Primeiras colheitas em verde", "Época de chuvas"],
+      "4": ["Colheita", "Fim das chuvas"],
+      "5": ["Colheita", "Época seca"],
+      "6": ["Colheita", "Época seca"],
+      "7": ["Época seca"],
+      "8": ["Época seca"],
+      "9": ["Preparação da terra", "Época seca"],
+      "10": ["Preparação da terra", "Época seca"],
+      "11": ["Início das chuvas", "Sementeira"],
+      "12": ["Sementeira", "Época de chuvas", "Época de fome"]
+    },
+    "CENTRO_SUL": {
+      "1": ["Época de chuvas", "Época de fome (fim)"],
+      "2": ["Primeiras colheitas em verde", "Época de chuvas"],
+      "3": ["Colheita principal", "Época de chuvas"],
+      "4": ["Colheita principal", "Fim das chuvas"],
+      "5": ["Colheita principal (fim)", "Segunda sementeira", "Época seca"],
+      "6": ["Segunda sementeira", "Época seca"],
+      "7": ["Segunda sementeira (início do mês)", "Segunda colheita", "Época seca"],
+      "8": ["Segunda colheita", "Preparação da terra", "Época seca"],
+      "9": ["Preparação da terra", "Época seca"],
+      "10": ["Início das chuvas", "Sementeira principal", "Época de fome"],
+      "11": ["Sementeira principal", "Época de chuvas", "Época de fome"],
+      "12": ["Sementeira principal", "Época de chuvas", "Época de fome"]
+    }
+  },
+  "fonte_actividades": ["FEWS2013"],
+  "sementeira": {
+    "MZ-A": "2.ª década de Novembro (estação de Lichinga)",
+    "MZ-P": "2.ª década de Dezembro (estação de Pemba)",
+    "MZ-N": "3.ª década de Novembro (estações de Nampula e Ribáuè)",
+    "MZ-Q": "3.ª década de Novembro (estação de Quelimane)",
+    "MZ-T": "1.ª década de Dezembro (estação de Tete)",
+    "MZ-B": "2.ª década de Novembro (estações de Chimoio e Sussundenga)",
+    "MZ-S": "2.ª década de Novembro (estação da Beira)",
+    "MZ-I": "2.ª década de Novembro (estação de Inhambane)",
+    "MZ-G": "3.ª década de Novembro (Chókwè, Xai-Xai) a 1.ª de Dezembro (Maniquenique)",
+    "MZ-L": "3.ª década de Novembro (estação do Umbeluzi)",
+    "MZ-MPM": "3.ª década de Novembro (estação de Maputo)"
+  },
+  "fonte_sementeira": ["MASA2018"],
+  "avisos": [
+    {
+      "cultura_id": "milho", "classe": "lagarta_do_cartucho", "confianca": "alta", "fontes": ["MASA2018"],
+      "texto": "Milho semeado há mais de 10 dias: veja o funil das plantas jovens à procura da lagarta-do-funil.",
+      "meses": {"NORTE": [11, 12, 1, 2], "CENTRO_SUL": [10, 11, 12, 1]}
+    },
+    {
+      "cultura_id": "milho", "classe": "lagarta_do_cartucho", "confianca": "media", "fontes": ["CANICO2020"],
+      "texto": "No milho da segunda época (época seca), a lagarta-do-funil costuma atacar mais: vigie com mais frequência.",
+      "meses": {"CENTRO_SUL": [5, 6, 7, 8]}
+    },
+    {
+      "cultura_id": "milho", "classe": "listrado_do_milho", "confianca": "media", "fontes": ["SHEPHERD2010"],
+      "texto": "Sementeiras tardias têm mais risco de listrado do milho: se ainda vai semear, faça-o o mais cedo possível.",
+      "meses": {"NORTE": [1, 2], "CENTRO_SUL": [12, 1]}
+    },
+    {
+      "cultura_id": "milho", "classe": null, "confianca": "media", "fontes": ["NSIBO2024"],
+      "texto": "Com chuva e humidade, vigie manchas nas folhas do milho (mancha cinzenta e queima da folha), sobretudo nas folhas de baixo.",
+      "meses": {"NORTE": [1, 2, 3], "CENTRO_SUL": [1, 2, 3]}
+    },
+    {
+      "cultura_id": "mandioca", "classe": "acaro_verde", "confianca": "media", "fontes": ["AKINLOSOTU1982", "GUTIERREZ1988"],
+      "texto": "Na época seca, vigie as folhas novas da mandioca: pontos amarelos podem ser ácaro verde.",
+      "meses": {"NORTE": [5, 6, 7, 8, 9, 10], "CENTRO_SUL": [5, 6, 7, 8, 9]}
+    }
+  ],
+  "fora_por_falta_de_fontes": "Mosaico da mandioca (só um modelo de risco, com resultados contraditórios), mancha castanha (evidência fraca), mancha bacteriana, gafanhoto e besouro-da-folha (sem fontes encontradas)."
+}

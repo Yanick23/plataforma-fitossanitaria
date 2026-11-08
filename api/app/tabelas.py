@@ -5,10 +5,10 @@ Utilizador, Cultura, Patologia, Diagnostico, Imagem e ModeloML; Provincia e Dist
 """
 
 import enum
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
-from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text, UniqueConstraint, false,
-                        true)
+from sqlalchemy import (Boolean, Date, DateTime, Enum, Float, ForeignKey, Integer, String, Text, UniqueConstraint,
+                        false, true)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -346,3 +346,55 @@ class PrevisaoMeteo(Base):
     distrito_id: Mapped[int] = mapped_column(ForeignKey("distritos.id", ondelete="CASCADE"), primary_key=True)
     obtida_em: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     dados: Mapped[str] = mapped_column(Text)  # JSON: {"time": [...], "temperature_2m": [...], ...}
+
+
+class Campanha(Base):
+    """Campanha de vigilância activa: o técnico pede aos agricultores de uma zona que fotografem
+    uma cultura durante alguns dias (mesmo que esteja saudável) e acompanha quantos responderam."""
+
+    __tablename__ = "campanhas"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    titulo: Mapped[str] = mapped_column(String(120))
+    mensagem: Mapped[str] = mapped_column(Text)
+    cultura_id: Mapped[str] = mapped_column(ForeignKey("culturas.id"))
+    patologia_id: Mapped[int | None] = mapped_column(ForeignKey("patologias.id", ondelete="SET NULL"))
+    # Zona: distrito > província > (nenhum dos dois) país todo, como nos alertas.
+    provincia_codigo: Mapped[str | None] = mapped_column(ForeignKey("provincias.codigo"), index=True)
+    distrito_id: Mapped[int | None] = mapped_column(ForeignKey("distritos.id"), index=True)
+    inicio: Mapped[date] = mapped_column(Date)
+    fim: Mapped[date] = mapped_column(Date)
+    autor_id: Mapped[int] = mapped_column(ForeignKey("utilizadores.id"))
+    cancelada: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora, index=True)
+
+    autor: Mapped[Utilizador] = relationship()
+    patologia: Mapped[Patologia | None] = relationship()
+    distrito: Mapped[Distrito | None] = relationship()
+    provincia: Mapped[Provincia | None] = relationship()
+
+
+class EstadoSMS(str, enum.Enum):
+    PENDENTE = "PENDENTE"    # ainda não foi entregue ao fornecedor
+    ENVIADO = "ENVIADO"      # o fornecedor aceitou a mensagem
+    FALHOU = "FALHOU"        # o fornecedor recusou ou não respondeu
+    SIMULADO = "SIMULADO"    # sem fornecedor configurado (testes, demonstração): não sai nada
+
+
+class EnvioSMS(Base):
+    """Um SMS para um agricultor, por causa de um alerta ou de uma campanha."""
+
+    __tablename__ = "envios_sms"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    alerta_id: Mapped[int | None] = mapped_column(ForeignKey("alertas.id", ondelete="CASCADE"), index=True)
+    campanha_id: Mapped[int | None] = mapped_column(ForeignKey("campanhas.id", ondelete="CASCADE"), index=True)
+    utilizador_id: Mapped[int] = mapped_column(ForeignKey("utilizadores.id", ondelete="CASCADE"))
+    telefone: Mapped[str] = mapped_column(String(20))
+    conteudo: Mapped[str] = mapped_column(Text)
+    estado: Mapped[EstadoSMS] = mapped_column(Enum(EstadoSMS, name="estado_sms", native_enum=False, length=10),
+                                              default=EstadoSMS.PENDENTE)
+    id_externo: Mapped[str | None] = mapped_column(String(80))
+    erro: Mapped[str | None] = mapped_column(Text)
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+    actualizado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora, onupdate=agora)
