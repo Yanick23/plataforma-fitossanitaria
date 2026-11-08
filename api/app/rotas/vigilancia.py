@@ -3,13 +3,13 @@
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import obter_sessao
-from ..esquemas import Declaracao, Ocorrencia, RiscoMeteorologico, Surto
+from ..esquemas import Declaracao, DecisaoSurtoEscrever, Ocorrencia, RiscoMeteorologico, SemanaContagem, Surto
 from ..repositorios.diagnosticos import FiltrosDiagnostico
-from ..seguranca import Leitor
+from ..seguranca import Leitor, Pessoal
 from ..servicos import meteorologia, relatorios, vigilancia as servico
 from ..tabelas import TipoPatologia
 
@@ -17,13 +17,38 @@ router = APIRouter(prefix="/vigilancia", tags=["Vigilância"])
 Sessao = Annotated[AsyncSession, Depends(obter_sessao)]
 
 
+LIMIAR_CONFIANCA = 0.60  # o mesmo da app (RF05)
+
+
+def _filtro_confianca(confianca: str | None) -> dict:
+    """alta = confiança de 60% ou mais; baixa = abaixo de 60% (a app avisou o agricultor)."""
+    if confianca == "alta":
+        return {"confianca_min": LIMIAR_CONFIANCA}
+    if confianca == "baixa":
+        return {"confianca_abaixo": LIMIAR_CONFIANCA}
+    return {}
+
+
+Confianca = Annotated[str | None, Query(pattern="^(alta|baixa)$")]
+
+
 @router.get("/ocorrencias", response_model=list[Ocorrencia])
 async def ocorrencias(utilizador: Leitor, sessao: Sessao, cultura: str | None = None, classe: str | None = None,
                       tipo: TipoPatologia | None = None, desde: datetime | None = None,
-                      ate: datetime | None = None) -> list[Ocorrencia]:
-    """Diagnósticos por distrito com os filtros escolhidos (alimenta o mapa)."""
+                      ate: datetime | None = None, confianca: Confianca = None) -> list[Ocorrencia]:
+    """Diagnósticos por distrito com os filtros escolhidos (alimenta o mapa), com a tendência
+    de cada distrito (últimos 7 dias contra os 7 anteriores)."""
     return await servico.ocorrencias(sessao, utilizador, FiltrosDiagnostico(
-        cultura=cultura, classe=classe, tipo=tipo, desde=desde, ate=ate))
+        cultura=cultura, classe=classe, tipo=tipo, desde=desde, ate=ate, **_filtro_confianca(confianca)))
+
+
+@router.get("/tendencia", response_model=list[SemanaContagem])
+async def tendencia(utilizador: Leitor, sessao: Sessao, cultura: str | None = None, classe: str | None = None,
+                    tipo: TipoPatologia | None = None, confianca: Confianca = None,
+                    semanas: Annotated[int, Query(ge=2, le=52)] = 8) -> list[SemanaContagem]:
+    """Diagnósticos por semana na zona (tendência semana a semana), com os mesmos filtros do mapa."""
+    return await servico.tendencia(sessao, utilizador, FiltrosDiagnostico(
+        cultura=cultura, classe=classe, tipo=tipo, **_filtro_confianca(confianca)), semanas)
 
 
 @router.get("/surtos", response_model=list[Surto])
@@ -34,6 +59,12 @@ async def surtos(utilizador: Leitor, sessao: Sessao,
                  factor: Annotated[float, Query(ge=1, le=20)] = 2.0) -> list[Surto]:
     """Subidas anormais de uma praga/doença num distrito (sinal para o técnico decidir se envia alerta)."""
     return await servico.surtos(sessao, utilizador, janela_dias, semanas_base, min_casos, factor)
+
+
+@router.post("/surtos/decisao", status_code=status.HTTP_204_NO_CONTENT)
+async def decidir_surto(dados: DecisaoSurtoEscrever, utilizador: Pessoal, sessao: Sessao) -> None:
+    """O técnico confirma (e normalmente envia um alerta) ou descarta um sinal de surto da sua zona."""
+    await servico.decidir(sessao, utilizador, dados)
 
 
 @router.get("/declaracoes", response_model=list[Declaracao])

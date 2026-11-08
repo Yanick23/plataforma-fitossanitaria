@@ -246,7 +246,8 @@ def test_deteccao_de_surto(cliente):
     assert s["nivel"] == "URGENTE" and s["razao"] == 6.0
 
     mapa = cliente.get("/vigilancia/ocorrencias", headers=tecnico, params={"classe": "lagarta_do_cartucho"}).json()
-    assert mapa == [{"distrito_id": s["distrito_id"], "distrito": "Govuro", "provincia_codigo": "MZ-I", "total": 10}]
+    assert mapa == [{"distrito_id": s["distrito_id"], "distrito": "Govuro", "provincia_codigo": "MZ-I", "total": 10,
+                    "ultimos_7d": 6, "anteriores_7d": 1}]
 
 
 def test_resumo_e_diagnosticos_da_gestao(cliente):
@@ -319,7 +320,7 @@ def test_migracao_de_base_antiga(tmp_path):
         assert {"distrito_id", "provincia_codigo", "activo"} <= colunas
         assert {"alertas", "validacoes", "pedidos_visita", "auditoria", "notificacoes"} <= set(inspect(ligacao).get_table_names())
         assert ligacao.execute(text("SELECT nome, activo FROM utilizadores")).one() == ("Antigo", 1)
-        assert ligacao.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0006"
+        assert ligacao.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0007"
     motor.dispose()
 
 

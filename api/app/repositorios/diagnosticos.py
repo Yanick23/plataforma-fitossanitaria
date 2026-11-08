@@ -27,6 +27,8 @@ class FiltrosDiagnostico:
     desde: datetime | None = None
     ate: datetime | None = None
     confianca_max: float | None = None
+    confianca_min: float | None = None      # >= (ex.: só os diagnósticos com confiança alta)
+    confianca_abaixo: float | None = None   # <  (ex.: só os de confiança baixa, abaixo de 60%)
     validacao: EstadoValidacao | None = None
     utilizador_id: int | None = None
 
@@ -71,6 +73,10 @@ def com_filtros(consulta: Select, f: FiltrosDiagnostico) -> Select:
         condicoes.append(Diagnostico.data <= f.ate)
     if f.confianca_max is not None:
         condicoes.append(Diagnostico.confianca <= f.confianca_max)
+    if f.confianca_min is not None:
+        condicoes.append(Diagnostico.confianca >= f.confianca_min)
+    if f.confianca_abaixo is not None:
+        condicoes.append(Diagnostico.confianca < f.confianca_abaixo)
     if f.utilizador_id:
         condicoes.append(Diagnostico.utilizador_id == f.utilizador_id)
     if f.validacao == EstadoValidacao.PENDENTE:

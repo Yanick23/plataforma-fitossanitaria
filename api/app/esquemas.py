@@ -332,6 +332,7 @@ class ExactidaoCampo(Esquema):
     pendentes: int
     por_classe: list[ExactidaoClasse]
     por_versao: list[ExactidaoVersao]
+    por_distrito: list["ExactidaoDistrito"] = []
     confusoes: list[Confusao]
 
 
@@ -382,6 +383,19 @@ class Surto(Esquema):
     media_anterior: float        # média por janela nas `semanas_base` anteriores
     razao: float | None          # casos_recentes / media_anterior (None se a média for 0)
     nivel: NivelAlerta           # AVISO ou URGENTE, conforme a subida
+    # Decisão do técnico sobre este sinal, nesta janela (None = por decidir)
+    decisao: str | None = None   # CONFIRMADO ou DESCARTADO
+    decisao_nota: str | None = None
+    decidido_por: str | None = None
+    decidido_em: datetime | None = None
+
+
+class DecisaoSurtoEscrever(Esquema):
+    distrito_id: int
+    cultura_id: str
+    classe: str
+    decisao: str = Field(pattern="^(CONFIRMADO|DESCARTADO)$")
+    nota: str | None = Field(default=None, max_length=500)
 
 
 class Ocorrencia(Esquema):
@@ -389,6 +403,15 @@ class Ocorrencia(Esquema):
     distrito: str
     provincia_codigo: str
     total: int
+    # Tendência: com os mesmos filtros, mas nos últimos 7 dias e nos 7 anteriores
+    ultimos_7d: int = 0
+    anteriores_7d: int = 0
+
+
+class SemanaContagem(Esquema):
+    semana: date  # segunda-feira da semana
+    total: int
+    pragas_doencas: int
 
 
 # --- Auditoria ----------------------------------------------------------------
@@ -707,3 +730,14 @@ class Calendario(Esquema):
     meses: list[MesCalendario]
     fontes: list[FonteCalendario]
     aviso: str
+
+
+class ExactidaoDistrito(Esquema):
+    distrito_id: int | None
+    distrito: str
+    validados: int
+    correctos: int
+    exactidao: float | None
+
+
+ExactidaoCampo.model_rebuild()

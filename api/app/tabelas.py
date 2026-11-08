@@ -398,3 +398,26 @@ class EnvioSMS(Base):
     erro: Mapped[str | None] = mapped_column(Text)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
     actualizado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora, onupdate=agora)
+
+
+class DecisaoSurto(str, enum.Enum):
+    CONFIRMADO = "CONFIRMADO"  # o técnico confirma o surto (normalmente segue-se um alerta)
+    DESCARTADO = "DESCARTADO"  # falso alarme (ex.: fotografias repetidas, erro do modelo)
+
+
+class DecisaoSinal(Base):
+    """Decisão do técnico sobre um sinal de surto (distrito + cultura + praga). Vale para a janela
+    em que foi tomada: um sinal novo, semanas depois, volta a aparecer por decidir."""
+
+    __tablename__ = "decisoes_surto"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    distrito_id: Mapped[int] = mapped_column(ForeignKey("distritos.id"), index=True)
+    cultura_id: Mapped[str] = mapped_column(ForeignKey("culturas.id"))
+    classe: Mapped[str] = mapped_column(String(60))
+    decisao: Mapped[DecisaoSurto] = mapped_column(Enum(DecisaoSurto, name="decisao_surto", native_enum=False, length=12))
+    nota: Mapped[str | None] = mapped_column(Text)
+    utilizador_id: Mapped[int] = mapped_column(ForeignKey("utilizadores.id"))
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora, index=True)
+
+    utilizador: Mapped[Utilizador] = relationship()

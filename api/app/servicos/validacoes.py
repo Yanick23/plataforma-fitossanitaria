@@ -1,10 +1,12 @@
 """Validação pelo técnico, exactidão em campo e conjunto de retreino."""
 
 import csv
+import hashlib
+import hmac
 import io
 import zipfile
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import HTTPException, status
@@ -12,7 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import definicoes
-from ..esquemas import Confusao, ExactidaoCampo, ExactidaoClasse, ExactidaoVersao, ValidacaoEscrever
+from ..esquemas import Confusao, ExactidaoCampo, ExactidaoClasse, ExactidaoDistrito, ExactidaoVersao, ValidacaoEscrever
 from ..regioes import filtro_zona, zona_de
 from ..repositorios import diagnosticos as repo
 from ..tabelas import PERFIS_PESSOAL, Diagnostico, Distrito, Patologia, Utilizador, Validacao
@@ -68,7 +70,7 @@ async def exactidao(sessao: AsyncSession, utilizador: Utilizador, cultura: str |
 
     validados = list(await sessao.execute(
         da_zona(Diagnostico.cultura_id, Diagnostico.classe_prevista, Diagnostico.versao_modelo,
-                Validacao.classe_confirmada, Validacao.correcto)
+                Validacao.classe_confirmada, Validacao.correcto, Diagnostico.distrito_id, Distrito.nome)
         .join(Validacao, Validacao.diagnostico_id == Diagnostico.id)))
     pendentes = await sessao.scalar(
         da_zona(func.count(Diagnostico.id)).outerjoin(Validacao, Validacao.diagnostico_id == Diagnostico.id)
@@ -76,7 +78,10 @@ async def exactidao(sessao: AsyncSession, utilizador: Utilizador, cultura: str |
     nomes = {(p.cultura_id, p.codigo): p.nome_local for p in await sessao.scalars(select(Patologia))}
 
     por_classe, por_versao, confusoes = defaultdict(lambda: [0, 0]), defaultdict(lambda: [0, 0]), defaultdict(int)
-    for c, prevista, versao, confirmada, correcto in validados:
+    por_distrito = defaultdict(lambda: [0, 0])
+    for c, prevista, versao, confirmada, correcto, distrito_id, distrito_nome in validados:
+        por_distrito[(distrito_id, distrito_nome or "Sem distrito")][0] += 1
+        por_distrito[(distrito_id, distrito_nome or "Sem distrito")][1] += int(correcto)
         por_classe[(c, confirmada)][0] += 1          # a classe real é a confirmada pelo técnico
         por_classe[(c, confirmada)][1] += int(correcto)
         por_versao[(c, versao)][0] += 1
@@ -98,20 +103,57 @@ async def exactidao(sessao: AsyncSession, utilizador: Utilizador, cultura: str |
                                            exactidao=taxa(n, ok))
                            for (c, v), (n, ok) in por_versao.items()),
                           key=lambda x: (x.cultura_id, x.versao_modelo or 0)),
+        por_distrito=sorted((ExactidaoDistrito(distrito_id=d, distrito=n, validados=v, correctos=ok,
+                                               exactidao=taxa(v, ok))
+                             for (d, n), (v, ok) in por_distrito.items()), key=lambda x: (-x.validados, x.distrito)),
         confusoes=sorted((Confusao(cultura_id=c, prevista=p, confirmada=k, total=n)
                           for (c, p, k), n in confusoes.items()), key=lambda x: -x.total),
     )
 
 
+# Divisão para retreino, como a do CCMT: 70% treino, 15% validação, 15% teste, fixa entre exportações.
+DIVISAO = (("treino", 70), ("validacao", 15), ("teste", 15))
+LEIA_ME = """Conjunto de retreino exportado da plataforma (fotografias validadas pelos técnicos).
+
+rotulos.csv: uma linha por diagnóstico validado. A classe verdadeira é classe_confirmada.
+
+Divisão (coluna subconjunto): 70% treino, 15% validação, 15% teste. As fotografias do mesmo
+agricultor no mesmo dia (coluna grupo) ficam sempre no mesmo subconjunto, como as fotografias da
+mesma folha na divisão do CCMT, para não haver fuga de dados entre treino e teste. A divisão é
+fixa: o mesmo grupo cai sempre no mesmo subconjunto, de uma exportação para a seguinte.
+"""
+
+
+def grupo_de(d: Diagnostico) -> str:
+    """Fotografias que provavelmente mostram as mesmas plantas: mesmo agricultor, mesmo dia.
+    Código não reversível (HMAC com a chave do servidor): o investigador também exporta este ficheiro."""
+    data = d.data if d.data.tzinfo else d.data.replace(tzinfo=timezone.utc)
+    chave = f"{d.utilizador_id}-{data.date().isoformat()}".encode()
+    return hmac.new(definicoes.jwt_segredo.encode(), chave, hashlib.sha256).hexdigest()[:12]
+
+
+def subconjunto_de(grupo: str) -> str:
+    """Divisão determinística por grupo (resumo SHA-256 em 100 partes)."""
+    n = int(hashlib.sha256(grupo.encode()).hexdigest(), 16) % 100
+    limite = 0
+    for nome, pct in DIVISAO:
+        limite += pct
+        if n < limite:
+            return nome
+    return DIVISAO[-1][0]
+
+
 async def exportar_validados(sessao: AsyncSession) -> bytes:
-    """ZIP com as fotografias validadas (pasta por cultura/classe confirmada) e um CSV com os rótulos."""
+    """ZIP com as fotografias validadas (pasta por cultura/classe confirmada), um CSV com os rótulos
+    e a divisão treino/validação/teste por grupo, e um LEIA-ME."""
     linhas = list(await sessao.scalars(
         repo.consulta_base().where(Validacao.diagnostico_id.is_not(None)).order_by(Diagnostico.data)))
     memoria = io.BytesIO()
     tabela = io.StringIO()
     escritor = csv.writer(tabela)
     escritor.writerow(["ficheiro", "diagnostico_id", "cultura", "classe_confirmada", "classe_prevista",
-                       "confianca", "correcto", "distrito", "provincia", "data", "versao_modelo", "tecnico"])
+                       "confianca", "correcto", "distrito", "provincia", "data", "versao_modelo", "tecnico",
+                       "grupo", "subconjunto"])
     with zipfile.ZipFile(memoria, "w", zipfile.ZIP_DEFLATED) as z:
         for d in linhas:
             v = d.validacao
@@ -123,7 +165,9 @@ async def exportar_validados(sessao: AsyncSession) -> bytes:
             escritor.writerow([nome, d.id, d.cultura_id, v.classe_confirmada, d.classe_prevista,
                                round(d.confianca, 4), int(v.correcto), d.distrito.nome if d.distrito else "",
                                d.distrito.provincia_codigo if d.distrito else "", d.data.isoformat(),
-                               d.versao_modelo or "", v.tecnico.nome if v.tecnico else ""])
+                               d.versao_modelo or "", v.tecnico.nome if v.tecnico else "",
+                               grupo_de(d), subconjunto_de(grupo_de(d))])
         z.writestr("rotulos.csv", tabela.getvalue())
+        z.writestr("LEIA-ME.txt", LEIA_ME)
     return memoria.getvalue()
 
