@@ -5,19 +5,21 @@ import io
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 
+from fastapi import HTTPException, status
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..esquemas import Boletim, Declaracao, EficaciaPatologia, LinhaBoletim
-from ..regioes import condicao_utilizador_na_zona, filtro_zona, zona_de
+from ..regioes import Zona, condicao_utilizador_na_zona, filtro_zona, zona_contem, zona_de
 from ..repositorios import diagnosticos as repo
 from ..repositorios.diagnosticos import FiltrosDiagnostico
 from ..seguranca import anonimizado, pseudonimo
-from ..tabelas import (Alerta, Cultura, Diagnostico, Distrito, EstadoVisita, Patologia, PedidoVisita, Perfil, ResultadoTratamento,
+from ..tabelas import (Alerta, Cultura, Diagnostico, Distrito, Provincia, EstadoVisita, Patologia, PedidoVisita, Perfil, ResultadoTratamento,
                        Seguiu, Seguimento, TipoPatologia, Utilizador)
 from . import alertas as servico_alertas
-from .painel import descricao_zona
+from .painel import descricao_de
 from .vigilancia import surtos
 
 
@@ -29,8 +31,30 @@ async def _patologias(sessao: AsyncSession) -> dict[tuple[str, str], Patologia]:
     return {(p.cultura_id, p.codigo): p for p in await sessao.scalars(select(Patologia))}
 
 
-async def _diagnosticos(sessao: AsyncSession, u: Utilizador, desde: datetime | None, ate: datetime | None):
-    consulta = repo.com_filtros(repo.na_zona(repo.consulta_base(), zona_de(u)), FiltrosDiagnostico(desde=desde, ate=ate))
+async def zona_escolhida(sessao: AsyncSession, u: Utilizador, provincia: str | None,
+                         distrito_id: int | None) -> Zona:
+    """A zona do boletim: a de quem pede, ou uma província/distrito dentro dela."""
+    propria = zona_de(u)
+    if distrito_id is not None:
+        d = await sessao.get(Distrito, distrito_id)
+        if d is None:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Distrito inexistente")
+        if not zona_contem(propria, None, d.id, d.provincia_codigo):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Este distrito não é da sua zona")
+        return Zona(distrito_id=d.id)
+    if provincia is not None:
+        if await sessao.get(Provincia, provincia) is None:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Província inexistente")
+        if not zona_contem(propria, provincia, None, None):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Esta província não é da sua zona")
+        return Zona(provincia_codigo=provincia)
+    return propria
+
+
+async def _diagnosticos(sessao: AsyncSession, u: Utilizador, desde: datetime | None, ate: datetime | None,
+                        zona: Zona | None = None):
+    consulta = repo.com_filtros(repo.na_zona(repo.consulta_base(), zona or zona_de(u)),
+                                FiltrosDiagnostico(desde=desde, ate=ate))
     return list(await sessao.scalars(consulta.order_by(Diagnostico.data.desc())))
 
 
@@ -75,9 +99,10 @@ async def declaracoes(sessao: AsyncSession, u: Utilizador, desde: datetime | Non
     return _declaracoes(await _diagnosticos(sessao, u, desde, None), await _patologias(sessao), anonimizado(u))
 
 
-async def boletim(sessao: AsyncSession, u: Utilizador, inicio: datetime, fim: datetime) -> Boletim:
-    zona = zona_de(u)
-    diags = await _diagnosticos(sessao, u, inicio, fim)
+async def boletim(sessao: AsyncSession, u: Utilizador, inicio: datetime, fim: datetime,
+                  zona: Zona | None = None) -> Boletim:
+    zona = zona or zona_de(u)
+    diags = await _diagnosticos(sessao, u, inicio, fim, zona)
     pats = await _patologias(sessao)
     pragas_doencas = [d for d in diags if (p := pats.get((d.cultura_id, classe_final(d)))) and p.tipo != TipoPatologia.SAUDAVEL]
 
@@ -101,7 +126,7 @@ async def boletim(sessao: AsyncSession, u: Utilizador, inicio: datetime, fim: da
     dias = [(v.actualizado_em - v.criado_em).total_seconds() / 86400 for v in resolvidas]
 
     return Boletim(
-        zona=await descricao_zona(sessao, u), inicio=inicio, fim=fim, gerado_em=datetime.now(timezone.utc),
+        zona=await descricao_de(sessao, zona), inicio=inicio, fim=fim, gerado_em=datetime.now(timezone.utc),
         diagnosticos=len(diags), diagnosticos_pragas_doencas=len(pragas_doencas),
         agricultores_activos=len({d.utilizador_id for d in diags}), agricultores_novos=novos,
         taxa_confianca_baixa=round(sum(d.confianca < 0.6 for d in diags) / len(diags), 4) if diags else None,
@@ -113,15 +138,16 @@ async def boletim(sessao: AsyncSession, u: Utilizador, inicio: datetime, fim: da
                            for k, n in por_classe.most_common(8)],
         distritos_mais_afectados=[LinhaBoletim(nome=n, valor=v) for n, v in por_distrito.most_common(8)],
         alertas=await servico_alertas.para_ler(sessao, alertas),
-        surtos=await surtos(sessao, u, agora=fim),
+        surtos=await surtos(sessao, u, agora=fim, zona=zona),
         declaracoes=_declaracoes(diags, pats, anonimizado(u)),
         eficacia=_eficacia(diags, pats),
     )
 
 
-async def boletim_csv(sessao: AsyncSession, u: Utilizador, inicio: datetime, fim: datetime) -> str:
+async def boletim_csv(sessao: AsyncSession, u: Utilizador, inicio: datetime, fim: datetime,
+                      zona: Zona | None = None) -> str:
     """Contagens por distrito, cultura e praga/doença no período (para folha de cálculo)."""
-    diags = await _diagnosticos(sessao, u, inicio, fim)
+    diags = await _diagnosticos(sessao, u, inicio, fim, zona)
     pats = await _patologias(sessao)
     contas = Counter()
     for d in diags:

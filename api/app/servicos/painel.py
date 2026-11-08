@@ -24,7 +24,10 @@ def _diagnosticos_da_zona(zona, *colunas):
 
 
 async def descricao_zona(sessao: AsyncSession, utilizador: Utilizador) -> str:
-    zona = zona_de(utilizador)
+    return await descricao_de(sessao, zona_de(utilizador))
+
+
+async def descricao_de(sessao: AsyncSession, zona) -> str:
     if zona.nacional:
         return "Moçambique"
     if zona.distrito_id:

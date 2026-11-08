@@ -116,17 +116,22 @@ def _periodo(inicio: date | None, fim: date | None) -> tuple[datetime, datetime]
 
 
 @router.get("/boletim", response_model=Boletim)
-async def boletim(utilizador: Leitor, sessao: Sessao, inicio: date | None = None, fim: date | None = None) -> Boletim:
-    """Boletim fitossanitário da zona no período (o painel imprime-o em PDF)."""
-    return await relatorios.boletim(sessao, utilizador, *_periodo(inicio, fim))
+async def boletim(utilizador: Leitor, sessao: Sessao, inicio: date | None = None, fim: date | None = None,
+                  provincia: str | None = None, distrito_id: int | None = None) -> Boletim:
+    """Boletim fitossanitário no período (o painel imprime-o em PDF): da zona de quem pede ou de uma
+    província/distrito dentro dela."""
+    zona = await relatorios.zona_escolhida(sessao, utilizador, provincia, distrito_id)
+    return await relatorios.boletim(sessao, utilizador, *_periodo(inicio, fim), zona=zona)
 
 
 @router.get("/boletim.csv", response_class=Response, responses={200: {"content": {"text/csv": {}}}})
 async def boletim_csv(utilizador: Leitor, sessao: Sessao, inicio: date | None = None,
-                      fim: date | None = None) -> Response:
+                      fim: date | None = None, provincia: str | None = None,
+                      distrito_id: int | None = None) -> Response:
     a, b = _periodo(inicio, fim)
+    zona = await relatorios.zona_escolhida(sessao, utilizador, provincia, distrito_id)
     nome = f"boletim_{a:%Y%m%d}_{b:%Y%m%d}.csv"
-    return Response(await relatorios.boletim_csv(sessao, utilizador, a, b), media_type="text/csv; charset=utf-8",
+    return Response(await relatorios.boletim_csv(sessao, utilizador, a, b, zona=zona), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f'attachment; filename="{nome}"'})
 
 
