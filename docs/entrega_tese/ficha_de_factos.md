@@ -29,7 +29,7 @@ negócio) → `repositorios/` (consultas).
 - ViewModel = `viewmodels/use*ViewModel.ts` (*hooks*);
 - View = `views/*View.tsx`.
 
-**Base de dados:** 19 tabelas, migrações Alembic aplicadas no arranque:
+**Base de dados:** 20 tabelas, migrações Alembic aplicadas no arranque:
 
 | Migração | Conteúdo |
 |---|---|
@@ -39,6 +39,7 @@ negócio) → `repositorios/` (consultas).
 | 0004 | Perfis e notificações |
 | 0005 | Previsões do tempo |
 | 0006 | Campanhas de vigilância e registo dos SMS |
+| 0007 | Decisões do técnico sobre os sinais de surto |
 
 ---
 
@@ -66,19 +67,15 @@ negócio) → `repositorios/` (consultas).
 | 2d | Perfis de coordenador e investigador; **aviso imediato** ao coordenador da província e ao administrador quando se confirma um caso de declaração obrigatória (sino no painel) |
 | 3a | **Risco meteorológico**: previsão Open-Meteo de 7 dias por distrito, 4 regras com fontes, cartão na Vigilância e alerta preventivo |
 | 3b | **Campanhas de vigilância activa**; **SMS** dos alertas e campanhas (API Ola da Pavulla); **notificações na app sem Firebase** (consulta em segundo plano); **calendário agrícola** por província; correcção dos perfis novos na app |
+| 3c | Mapa com **filtro por confiança** e **tendência semana a semana** (▲/▼ por distrito); **confirmar ou descartar** cada sinal de surto (com nota e auditoria); exactidão em campo **por distrito**; conjunto de retreino com **grupo por folha** (agricultor + dia, pseudónimo HMAC) e **divisão fixa treino/validação/teste** (70/15/15); **modelos de mensagem** nos alertas; boletim de uma **província ou distrito à escolha** |
 
 **Não implementadas (decisão do Yanick):** severidade, inspecção FAMEWS, armadilhas, dados
 abertos, segurança de produção (HTTPS, limite de tentativas, cópias de segurança), privacidade
 (consentimento, apagar a conta). **Ficam para trabalho futuro:** machambas com GPS, organizações,
 directório de apoio, «não reconhecido» e línguas locais em áudio (falta a API).
 
-**Feitas com menos do que o planeado** (o texto do PFC deve descrever só o que existe):
-- mapa de ocorrências: sem filtro por confiança nem tendência semana a semana;
-- sinais de surto: sem «confirmar ou descartar» (só «Criar alerta»);
-- exactidão em campo: por classe e por versão, não por distrito;
-- conjunto de retreino: sem a divisão por folha;
-- alertas: sem modelos de mensagem;
-- boletim: só da zona de quem pede (não se escolhe a província ou o distrito).
+**Feitas com menos do que o planeado:** nenhuma. As seis que estavam incompletas foram fechadas
+na iteração 3c (ver a linha 3c acima e a secção «Entrega 3c» de `03_resultados_plataforma.md`).
 
 ---
 
@@ -91,18 +88,18 @@ Os RF01 a RF12 e os RNF01 a RNF07 são os da v1.
 | RF11 (actualizado) | Gerir o catálogo enriquecido: sintomas, prevenção, fotos de referência, validação do texto por um técnico, versão | Administrador; técnico valida |
 | RF12 (actualizado) | Publicar modelo em piloto por distrito, promover a publicado ou retirar; porta de qualidade | Administrador |
 | RF13 | Validar um diagnóstico: confirmar ou corrigir a classe, com nota ao agricultor | Técnico, coordenador |
-| RF14 | Calcular a exactidão em campo (modelo × técnico), por classe e por versão | Técnico, investigador |
-| RF15 | Mostrar o mapa de ocorrências por distrito | Equipa |
-| RF16 | Detectar sinais de surto (subida acima do habitual por distrito e praga) | Equipa |
-| RF17 | Enviar alertas por zona (distrito, província, país), com alcance previsto e taxa de leitura | Técnico, coordenador, administrador |
+| RF14 | Calcular a exactidão em campo (modelo × técnico), por classe, por versão e por distrito | Técnico, investigador |
+| RF15 | Mostrar o mapa de ocorrências por distrito, com filtro por confiança do modelo e tendência semana a semana | Equipa |
+| RF16 | Detectar sinais de surto (subida acima do habitual por distrito e praga); o técnico confirma (e prepara o alerta) ou descarta com nota | Equipa; técnico e coordenador decidem |
+| RF17 | Enviar alertas por zona (distrito, província, país), com alcance previsto, taxa de leitura e modelos de mensagem | Técnico, coordenador, administrador |
 | RF18 | Pedir visita técnica a partir de um diagnóstico; o técnico agenda e resolve | Agricultor, técnico |
 | RF19 | Perguntar aos 7 dias se seguiu a recomendação e se a planta melhorou | Agricultor |
 | RF20 | Marcar pragas de declaração obrigatória e avisar logo o coordenador e o administrador quando um caso é confirmado | Administrador; sistema |
 | RF21 | Mostrar o risco meteorológico dos próximos 7 dias por distrito | Equipa; Open-Meteo |
-| RF22 | Gerar o boletim fitossanitário da zona (PDF e CSV) | Equipa |
+| RF22 | Gerar o boletim fitossanitário da zona, ou de uma província ou distrito dela (PDF e CSV) | Equipa |
 | RF23 | Gerir contas, perfis e zonas de actuação | Administrador, coordenador |
 | RF24 | Registar a auditoria (quem fez o quê, quando, com o antes e o depois) | Sistema; administrador consulta |
-| RF25 | Exportar o conjunto de retreino (fotos validadas e rótulos) | Administrador, investigador |
+| RF25 | Exportar o conjunto de retreino (fotos validadas e rótulos), com grupo por folha e divisão fixa treino/validação/teste | Administrador, investigador |
 | RF26 | Verificar a nitidez e a luz da foto antes de diagnosticar | Sistema (app) |
 | RF27 | Combinar 2 a 3 fotos da mesma planta num só diagnóstico | Agricultor (app) |
 | RNF08 | Controlo de acesso por perfil e por zona em todas as rotas | — |
@@ -117,7 +114,7 @@ Os RF01 a RF12 e os RNF01 a RNF07 são os da v1.
 
 ---
 
-## 5. Base de dados (19 tabelas, para o diagrama de classes)
+## 5. Base de dados (20 tabelas, para o diagrama de classes)
 
 | Tabela | Campos principais |
 |---|---|
@@ -140,13 +137,14 @@ Os RF01 a RF12 e os RNF01 a RNF07 são os da v1.
 | PrevisaoMeteo | distrito_id, obtida_em, dados (previsão horária em JSON) |
 | Campanha | id, titulo, mensagem, cultura_id, patologia_id, provincia_codigo, distrito_id, inicio, fim, autor_id, cancelada |
 | EnvioSMS | id, alerta_id ou campanha_id, utilizador_id, telefone, conteudo, estado (PENDENTE, ENVIADO, FALHOU, SIMULADO), id_externo, erro |
+| DecisaoSinal | id, distrito_id, cultura_id, classe, decisao (CONFIRMADO, DESCARTADO), nota, utilizador_id, criado_em |
 
 **Diferença face à v1:** o modelo **passou a ser uma entidade persistida** (ModeloML). A frase da
 v1 «o modelo de classificação não é uma entidade persistida» tem de sair.
 
 ---
 
-## 6. API: 67 endpoints (mais `/saude`)
+## 6. API: 69 endpoints (mais `/saude`)
 
 | Grupo | N.º | Exemplos |
 |---|---|---|
@@ -159,7 +157,7 @@ v1 «o modelo de classificação não é uma entidade persistida» tem de sair.
 | Alertas | 6 | `GET /alertas/alcance`, `POST /alertas`, `GET /alertas/meus`, `POST /alertas/{id}/lido` |
 | Visitas | 5 | `POST /visitas`, `GET /visitas/minhas`, `PATCH /visitas/{id}` |
 | Gestão | 12 | `/gestao/resumo`, `/gestao/diagnosticos`, `/gestao/utilizadores`, `/gestao/auditoria`, `/gestao/boletim` (+ `.csv`), `/gestao/eficacia`, `/gestao/notificacoes` |
-| Vigilância | 4 | `/vigilancia/ocorrencias`, `/surtos`, `/declaracoes`, `/risco-meteorologico` |
+| Vigilância | 6 | `/vigilancia/ocorrencias?confianca=`, `/tendencia`, `/surtos`, `POST /surtos/decisao`, `/declaracoes`, `/risco-meteorologico` |
 | Campanhas, novidades e calendário | 6 | `POST/GET /campanhas`, `GET /campanhas/minhas`, `POST /campanhas/{id}/cancelar`, `GET /novidades?desde=`, `GET /calendario?provincia=` |
 
 Documentação automática em `/docs` (Swagger UI) e `/redoc`.
@@ -170,7 +168,7 @@ Documentação automática em `/docs` (Swagger UI) e `/redoc`.
 
 | O quê | Resultado |
 |---|---|
-| API (pytest + httpx, SQLite temporária) | **68 testes aprovados** (v1: 23; 59 até à entrega 3a). Também cobrem SMS (fornecedor simulado), campanhas, novidades e calendário. Cobrem autenticação, sincronização sem duplicados, permissões por perfil e zona, catálogo, modelos (piloto, porta de qualidade, deriva), Grad-CAM, alertas, visitas, vigilância e surtos, boletim, perfis finos, notificações, risco meteorológico (com a Open-Meteo simulada) e migração de uma base antiga |
+| API (pytest + httpx, SQLite temporária) | **74 testes aprovados** (v1: 23; 59 até à entrega 3a; 68 na 3b). Também cobrem filtro de confiança e tendência do mapa, decisão sobre sinais de surto, exactidão por distrito, divisão do retreino, boletim de uma zona escolhida, SMS (fornecedor simulado), campanhas, novidades e calendário. Cobrem autenticação, sincronização sem duplicados, permissões por perfil e zona, catálogo, modelos (piloto, porta de qualidade, deriva), Grad-CAM, alertas, visitas, vigilância e surtos, boletim, perfis finos, notificações, risco meteorológico (com a Open-Meteo simulada) e migração de uma base antiga |
 | App (`flutter test`) | 21 testes (18 aprovados e 3 saltados nesta máquina, que precisam das fotos de calibração): qualidade da foto, combinação de fotos, seguimento, catálogo, sincronização com UUID, perfis, notificações, calendário e campanhas. APK de release arm64 compilado (36,4 MB) |
 | Painel | `npm run build` sem erros; testado no Chrome com Puppeteer, contra uma API de teste (porta 8001, base temporária, **nunca a base real**), sem erros na consola |
 | Migrações | 0003 → 0004 → 0003 → 0004 num PostgreSQL 16 temporário (Docker), sem erros |

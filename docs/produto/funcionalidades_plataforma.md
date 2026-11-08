@@ -108,6 +108,6 @@ Push (13b) · SMS (13) · línguas locais e áudio (14) · dados abertos (22) ·
 
 **Estado a 08/11/2026:** no PFC entram como implementadas a Fase 1, a Fase 2, o risco
 meteorológico, o calendário e as campanhas da Fase 3, e o SMS e as notificações (sem Firebase) da
-Fase 4 (entregas 1a a 3b). O que não foi feito entra como trabalho futuro ou
+Fase 4 (entregas 1a a 3c; a 3c fechou o que estava feito com menos do que o planeado em 1, 1b, 2b, 2c, 3 e 5). O que não foi feito entra como trabalho futuro ou
 fica de fora por decisão do Yanick. O estado de cada funcionalidade está em
 [estado_e_pendentes.md](estado_e_pendentes.md).
