@@ -1,3 +1,5 @@
+import 'audio.dart';
+
 /// Nível de um alerta (igual à API).
 enum NivelAlerta {
   informacao('INFORMACAO', 'Informação'),
@@ -25,6 +27,7 @@ class Alerta {
     this.patologiaCodigo,
     this.expiraEm,
     this.lido = false,
+    this.audios = const [],
   });
 
   final int id;
@@ -38,12 +41,14 @@ class Alerta {
   final String? patologiaCodigo;
   final DateTime? expiraEm;
   final bool lido;
+  final List<AudioVoz> audios; // mensagem de voz em línguas locais
 
   bool get expirado => expiraEm != null && expiraEm!.isBefore(DateTime.now());
 
   Alerta comLido(bool valor) => Alerta(
         id: id, titulo: titulo, mensagem: mensagem, nivel: nivel, zona: zona, criadoEm: criadoEm,
         culturaId: culturaId, patologiaId: patologiaId, patologiaCodigo: patologiaCodigo, expiraEm: expiraEm, lido: valor,
+        audios: audios,
       );
 
   factory Alerta.fromJson(Map<String, dynamic> j) => Alerta(
@@ -58,6 +63,7 @@ class Alerta {
         patologiaCodigo: j['patologia_codigo'] as String?,
         expiraEm: j['expira_em'] == null ? null : DateTime.parse(j['expira_em'] as String).toLocal(),
         lido: j['lido'] as bool? ?? false,
+        audios: AudioVoz.lista(j['audios']),
       );
 
   Map<String, dynamic> toJson() => {
@@ -72,5 +78,6 @@ class Alerta {
         'patologia_codigo': patologiaCodigo,
         'expira_em': expiraEm?.toUtc().toIso8601String(),
         'lido': lido,
+        'audios': [for (final a in audios) a.toJson()],
       };
 }

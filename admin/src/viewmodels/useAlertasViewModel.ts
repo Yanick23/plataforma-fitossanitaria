@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { alertasRepo } from '@/model/repositorios'
+import { alertasRepo, audiosRepo } from '@/model/repositorios'
 import type { NivelAlerta } from '@/model/tipos'
 import { useNotificar } from '@/nucleo/notificacoes'
 import { useSessao } from '@/nucleo/sessao'
+import type { AudioGravado } from '@/ui/Gravador'
 import { useCatalogo } from './referencias'
 
 export type Ambito = 'distrito' | 'provincia' | 'pais'
@@ -18,6 +19,8 @@ export interface Rascunho {
   distrito: string
   validade: string // AAAA-MM-DD ou ''
   sms: boolean // também por SMS
+  linguaVoz: string // língua da mensagem de voz ('' = sem voz)
+  voz: AudioGravado | null // gravada aqui; vai para a API depois de o alerta ser criado
 }
 
 export interface Preenchimento {
@@ -85,7 +88,7 @@ export function useAlertasViewModel(preenchimento?: Preenchimento | null) {
   const vazio = (): Rascunho => ({
     titulo: '', mensagem: '', nivel: 'AVISO', patologia: '', ambito: ambitos[0],
     provincia: tecnicoProvincia, distrito: tecnicoDistrito, validade: dataDaqui(14),
-    sms: false,
+    sms: false, linguaVoz: '', voz: null,
   })
   const [aCompor, setACompor] = useState(false)
   const [rascunho, setRascunho] = useState<Rascunho>(vazio)
@@ -121,7 +124,28 @@ export function useAlertasViewModel(preenchimento?: Preenchimento | null) {
   })
 
   const enviar = useMutation({
-    mutationFn: () => alertasRepo.criar({
+    mutationFn: async () => {
+      const alerta = await criarAlerta()
+      if (!rascunho.voz || !rascunho.linguaVoz) return { alerta, vozFalhou: null }
+      try {
+        await audiosRepo.gravar({ alerta_id: alerta.id }, { blob: rascunho.voz.blob, lingua: rascunho.linguaVoz, duracao_s: rascunho.voz.duracao_s })
+        return { alerta, vozFalhou: null }
+      } catch (e) {
+        return { alerta, vozFalhou: (e as Error).message } // o alerta já saiu: só a voz falhou
+      }
+    },
+    onSuccess: ({ alerta: a, vozFalhou }) => {
+      notificar(`Alerta enviado a ${a.destinatarios} agricultor(es) — ${a.zona}${a.sms ? ', também por SMS' : ''}${rascunho.voz && !vozFalhou ? ', com mensagem de voz' : ''}`)
+      if (vozFalhou) notificar(`A mensagem de voz não foi enviada: ${vozFalhou}`, 'erro')
+      setACompor(false)
+      setRascunho(vazio())
+      cliente.invalidateQueries({ queryKey: ['alertas'] })
+      cliente.invalidateQueries({ queryKey: ['resumo'] })
+    },
+    onError: (e: Error) => notificar(e.message, 'erro'),
+  })
+
+  const criarAlerta = () => alertasRepo.criar({
       titulo: rascunho.titulo.trim(),
       mensagem: rascunho.mensagem.trim(),
       nivel: rascunho.nivel,
@@ -130,16 +154,7 @@ export function useAlertasViewModel(preenchimento?: Preenchimento | null) {
       distrito_id: destino.distrito_id,
       expira_em: rascunho.validade ? new Date(`${rascunho.validade}T23:59:59`).toISOString() : null,
       enviar_sms: rascunho.sms,
-    }),
-    onSuccess: (a) => {
-      notificar(`Alerta enviado a ${a.destinatarios} agricultor(es) — ${a.zona}${a.sms ? ', também por SMS' : ''}`)
-      setACompor(false)
-      setRascunho(vazio())
-      cliente.invalidateQueries({ queryKey: ['alertas'] })
-      cliente.invalidateQueries({ queryKey: ['resumo'] })
-    },
-    onError: (e: Error) => notificar(e.message, 'erro'),
-  })
+    })
 
   const arquivar = useMutation({
     mutationFn: alertasRepo.arquivar,
@@ -162,7 +177,9 @@ export function useAlertasViewModel(preenchimento?: Preenchimento | null) {
   const alterar = <K extends keyof Rascunho>(k: K, v: Rascunho[K]) =>
     setRascunho((r) => ({ ...r, [k]: v, ...(k === 'provincia' && !tecnicoDistrito ? { distrito: '' } : {}) }))
 
+  // Uma gravação sem língua escolhida não se pode enviar: obriga a escolher ou a descartar.
   const valido = rascunho.titulo.trim().length >= 3 && rascunho.mensagem.trim().length >= 3 && destinoCompleto
+    && (!rascunho.voz || Boolean(rascunho.linguaVoz))
 
   return {
     alertas: lista.data ?? [], aCarregar: lista.isLoading, erro: lista.error as Error | null,

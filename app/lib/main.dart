@@ -13,6 +13,7 @@ import 'services/notificacoes_fundo.dart';
 import 'services/sessao.dart';
 import 'services/sincronizacao.dart';
 import 'services/visitas_locais.dart';
+import 'services/vozes_locais.dart';
 import 'tema.dart';
 
 Future<void> main() async {
@@ -24,6 +25,7 @@ Future<void> main() async {
   await VisitasLocais.instancia.carregar();
   await CampanhasLocais.instancia.carregar();
   await CalendarioLocal.instancia.carregar();
+  await VozesLocais.instancia.carregar();
   await Acompanhamento.instancia.actualizar();
   runApp(const AgroDiagnosticoApp());
 }

@@ -83,6 +83,8 @@ class Utilizador(Base):
     provincia_codigo: Mapped[str | None] = mapped_column(ForeignKey("provincias.codigo"), index=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+    # Língua em que o agricultor quer ouvir as mensagens (código ISO 639-3, ver app/linguas.py).
+    lingua: Mapped[str | None] = mapped_column(String(3))
 
     diagnosticos: Mapped[list["Diagnostico"]] = relationship(back_populates="utilizador")
     distrito: Mapped[Distrito | None] = relationship()
@@ -123,6 +125,8 @@ class Patologia(Base):
     validado_por: Mapped["Utilizador | None"] = relationship()
     fotos: Mapped[list["FotoReferencia"]] = relationship(back_populates="patologia", cascade="all, delete-orphan",
                                                          passive_deletes=True, order_by="FotoReferencia.id")
+    audios: Mapped[list["Audio"]] = relationship(back_populates="patologia", cascade="all, delete-orphan",
+                                                 passive_deletes=True, order_by="Audio.lingua")
 
 
 class FotoReferencia(Base):
@@ -421,3 +425,32 @@ class DecisaoSinal(Base):
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora, index=True)
 
     utilizador: Mapped[Utilizador] = relationship()
+
+
+class Audio(Base):
+    """Gravação de voz numa língua local (funcionalidade 14): a recomendação de uma praga ou doença
+    do catálogo, ou a mensagem de um alerta. Uma por língua: gravar de novo substitui a anterior.
+
+    As do catálogo só chegam à app depois de outra pessoa da equipa confirmar que dizem o mesmo
+    que o texto; as dos alertas seguem logo com o alerta (quem o envia é responsável por ele).
+    """
+
+    __tablename__ = "audios"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patologia_id: Mapped[int | None] = mapped_column(ForeignKey("patologias.id", ondelete="CASCADE"), index=True)
+    alerta_id: Mapped[int | None] = mapped_column(ForeignKey("alertas.id", ondelete="CASCADE"), index=True)
+    lingua: Mapped[str] = mapped_column(String(3))
+    caminho_ficheiro: Mapped[str] = mapped_column(String(300))
+    tipo_mime: Mapped[str] = mapped_column(String(40))
+    tamanho_bytes: Mapped[int] = mapped_column(Integer)
+    duracao_s: Mapped[float | None] = mapped_column(Float)
+    autor_id: Mapped[int] = mapped_column(ForeignKey("utilizadores.id"))
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+    validado_por_id: Mapped[int | None] = mapped_column(ForeignKey("utilizadores.id"))
+    validado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reproducoes: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
+    patologia: Mapped[Patologia | None] = relationship(back_populates="audios")
+    autor: Mapped[Utilizador] = relationship(foreign_keys=[autor_id])
+    validado_por: Mapped[Utilizador | None] = relationship(foreign_keys=[validado_por_id])

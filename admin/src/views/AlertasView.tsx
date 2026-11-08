@@ -1,11 +1,13 @@
 import { useLocation } from 'react-router-dom'
-import { Archive, BellRing, CircleAlert, Info, Megaphone, MessageSquareText, Send, TriangleAlert, Users } from 'lucide-react'
+import { Archive, BellRing, CircleAlert, Info, Megaphone, MessageSquareText, Send, TriangleAlert, Users, Volume2 } from 'lucide-react'
 import type { NivelAlerta } from '@/model/tipos'
 import { data, numero, percentagem, relativo, resumoSMS } from '@/nucleo/formatos'
 import { NIVEL } from '@/nucleo/rotulos'
 import { Botao, CabecalhoPagina, Campo, Cartao, Esqueleto, Etiqueta, Gaveta, Segmentos, Seleccao, Separadores, Vazio } from '@/ui/componentes'
 import { MODELOS_MENSAGEM, useAlertasViewModel, type Ambito, type ModeloMensagem, type Preenchimento } from '@/viewmodels/useAlertasViewModel'
 import { useCatalogo, useRegioes } from '@/viewmodels/referencias'
+import { useLinguas } from '@/viewmodels/useAudiosViewModel'
+import { Gravador } from '@/ui/Gravador'
 
 const ICONE_NIVEL: Record<NivelAlerta, typeof Info> = { INFORMACAO: Info, AVISO: TriangleAlert, URGENTE: CircleAlert }
 const NOME_AMBITO: Record<Ambito, string> = { distrito: 'Distrito', provincia: 'Província', pais: 'Todo o país' }
@@ -15,6 +17,7 @@ export function AlertasView() {
   const vm = useAlertasViewModel((local.state as { preencher?: Preenchimento } | null)?.preencher)
   const catalogo = useCatalogo()
   const regioes = useRegioes()
+  const { linguas, nomeLingua } = useLinguas()
   const r = vm.rascunho
   const patologia = r.patologia ? catalogo.patologias.find((p) => String(p.id) === r.patologia) : undefined
 
@@ -51,6 +54,11 @@ export function AlertasView() {
                         <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {a.patologia_nome ? `${a.patologia_nome} · ` : ''}{a.mensagem}
                         </span>
+                        {a.audios.length > 0 && (
+                          <span className="suave pequeno" title="Mensagem de voz">
+                            <Volume2 size={12} style={{ verticalAlign: -2 }} /> {a.audios.map((x) => x.lingua_nome).join(', ')}
+                          </span>
+                        )}
                       </td>
                       <td><Etiqueta tom={NIVEL[a.nivel].tom} icone={<Icone size={12} />}>{NIVEL[a.nivel].nome}</Etiqueta></td>
                       <td>{a.zona}</td>
@@ -167,6 +175,13 @@ export function AlertasView() {
                 </span>
               </span>
             </label>
+            <div className="campo">
+              <span>Mensagem de voz (opcional)</span>
+              <small>Para quem lê pouco: leia a mensagem numa língua local. Chega à app com o alerta; o SMS não leva áudio.</small>
+              <Seleccao value={r.linguaVoz} onChange={(e) => vm.alterar('linguaVoz', e.target.value)} vazio="Sem mensagem de voz"
+                opcoes={linguas.map((l) => ({ valor: l.codigo, nome: l.nome }))} aria-label="Língua da mensagem de voz" />
+              {r.linguaVoz && <Gravador valor={r.voz} aoMudar={(g) => vm.alterar('voz', g)} desactivado={vm.aEnviar} />}
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
@@ -185,6 +200,7 @@ export function AlertasView() {
                   <b>Mensagem</b>
                   {r.mensagem || 'A mensagem aparece aqui.'}
                 </div>
+                {r.voz && r.linguaVoz && <span className="t-bloco" style={{ display: 'flex', gap: 6, alignItems: 'center' }}><Volume2 size={14} />Ouvir em {nomeLingua(r.linguaVoz)}</span>}
                 <span style={{ fontSize: 11, color: '#6b7280', marginTop: 'auto' }}>
                   {vm.alcance?.zona ?? '—'}{r.validade ? ` · válido até ${data(`${r.validade}T12:00:00`)}` : ''}
                 </span>

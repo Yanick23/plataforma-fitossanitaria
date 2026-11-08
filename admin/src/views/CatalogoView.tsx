@@ -5,6 +5,7 @@ import { data } from '@/nucleo/formatos'
 import { TIPO } from '@/nucleo/rotulos'
 import { Botao, CabecalhoPagina, Campo, Cartao, Esqueleto, Etiqueta, Gaveta, Segmentos, Separadores, Vazio } from '@/ui/componentes'
 import { conteudoValidado, useCatalogoViewModel, type FiltroRevisao } from '@/viewmodels/useCatalogoViewModel'
+import { AudiosPatologia } from './AudiosPatologia'
 
 const AVISO_APP = 'Recomendação básica gerada automaticamente. Confirme o diagnóstico e o tratamento com um extensionista ou técnico agrário.'
 
@@ -59,7 +60,7 @@ export function CatalogoView() {
             {vm.patologias.length === 0 ? <Vazio titulo="Nada a mostrar" texto="Nenhuma praga ou doença corresponde ao filtro." /> : (
               <div className="tabela-envolvente">
                 <table className="tabela">
-                  <thead><tr><th>Nome local</th><th>Tipo</th><th>Informação para o agricultor</th><th>Revisão</th><th className="numero">Fotos</th><th>Código do modelo</th></tr></thead>
+                  <thead><tr><th>Nome local</th><th>Tipo</th><th>Informação para o agricultor</th><th>Revisão</th><th className="numero">Fotos</th><th className="numero" title="Línguas com gravação validada">Áudio</th><th>Código do modelo</th></tr></thead>
                   <tbody>
                     {vm.patologias.map((p) => {
                       const falta = vm.emFalta(p)
@@ -83,6 +84,7 @@ export function CatalogoView() {
                             <span>versão {p.versao_conteudo}</span>
                           </td>
                           <td className="numero">{p.fotos.length}</td>
+                          <td className="numero" title={p.audios.map((x) => x.lingua_nome).join(', ') || undefined}>{p.audios.length}</td>
                           <td className="mono suave">{p.codigo}</td>
                         </tr>
                       )
@@ -211,7 +213,8 @@ export function CatalogoView() {
                   )}
                 </section>
               )}
-              {e.id === null && <p className="suave pequeno">Depois de criar, pode juntar fotografias e pedir a validação do texto.</p>}
+              {g && <AudiosPatologia patologia={g} />}
+              {e.id === null && <p className="suave pequeno">Depois de criar, pode juntar fotografias e gravações e pedir a validação do texto.</p>}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', position: 'sticky', top: 0 }}>

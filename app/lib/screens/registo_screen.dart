@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/audio.dart';
 import '../services/api_cliente.dart';
 import '../services/sessao.dart';
 import '../tema.dart';
@@ -30,6 +31,7 @@ class _RegistoScreenState extends State<RegistoScreen> {
   String? _provincia;
   Regiao? _distrito;
   String? _erroRegioes;
+  String? _lingua; // para ouvir as mensagens; nulo = só texto
 
   @override
   void initState() {
@@ -82,6 +84,7 @@ class _RegistoScreenState extends State<RegistoScreen> {
         palavraPasse: _palavraPasse.text,
         area: _distrito?.nome,
         distritoId: _distrito == null ? null : int.parse(_distrito!.chave),
+        lingua: _lingua,
       );
       if (!mounted) return;
       Navigator.of(context).pop();
@@ -140,6 +143,15 @@ class _RegistoScreenState extends State<RegistoScreen> {
               aoMudar: (chave) => setState(() => _distrito = _distritos.where((d) => d.chave == chave).firstOrNull),
               dica: _erroRegioes ??
                   'Recebe os alertas do seu distrito e o técnico da zona pode ajudar com os seus diagnósticos',
+            ),
+            const SizedBox(height: 12),
+            _Lista<String>(
+              rotulo: 'Língua para ouvir as mensagens (opcional)',
+              icone: Icons.record_voice_over_outlined,
+              valor: _lingua,
+              opcoes: [for (final l in Lingua.todas) (l.codigo, l.nome)],
+              aoMudar: (v) => setState(() => _lingua = v),
+              dica: 'As recomendações e os alertas podem ter uma gravação na sua língua. Pode mudar depois nas Definições.',
             ),
             const SizedBox(height: 12),
             CampoTexto(

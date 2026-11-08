@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../models/audio.dart';
 import '../models/cultura.dart';
 import '../models/patologia.dart';
 import 'api_cliente.dart';
@@ -91,6 +92,9 @@ class Catalogo {
     final ficheiro = File(p.join(pasta.path, 'ref_${f.id}'));
     return ficheiro.existsSync() ? ficheiro : null;
   }
+
+  /// Todas as gravações de voz do catálogo (a sincronização descarrega as da língua do agricultor).
+  List<AudioVoz> get audios => [for (final e in _entradas.values) for (final pat in e.values) ...pat.audios];
 
   Patologia patologia(Cultura cultura, String codigo) =>
       _entradas[cultura]?[codigo] ?? Patologia.desconhecida(cultura, codigo);

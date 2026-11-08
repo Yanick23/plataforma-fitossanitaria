@@ -14,6 +14,7 @@ import '../services/sessao.dart';
 import '../services/sincronizacao.dart';
 import '../tema.dart';
 import '../widgets/anel_confianca.dart';
+import '../widgets/botao_ouvir.dart';
 import '../widgets/botoes.dart';
 import '../widgets/informacao_patologia.dart';
 import 'captura_screen.dart';
@@ -216,6 +217,7 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
               style: TextStyle(fontWeight: FontWeight.w800, color: Cores.verdeEscuro)),
           const SizedBox(height: 6),
           Text(entrada.recomendacao, style: const TextStyle(height: 1.4)),
+          if (entrada.audios.isNotEmpty) ...[const SizedBox(height: 10), BotaoOuvir(audios: entrada.audios)],
           const SizedBox(height: 10),
           Text(Catalogo.instancia.aviso,
               style: const TextStyle(fontSize: 11, color: Cores.textoSecundario, height: 1.3)),

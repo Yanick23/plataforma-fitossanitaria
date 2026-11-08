@@ -1,3 +1,4 @@
+import 'audio.dart';
 import 'cultura.dart';
 
 enum TipoPatologia {
@@ -43,6 +44,7 @@ class Patologia {
     this.prevencao,
     this.validado = false,
     this.fotos = const [],
+    this.audios = const [],
   });
 
   final int? id; // id na API (nulo no catálogo embutido)
@@ -59,6 +61,9 @@ class Patologia {
   final bool validado;
   final List<FotoReferencia> fotos;
 
+  /// Gravações validadas da recomendação em línguas locais (funcionalidade 14).
+  final List<AudioVoz> audios;
+
   /// Formato do catálogo embutido (assets/catalogo.json).
   factory Patologia.doCatalogo(Cultura cultura, String codigo, Map<String, dynamic> j) => Patologia(
         cultura: cultura,
@@ -71,6 +76,7 @@ class Patologia {
         prevencao: j['prevencao'] as String?,
         validado: j['validado'] as bool? ?? false,
         fotos: [for (final f in (j['fotos'] as List? ?? const [])) FotoReferencia.fromJson(f as Map<String, dynamic>)],
+        audios: AudioVoz.lista(j['audios']),
       );
 
   /// Formato da API (GET /patologias).
@@ -86,6 +92,7 @@ class Patologia {
         prevencao: j['prevencao'] as String?,
         validado: j['validado_por_nome'] != null,
         fotos: [for (final f in (j['fotos'] as List? ?? const [])) FotoReferencia.fromJson(f as Map<String, dynamic>)],
+        audios: AudioVoz.lista(j['audios']),
       );
 
   Map<String, dynamic> paraCatalogo() => {
@@ -97,6 +104,7 @@ class Patologia {
         'prevencao': prevencao,
         'validado': validado,
         'fotos': [for (final f in fotos) f.toJson()],
+        'audios': [for (final a in audios) a.toJson()],
       };
 
   /// Usada se o modelo devolver uma classe que não está no catálogo.

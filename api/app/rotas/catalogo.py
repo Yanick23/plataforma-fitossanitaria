@@ -17,7 +17,8 @@ from ..esquemas import (CulturaCriar, CulturaEscrever, CulturaLer, FotoLer, Pato
                         PatologiaLer)
 from ..seguranca import Administrador, Pessoal
 from ..servicos.auditoria import auditar, instantaneo
-from ..tabelas import Cultura, FotoReferencia, Patologia
+from ..servicos import audios
+from ..tabelas import Audio, Cultura, FotoReferencia, Patologia
 
 router = APIRouter(tags=["Catálogo"])
 Sessao = Annotated[AsyncSession, Depends(obter_sessao)]
@@ -57,7 +58,10 @@ async def actualizar_cultura(cultura_id: str, dados: CulturaEscrever, admin: Adm
 
 
 def _consulta_patologias():
-    return select(Patologia).options(selectinload(Patologia.validado_por), selectinload(Patologia.fotos))
+    return select(Patologia).options(
+        selectinload(Patologia.validado_por), selectinload(Patologia.fotos),
+        selectinload(Patologia.audios).selectinload(Audio.autor),
+        selectinload(Patologia.audios).selectinload(Audio.validado_por))
 
 
 def _para_ler(p: Patologia) -> PatologiaLer:
@@ -67,6 +71,7 @@ def _para_ler(p: Patologia) -> PatologiaLer:
         prevencao=p.prevencao, declaracao_obrigatoria=p.declaracao_obrigatoria, versao_conteudo=p.versao_conteudo,
         validado_por_nome=p.validado_por.nome if p.validado_por else None, validado_em=p.validado_em,
         fotos=[FotoLer(id=f.id, legenda=f.legenda, url=f"/fotos-referencia/{f.id}") for f in p.fotos],
+        audios=[audios.para_ler(a) for a in p.audios if a.validado_em is not None],
     )
 
 

@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { useSessao } from '@/nucleo/sessao'
 import { Esqueleto } from '@/ui/componentes'
 import { AlertasView } from '@/views/AlertasView'
+import { AudioView } from '@/views/AudioView'
 import { BoletimView } from '@/views/BoletimView'
 import { CalendarioView } from '@/views/CalendarioView'
 import { CampanhasView } from '@/views/CampanhasView'
@@ -33,6 +34,7 @@ export function App() {
           <Route path="campanhas" element={<CampanhasView />} />
           <Route path="catalogo" element={<CatalogoView />} />
           <Route path="calendario" element={<CalendarioView />} />
+          <Route path="audio" element={<AudioView />} />
           <Route path="modelos" element={<ModelosView />} />
           {podeOperar && <Route path="utilizadores" element={<UtilizadoresView />} />}
           <Route path="vigilancia" element={<VigilanciaView />} />

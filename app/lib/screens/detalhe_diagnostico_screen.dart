@@ -13,6 +13,7 @@ import '../services/historial_db.dart';
 import '../services/visitas_locais.dart';
 import '../tema.dart';
 import '../widgets/anel_confianca.dart';
+import '../widgets/botao_ouvir.dart';
 import '../widgets/botoes.dart';
 import '../widgets/formatacao.dart';
 import '../widgets/informacao_patologia.dart';
@@ -156,6 +157,7 @@ class _DetalheDiagnosticoScreenState extends State<DetalheDiagnosticoScreen> {
               const Text('Recomendação', style: TextStyle(fontWeight: FontWeight.w800, color: Cores.verdeEscuro)),
               const SizedBox(height: 6),
               Text(pat.recomendacao, style: const TextStyle(height: 1.4)),
+              if (pat.audios.isNotEmpty) ...[const SizedBox(height: 10), BotaoOuvir(audios: pat.audios)],
             ]),
           ),
           const SizedBox(height: 12),

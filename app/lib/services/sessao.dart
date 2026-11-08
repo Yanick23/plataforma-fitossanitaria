@@ -43,6 +43,12 @@ class Sessao {
     utilizador.value = u;
   }
 
+  /// Dados da conta alterados (ex.: a língua para ouvir as mensagens).
+  Future<void> actualizarUtilizador(Utilizador u) async {
+    await _armazem.write(key: _chaveUtilizador, value: jsonEncode(u.toJson()));
+    utilizador.value = u;
+  }
+
   /// Guarda o token renovado em cada sincronização (secção 4.4.5).
   Future<void> renovarToken(String novoToken) async {
     token = novoToken;

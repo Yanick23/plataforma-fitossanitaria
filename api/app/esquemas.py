@@ -23,6 +23,7 @@ class Registo(Esquema):
     palavra_passe: str = Field(min_length=6, max_length=72)  # o bcrypt só usa 72 bytes
     area: str | None = Field(default=None, max_length=80, examples=["Boane"])
     distrito_id: int | None = None  # se vier, tem prioridade sobre a área em texto
+    lingua: str | None = Field(default=None, pattern=r"^[a-z]{3}$")  # para ouvir as mensagens (ISO 639-3)
 
 
 class UtilizadorCriar(Registo):
@@ -46,6 +47,7 @@ class UtilizadorLer(Esquema):
     distrito_id: int | None = None
     provincia_codigo: str | None = None
     activo: bool = True
+    lingua: str | None = None
 
 
 class UtilizadorAdminLer(UtilizadorLer):
@@ -112,12 +114,31 @@ class FotoLer(Esquema):
     url: str  # caminho relativo à API, ex.: /fotos-referencia/3
 
 
+class AudioLer(Esquema):
+    id: int
+    lingua: str
+    lingua_nome: str
+    url: str  # caminho relativo à API, ex.: /audios/ficheiros/p3_vmw_1a2b3c4d5e.webm (muda a cada gravação)
+    tipo_mime: str
+    tamanho_bytes: int
+    duracao_s: float | None
+    patologia_id: int | None = None
+    alerta_id: int | None = None
+    autor_id: int
+    autor_nome: str
+    criado_em: datetime
+    validado_por_nome: str | None = None
+    validado_em: datetime | None = None
+    reproducoes: int = 0
+
+
 class PatologiaLer(PatologiaCriar):
     id: int
     versao_conteudo: int = 1
     validado_por_nome: str | None = None
     validado_em: datetime | None = None
     fotos: list[FotoLer] = []
+    audios: list[AudioLer] = []  # só as gravações já validadas (são as que a app descarrega)
 
 
 # --- Diagnósticos e sincronização -------------------------------------------
@@ -272,6 +293,7 @@ class AlertaLer(Esquema):
     destinatarios: int
     lidos: int
     sms: ResumoSMS | None = None
+    audios: list[AudioLer] = []
 
 
 class AlertaAgricultorLer(Esquema):
@@ -286,6 +308,7 @@ class AlertaAgricultorLer(Esquema):
     criado_em: datetime
     expira_em: datetime | None
     lido: bool
+    audios: list[AudioLer] = []
 
 
 class AlcanceAlerta(Esquema):
@@ -741,3 +764,42 @@ class ExactidaoDistrito(Esquema):
 
 
 ExactidaoCampo.model_rebuild()
+
+
+# --- Línguas locais e áudio (funcionalidade 14) --------------------------------
+
+class LinguaLer(Esquema):
+    codigo: str
+    nome: str
+    provincias: list[str]  # onde é mais falada (só para sugerir o que gravar primeiro)
+
+
+class LinguaEscrever(Esquema):
+    lingua: str | None = Field(default=None, pattern=r"^[a-z]{3}$")  # None = só texto
+
+
+class Reproducao(Esquema):
+    audio_id: int
+    vezes: int = Field(ge=1, le=1000)
+
+
+class EstadoAudio(Esquema):
+    id: int
+    validado: bool
+
+
+class LinhaCobertura(Esquema):
+    patologia_id: int
+    cultura_id: str
+    codigo: str
+    nome: str
+    tipo: TipoPatologia
+    audios: dict[str, EstadoAudio]  # por código de língua; as que faltam não aparecem
+
+
+class CoberturaAudio(Esquema):
+    linguas: list[LinguaLer]
+    patologias: list[LinhaCobertura]
+    agricultores_por_lingua: dict[str, int]  # na zona de quem pede
+    agricultores_sem_lingua: int
+    por_validar: int

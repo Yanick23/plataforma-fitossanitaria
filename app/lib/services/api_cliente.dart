@@ -138,7 +138,8 @@ class ApiCliente {
           required String telefone,
           required String palavraPasse,
           String? area,
-          int? distritoId}) async =>
+          int? distritoId,
+          String? lingua}) async =>
       _login(await _enviar(() => _http.post(_uri('/auth/registar'),
           headers: _cabecalhos,
           body: jsonEncode({
@@ -147,7 +148,22 @@ class ApiCliente {
             'palavra_passe': palavraPasse,
             'area': area,
             'distrito_id': distritoId,
+            'lingua': lingua,
           }))));
+
+  /// A língua em que o próprio quer ouvir as mensagens (nulo = só texto).
+  Future<Utilizador> mudarLingua(String? lingua) async => Utilizador.fromJson(_json(await _enviar(() => _http.put(
+      _uri('/auth/eu/lingua'),
+      headers: _cabecalhos,
+      body: jsonEncode({'lingua': lingua})))) as Map<String, dynamic>);
+
+  /// Quantas vezes cada gravação foi ouvida desde a última sincronização.
+  Future<void> enviarReproducoes(Map<int, int> vezes) async {
+    if (vezes.isEmpty) return;
+    await _enviar(() => _http.post(_uri('/audios/reproducoes'),
+        headers: _cabecalhos,
+        body: jsonEncode([for (final e in vezes.entries) {'audio_id': e.key, 'vezes': e.value}])));
+  }
 
   // --- Regiões (registo) ------------------------------------------------------
 

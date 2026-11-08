@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../models/audio.dart';
 import '../models/cultura.dart';
 import '../models/modelo_ml.dart';
 import '../services/acompanhamento.dart';
 import '../services/alertas_locais.dart';
+import '../services/api_cliente.dart';
+import '../services/catalogo.dart';
 import '../services/dados_zona.dart';
 import '../services/notificacoes_fundo.dart';
 import '../services/visitas_locais.dart';
+import '../services/vozes_locais.dart';
 import '../services/gestor_modelos.dart';
 import '../services/sessao.dart';
 import '../services/sincronizacao.dart';
@@ -57,6 +61,28 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
     }
   }
 
+  bool _aMudarLingua = false;
+
+  /// Muda a língua na conta (precisa de rede) e descarrega já as gravações dessa língua.
+  Future<void> _mudarLingua(String? lingua) async {
+    final mensageiro = ScaffoldMessenger.of(context);
+    setState(() => _aMudarLingua = true);
+    try {
+      final u = await ApiCliente.instancia.mudarLingua(lingua);
+      await Sessao.instancia.actualizarUtilizador(u);
+      final novas = await VozesLocais.instancia.sincronizar(
+          [...Catalogo.instancia.audios, for (final a in AlertasLocais.instancia.alertas) ...a.audios], lingua);
+      mensageiro.showSnackBar(SnackBar(
+          content: Text(lingua == null
+              ? 'Mensagens só em texto'
+              : 'Língua: ${Lingua.nomeDe(lingua)}. ${novas == 0 ? 'Ainda não há gravações novas nesta língua.' : '$novas gravação(ões) descarregada(s).'}')));
+    } on ErroApi catch (e) {
+      mensageiro.showSnackBar(SnackBar(content: Text('Não foi possível mudar a língua: ${e.mensagem}')));
+    } finally {
+      if (mounted) setState(() => _aMudarLingua = false);
+    }
+  }
+
   Future<void> _sincronizar() async {
     final resumo = await Sincronizacao.instancia.sincronizar();
     if (!mounted) return;
@@ -89,6 +115,24 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
             _linha('Telefone', utilizador.telefone),
             _linha('Perfil', utilizador.perfil.nome),
             if (utilizador.area != null) _linha('Distrito', utilizador.area!),
+          ]),
+          const SizedBox(height: 12),
+          _seccao('Ouvir as mensagens', [
+            const Text('As recomendações e os alertas podem ter uma gravação na sua língua. '
+                'Toque em «Ouvir» para a escutar, mesmo sem rede.',
+                style: TextStyle(color: Cores.textoSecundario, height: 1.35)),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<String?>(
+              initialValue: utilizador.lingua,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Língua', prefixIcon: Icon(Icons.record_voice_over_outlined)),
+              items: [
+                const DropdownMenuItem<String?>(value: null, child: Text('Só texto (sem áudio)')),
+                for (final l in Lingua.todas) DropdownMenuItem<String?>(value: l.codigo, child: Text(l.nome)),
+              ],
+              onChanged: _aMudarLingua ? null : _mudarLingua,
+            ),
+            if (_aMudarLingua) const Padding(padding: EdgeInsets.only(top: 8), child: LinearProgressIndicator()),
           ]),
           const SizedBox(height: 12),
           _seccao('Modelos de classificação', [

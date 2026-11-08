@@ -15,6 +15,7 @@ export interface Utilizador {
   distrito_id: number | null
   provincia_codigo: string | null
   activo: boolean
+  lingua?: string | null
 }
 
 export interface UtilizadorAdmin extends Utilizador {
@@ -67,6 +68,7 @@ export interface Patologia {
   validado_por_nome: string | null
   validado_em: string | null
   fotos: FotoReferencia[]
+  audios: Audio[] // só as gravações validadas (as que a app recebe)
 }
 
 /** Campos do catálogo que o administrador escreve (o resto é calculado pela API). */
@@ -153,6 +155,7 @@ export interface Alerta {
   destinatarios: number
   lidos: number
   sms: ResumoSMS | null
+  audios: Audio[]
 }
 
 /** SMS de um alerta ou campanha; simulacao = sem fornecedor configurado (nada sai). */
@@ -503,4 +506,39 @@ export interface Calendario {
   meses: { mes: number; actividades: string[]; avisos: AvisoCalendario[] }[]
   fontes: { id: string; referencia: string; url: string | null }[]
   aviso: string
+}
+
+// --- Línguas locais e áudio (funcionalidade 14) ---
+
+export interface Lingua {
+  codigo: string // ISO 639-3
+  nome: string
+  provincias: string[] // onde é mais falada
+}
+
+export interface Audio {
+  id: number
+  lingua: string
+  lingua_nome: string
+  url: string // relativo à API, público (muda a cada gravação)
+  tipo_mime: string
+  tamanho_bytes: number
+  duracao_s: number | null
+  patologia_id: number | null
+  alerta_id: number | null
+  autor_id: number
+  autor_nome: string
+  criado_em: string
+  validado_por_nome: string | null
+  validado_em: string | null
+  reproducoes: number
+}
+
+export interface CoberturaAudio {
+  linguas: Lingua[]
+  patologias: { patologia_id: number; cultura_id: string; codigo: string; nome: string; tipo: TipoPatologia;
+    audios: Record<string, { id: number; validado: boolean }> }[]
+  agricultores_por_lingua: Record<string, number>
+  agricultores_sem_lingua: number
+  por_validar: number
 }

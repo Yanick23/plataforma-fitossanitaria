@@ -29,7 +29,7 @@ negócio) → `repositorios/` (consultas).
 - ViewModel = `viewmodels/use*ViewModel.ts` (*hooks*);
 - View = `views/*View.tsx`.
 
-**Base de dados:** 20 tabelas, migrações Alembic aplicadas no arranque:
+**Base de dados:** 21 tabelas, migrações Alembic aplicadas no arranque:
 
 | Migração | Conteúdo |
 |---|---|
@@ -40,6 +40,7 @@ negócio) → `repositorios/` (consultas).
 | 0005 | Previsões do tempo |
 | 0006 | Campanhas de vigilância e registo dos SMS |
 | 0007 | Decisões do técnico sobre os sinais de surto |
+| 0008 | Áudio em línguas locais e língua do utilizador |
 
 ---
 
@@ -68,11 +69,13 @@ negócio) → `repositorios/` (consultas).
 | 3a | **Risco meteorológico**: previsão Open-Meteo de 7 dias por distrito, 4 regras com fontes, cartão na Vigilância e alerta preventivo |
 | 3b | **Campanhas de vigilância activa**; **SMS** dos alertas e campanhas (API Ola da Pavulla); **notificações na app sem Firebase** (consulta em segundo plano); **calendário agrícola** por província; correcção dos perfis novos na app |
 | 3c | Mapa com **filtro por confiança** e **tendência semana a semana** (▲/▼ por distrito); **confirmar ou descartar** cada sinal de surto (com nota e auditoria); exactidão em campo **por distrito**; conjunto de retreino com **grupo por folha** (agricultor + dia, pseudónimo HMAC) e **divisão fixa treino/validação/teste** (70/15/15); **modelos de mensagem** nos alertas; boletim de uma **província ou distrito à escolha** |
+| 3d | **Áudio em línguas locais** (sem serviço externo): a equipa grava no painel a recomendação de cada praga e a mensagem dos alertas, em 14 línguas (ISO 639-3); outra pessoa valida as do catálogo; o agricultor escolhe a língua e ouve na app sem rede; quadro do que falta gravar e das línguas escolhidas |
 
 **Não implementadas (decisão do Yanick):** severidade, inspecção FAMEWS, armadilhas, dados
 abertos, segurança de produção (HTTPS, limite de tentativas, cópias de segurança), privacidade
 (consentimento, apagar a conta). **Ficam para trabalho futuro:** machambas com GPS, organizações,
-directório de apoio, «não reconhecido» e línguas locais em áudio (falta a API).
+directório de apoio e «não reconhecido» (depende da tarefa D4). As línguas locais fizeram-se com
+gravações da equipa, sem tradução nem voz sintética (não existe uma API para isso).
 
 **Feitas com menos do que o planeado:** nenhuma. As seis que estavam incompletas foram fechadas
 na iteração 3c (ver a linha 3c acima e a secção «Entrega 3c» de `03_resultados_plataforma.md`).
@@ -111,16 +114,18 @@ Os RF01 a RF12 e os RNF01 a RNF07 são os da v1.
 | RF30 | Notificar o agricultor no telemóvel (alertas, validações, visitas, campanhas) sem Firebase, por consulta em segundo plano | Sistema (app) |
 | RF31 | Mostrar o calendário agrícola da província e, na app, «Nesta altura…» do mês actual, sem Internet | Agricultor, equipa |
 | RNF12 | Sem fornecedor de SMS configurado, os SMS ficam registados como simulados e nada é enviado | — |
+| RF32 | Gravar a recomendação de cada praga e a mensagem dos alertas em línguas locais; o agricultor escolhe a língua e ouve as gravações na app, sem rede | Técnico, coordenador, administrador gravam; outra pessoa valida; agricultor ouve |
+| RNF13 | Uma gravação do catálogo só chega à app depois de validada por alguém que não a gravou | — |
 
 ---
 
-## 5. Base de dados (20 tabelas, para o diagrama de classes)
+## 5. Base de dados (21 tabelas, para o diagrama de classes)
 
 | Tabela | Campos principais |
 |---|---|
 | Provincia | codigo (ISO 3166-2), nome |
 | Distrito | id, nome, provincia_codigo |
-| Utilizador | id, nome, telefone, hash_palavra_passe, perfil, area, distrito_id, provincia_codigo, activo, criado_em |
+| Utilizador | id, nome, telefone, hash_palavra_passe, perfil, area, distrito_id, provincia_codigo, activo, criado_em, lingua |
 | Cultura | id, nome, nome_cientifico |
 | Patologia | id, cultura_id, codigo, nome_local, nome_cientifico, tipo (DOENCA, PRAGA, SAUDAVEL), recomendacao, sintomas, prevencao, declaracao_obrigatoria, versao_conteudo, validado_por_id, validado_em |
 | FotoReferencia | id, patologia_id, caminho_ficheiro, legenda |
@@ -137,6 +142,7 @@ Os RF01 a RF12 e os RNF01 a RNF07 são os da v1.
 | PrevisaoMeteo | distrito_id, obtida_em, dados (previsão horária em JSON) |
 | Campanha | id, titulo, mensagem, cultura_id, patologia_id, provincia_codigo, distrito_id, inicio, fim, autor_id, cancelada |
 | EnvioSMS | id, alerta_id ou campanha_id, utilizador_id, telefone, conteudo, estado (PENDENTE, ENVIADO, FALHOU, SIMULADO), id_externo, erro |
+| Audio | id, patologia_id ou alerta_id, lingua (ISO 639-3), caminho_ficheiro, tipo_mime, tamanho_bytes, duracao_s, autor_id, validado_por_id, validado_em, reproducoes |
 | DecisaoSinal | id, distrito_id, cultura_id, classe, decisao (CONFIRMADO, DESCARTADO), nota, utilizador_id, criado_em |
 
 **Diferença face à v1:** o modelo **passou a ser uma entidade persistida** (ModeloML). A frase da
@@ -144,11 +150,11 @@ v1 «o modelo de classificação não é uma entidade persistida» tem de sair.
 
 ---
 
-## 6. API: 69 endpoints (mais `/saude`)
+## 6. API: 79 endpoints (mais `/saude`)
 
 | Grupo | N.º | Exemplos |
 |---|---|---|
-| Autenticação e contas | 5 | `POST /auth/registar`, `/auth/login`, `/auth/renovar`, `GET /auth/eu`, `POST /utilizadores` |
+| Autenticação e contas | 6 | `POST /auth/registar`, `/auth/login`, `/auth/renovar`, `GET /auth/eu`, `PUT /auth/eu/lingua`, `POST /utilizadores` |
 | Diagnósticos | 6 | `POST /diagnosticos` (lote), `POST /diagnosticos/{id}/imagem`, `GET /diagnosticos/{id}/gradcam`, `POST /diagnosticos/{id}/seguimento` |
 | Catálogo | 11 | culturas, patologias, `POST /patologias/{id}/validar`, fotos de referência |
 | Modelos | 7 | `GET /modelos/{cultura}/ultima-versao`, `/monitorizacao`, `/{versao}/porta-qualidade`, `POST /modelos/{cultura}`, `PATCH /modelos/{cultura}/{versao}` |
@@ -159,6 +165,7 @@ v1 «o modelo de classificação não é uma entidade persistida» tem de sair.
 | Gestão | 12 | `/gestao/resumo`, `/gestao/diagnosticos`, `/gestao/utilizadores`, `/gestao/auditoria`, `/gestao/boletim` (+ `.csv`), `/gestao/eficacia`, `/gestao/notificacoes` |
 | Vigilância | 6 | `/vigilancia/ocorrencias?confianca=`, `/tendencia`, `/surtos`, `POST /surtos/decisao`, `/declaracoes`, `/risco-meteorologico` |
 | Campanhas, novidades e calendário | 6 | `POST/GET /campanhas`, `GET /campanhas/minhas`, `POST /campanhas/{id}/cancelar`, `GET /novidades?desde=`, `GET /calendario?provincia=` |
+| Línguas locais e áudio | 9 | `GET /linguas`, `GET /audios`, `/audios/cobertura`, `POST /patologias/{id}/audios`, `POST /alertas/{id}/audios`, `POST /audios/{id}/validar`, `DELETE /audios/{id}`, `GET /audios/ficheiros/{nome}`, `POST /audios/reproducoes` |
 
 Documentação automática em `/docs` (Swagger UI) e `/redoc`.
 
@@ -168,8 +175,8 @@ Documentação automática em `/docs` (Swagger UI) e `/redoc`.
 
 | O quê | Resultado |
 |---|---|
-| API (pytest + httpx, SQLite temporária) | **74 testes aprovados** (v1: 23; 59 até à entrega 3a; 68 na 3b). Também cobrem filtro de confiança e tendência do mapa, decisão sobre sinais de surto, exactidão por distrito, divisão do retreino, boletim de uma zona escolhida, SMS (fornecedor simulado), campanhas, novidades e calendário. Cobrem autenticação, sincronização sem duplicados, permissões por perfil e zona, catálogo, modelos (piloto, porta de qualidade, deriva), Grad-CAM, alertas, visitas, vigilância e surtos, boletim, perfis finos, notificações, risco meteorológico (com a Open-Meteo simulada) e migração de uma base antiga |
-| App (`flutter test`) | 21 testes (18 aprovados e 3 saltados nesta máquina, que precisam das fotos de calibração): qualidade da foto, combinação de fotos, seguimento, catálogo, sincronização com UUID, perfis, notificações, calendário e campanhas. APK de release arm64 compilado (36,4 MB) |
+| API (pytest + httpx, SQLite temporária) | **78 testes aprovados** (v1: 23; 59 até à entrega 3a; 68 na 3b; 74 na 3c). Também cobrem áudio em línguas locais (gravar, validar por outra pessoa, substituir, voz nos alertas, cobertura, reproduções), filtro de confiança e tendência do mapa, decisão sobre sinais de surto, exactidão por distrito, divisão do retreino, boletim de uma zona escolhida, SMS (fornecedor simulado), campanhas, novidades e calendário. Cobrem autenticação, sincronização sem duplicados, permissões por perfil e zona, catálogo, modelos (piloto, porta de qualidade, deriva), Grad-CAM, alertas, visitas, vigilância e surtos, boletim, perfis finos, notificações, risco meteorológico (com a Open-Meteo simulada) e migração de uma base antiga |
+| App (`flutter test`) | 29 testes (26 aprovados e 3 saltados nesta máquina, que precisam das fotos de calibração): qualidade da foto, combinação de fotos, seguimento, catálogo, sincronização com UUID, perfis, notificações, calendário, campanhas e áudio (escolha da língua, ficheiros a descarregar, gravações no catálogo e nos alertas). APK de release arm64 compilado (36,4 MB) |
 | Painel | `npm run build` sem erros; testado no Chrome com Puppeteer, contra uma API de teste (porta 8001, base temporária, **nunca a base real**), sem erros na consola |
 | Migrações | 0003 → 0004 → 0003 → 0004 num PostgreSQL 16 temporário (Docker), sem erros |
 | Telemóvel (SOTEN R80, Android 13) | T01 a T12 aprovados (v1). **T13 (Grad-CAM) aprovado em 25/10:** 2,4 s no 1.º pedido do milho, 2,1 s na mandioca, 0,8 s com o modelo já carregado. **Por fazer:** a confirmação no ecrã das iterações 1d e 2c (alertas, validação, visitas, qualidade da foto, várias fotos, seguimento) |

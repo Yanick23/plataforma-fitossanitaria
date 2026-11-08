@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 from ..esquemas import AlertaAgricultorLer, AlertaCriar, AlertaLer
 from ..regioes import Zona, zona_contem, zona_de
 from ..tabelas import (Alerta, AlertaLeitura, Cultura, Distrito, Patologia, Perfil, Provincia, Utilizador)
-from . import sms
+from . import audios, sms
 from .auditoria import auditar, instantaneo
 
 
@@ -111,6 +111,7 @@ async def para_ler(sessao: AsyncSession, alertas: list[Alerta]) -> list[AlertaLe
         select(AlertaLeitura.alerta_id, func.count()).where(AlertaLeitura.alerta_id.in_([a.id for a in alertas]))
         .group_by(AlertaLeitura.alerta_id))).all())
     resultado = []
+    vozes = await audios.de_alertas(sessao, [a.id for a in alertas])
     for a in alertas:
         zona, destinatarios = await alcance(sessao, a.provincia_codigo, a.distrito_id)
         resultado.append(AlertaLer(
@@ -119,7 +120,8 @@ async def para_ler(sessao: AsyncSession, alertas: list[Alerta]) -> list[AlertaLe
             provincia_codigo=a.provincia_codigo, distrito_id=a.distrito_id, zona=zona,
             autor_nome=a.autor.nome, criado_em=a.criado_em, expira_em=a.expira_em, arquivado=a.arquivado,
             destinatarios=destinatarios, lidos=lidos.get(a.id, 0),
-            sms=(r if (r := await sms.resumo(sessao, alerta_id=a.id)).total else None)))
+            sms=(r if (r := await sms.resumo(sessao, alerta_id=a.id)).total else None),
+            audios=vozes.get(a.id, [])))
     return resultado
 
 
@@ -148,11 +150,13 @@ async def meus(sessao: AsyncSession, u: Utilizador) -> list[AlertaAgricultorLer]
                                         .options(selectinload(Alerta.patologia))))
     lidos = set(await sessao.scalars(select(AlertaLeitura.alerta_id).where(
         AlertaLeitura.utilizador_id == u.id, AlertaLeitura.alerta_id.in_([a.id for a in alertas])))) if alertas else set()
+    vozes = await audios.de_alertas(sessao, [a.id for a in alertas])
     return [AlertaAgricultorLer(
         id=a.id, titulo=a.titulo, mensagem=a.mensagem, nivel=a.nivel, cultura_id=a.cultura_id,
         patologia_id=a.patologia_id, patologia_codigo=a.patologia.codigo if a.patologia else None,
         zona=await nome_zona(sessao, a.provincia_codigo, a.distrito_id),
-        criado_em=a.criado_em, expira_em=a.expira_em, lido=a.id in lidos) for a in alertas]
+        criado_em=a.criado_em, expira_em=a.expira_em, lido=a.id in lidos,
+        audios=vozes.get(a.id, [])) for a in alertas]
 
 
 async def marcar_lido(sessao: AsyncSession, u: Utilizador, alerta_id: int) -> None:
@@ -163,7 +167,8 @@ async def marcar_lido(sessao: AsyncSession, u: Utilizador, alerta_id: int) -> No
         await sessao.commit()
 
 
-async def arquivar(sessao: AsyncSession, utilizador: Utilizador, alerta_id: int) -> None:
+async def gerivel(sessao: AsyncSession, utilizador: Utilizador, alerta_id: int, accao: str) -> Alerta:
+    """O alerta, se o utilizador o pode alterar: o autor, o coordenador da província ou o administrador."""
     alerta = await sessao.get(Alerta, alerta_id)
     if alerta is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Alerta não encontrado")
@@ -173,7 +178,12 @@ async def arquivar(sessao: AsyncSession, utilizador: Utilizador, alerta_id: int)
         zona_de(utilizador), alerta.provincia_codigo, alerta.distrito_id, provincia_do_distrito)
     if utilizador.perfil != Perfil.ADMINISTRADOR and alerta.autor_id != utilizador.id and not coordenador_da_zona:
         raise HTTPException(status.HTTP_403_FORBIDDEN,
-                            "Só o autor, o coordenador da província ou o administrador podem arquivar")
+                            f"Só o autor, o coordenador da província ou o administrador podem {accao}")
+    return alerta
+
+
+async def arquivar(sessao: AsyncSession, utilizador: Utilizador, alerta_id: int) -> None:
+    alerta = await gerivel(sessao, utilizador, alerta_id, "arquivar")
     alerta.arquivado = True
     auditar(sessao, utilizador, "alerta.arquivar", "alerta", alerta.id)
     await sessao.commit()

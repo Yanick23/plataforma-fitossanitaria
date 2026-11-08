@@ -60,7 +60,7 @@ fitossanitária**. O ciclo a fechar é diagnóstico → validação pelo técnic
 | 1 — núcleo | Regiões, painel, mapa e surtos, validação e exactidão em campo, conjunto de retreino, alertas por zona, visitas, auditoria, gestão de contas, catálogo e modelos; na app: alertas, validação, visitas, distrito no registo | **Feita** (entregas 1a–1d) |
 | 2 — gestão e qualidade | Boletim, catálogo enriquecido, modelos com piloto, porta de qualidade e deriva, qualidade da foto, várias fotos, seguimento do tratamento, declaração obrigatória, perfis finos | **Feita** (entregas 2a–2d) |
 | 3 — contexto agrícola | Risco meteorológico, calendário agrícola, campanhas, inspecção de campo (FAMEWS) e armadilhas, machambas com GPS | **Risco meteorológico feito** (3a); FAMEWS e armadilhas não se fazem; o resto é trabalho futuro |
-| 4 — alcance e abertura | Push, «não reconhecido», segurança de produção, privacidade, dados abertos; SMS, línguas locais, organizações e severidade como trabalho futuro | Línguas locais em áudio a fazer; «não reconhecido» depende da tarefa D4; segurança, privacidade, dados abertos e severidade não se fazem |
+| 4 — alcance e abertura | Push, «não reconhecido», segurança de produção, privacidade, dados abertos; SMS, línguas locais, organizações e severidade como trabalho futuro | Línguas locais em áudio feitas com gravações da equipa (3d); «não reconhecido» depende da tarefa D4; segurança, privacidade, dados abertos e severidade não se fazem |
 
 ---
 
@@ -79,8 +79,9 @@ fitossanitária**. O ciclo a fechar é diagnóstico → validação pelo técnic
 | 3a — Risco meteorológico | 04/11 | ver `git log` | Open-Meteo por distrito, regras com fontes, cartão na Vigilância; migração 0005; 59 testes na API |
 | 3b — SMS, campanhas, notificações e calendário | 08/11 | ver `git log` | API Ola (SMS), campanhas de vigilância activa, notificações na app sem Firebase, calendário agrícola; migração 0006; 68 testes na API, 21 na app |
 | 3c — As seis funcionalidades que estavam incompletas | 08/11 | ver `git log` | Mapa com filtro por confiança e tendência; confirmar ou descartar sinais de surto; exactidão por distrito; retreino com grupo por folha e divisão 70/15/15; modelos de mensagem nos alertas; boletim de uma província ou distrito; migração 0007; 74 testes na API |
+| 3d — Áudio em línguas locais | 08/11 | ver `git log` | Gravação no painel (microfone ou ficheiro), validação por outra pessoa, voz nos alertas, quadro «Línguas e áudio»; na app, escolha da língua e botão «Ouvir» sem rede; migração 0008; 78 testes na API, 29 na app |
 
-**Testes automáticos:** 74 na API (`pytest`, todos aprovados) e 21 na app (`flutter test`: 18 aprovados, 3 saltados sem as fotos de calibração).
+**Testes automáticos:** 78 na API (`pytest`, todos aprovados) e 29 na app (`flutter test`: 26 aprovados, 3 saltados sem as fotos de calibração).
 O painel compila sem erros (`npm run build`) e foi testado no Chrome com Puppeteer, contra a API de teste.
 
 ### Estado das 24 funcionalidades
@@ -109,7 +110,7 @@ O painel compila sem erros (`npm run build`) e foi testado no Chrome com Puppete
 | 12 | Campanhas de vigilância activa | Feito (3b): painel, app e taxa de resposta |
 | 13 | Alertas por SMS | Feito (3b): API Ola da Pavulla; simulado sem chave configurada |
 | 13b | Notificações push | Feito (3b) **sem Firebase**: consulta em segundo plano de 15 em 15 min; **falta ver no telemóvel** |
-| 14 | Línguas locais e áudio | **A fazer** com a API de áudio em línguas locais do Yanick (falta a documentação da API) |
+| 14 | Línguas locais e áudio | Feito (3d) com gravações da equipa, sem API externa (não existe); **falta ver no telemóvel** |
 | 15 | Verificação da fotografia | Feito (2c); **falta ver no telemóvel** |
 | 16 | Várias fotos por caso | Feito (2c); **falta ver no telemóvel** |
 | 17 | «Não reconhecido» | Por fazer (fase 4); depende da tarefa D4 |
@@ -136,8 +137,8 @@ O painel compila sem erros (`npm run build`) e foi testado no Chrome com Puppete
 ### 3.2 Fase 3 — contexto agrícola
 
 - **Risco meteorológico (9): feito** (entrega 3a, 04/11).
-- **Línguas locais em áudio (14): a fazer**, com a API de áudio do Yanick. Falta a documentação
-  da API.
+- **Línguas locais em áudio (14): feito** (entrega 3d). Não havia API de áudio: a equipa grava
+  no painel e outra pessoa valida; a app toca as gravações sem rede.
 - **Calendário agrícola (10) e campanhas de vigilância activa (12): feitos** (entrega 3b).
 - **Trabalho futuro no PFC:** machambas com GPS (11).
 - **Não se fazem** (decisão de 04/11): inspecção de campo FAMEWS (19) e armadilhas de

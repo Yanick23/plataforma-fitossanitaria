@@ -16,6 +16,7 @@ import 'notificacoes_fundo.dart';
 import 'registo_tecnico.dart';
 import 'sessao.dart';
 import 'visitas_locais.dart';
+import 'vozes_locais.dart';
 
 class ResumoSincronizacao {
   const ResumoSincronizacao({
@@ -160,7 +161,14 @@ class Sincronizacao extends ChangeNotifier {
       final calendario = await ApiCliente.instancia.calendario();
       if (calendario != null) await CalendarioLocal.instancia.actualizar(calendario);
 
-      // 10. Com a app aberta, o agricultor já vê tudo: avança o ponto de partida das notificações em
+      // 10. Áudio em línguas locais: as gravações da língua do agricultor (e em português) do catálogo
+      // e dos alertas, para ouvir sem rede; e quantas vezes foram ouvidas.
+      final lingua = Sessao.instancia.utilizador.value?.lingua;
+      await VozesLocais.instancia.sincronizar(
+          [...Catalogo.instancia.audios, for (final a in AlertasLocais.instancia.alertas) ...a.audios], lingua);
+      await VozesLocais.instancia.enviarReproducoes();
+
+      // 11. Com a app aberta, o agricultor já vê tudo: avança o ponto de partida das notificações em
       // segundo plano, para não as repetir. Uma falha aqui não estraga a sincronização.
       try {
         await NotificacoesFundo.consultar(notificar: false);

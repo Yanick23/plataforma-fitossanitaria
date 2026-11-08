@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/alerta.dart';
 import '../tema.dart';
+import 'botao_ouvir.dart';
 import 'formatacao.dart';
 
 /// Cores e ícone de cada nível (o nível é sempre dito também por escrito).
@@ -76,6 +77,8 @@ class CartaoAlerta extends StatelessWidget {
               overflow: completo ? null : TextOverflow.ellipsis,
               style: const TextStyle(height: 1.4, color: Cores.texto),
             ),
+            // Mensagem de voz só com o alerta aberto (na lista, tocar abre-o).
+            if (completo && alerta.audios.isNotEmpty) ...[const SizedBox(height: 10), BotaoOuvir(audios: alerta.audios)],
             const SizedBox(height: 8),
             Row(children: [
               const Icon(Icons.place_outlined, size: 14, color: Cores.textoSecundario),

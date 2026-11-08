@@ -644,3 +644,75 @@ A API passa a 69 endpoints (mais `/saude`) e 20 tabelas.
 - O limiar de 60 % é o mesmo do aviso da app (RF05); não foi calibrado com dados de campo.
 - O «grupo por folha» é uma aproximação (mesmo agricultor e mesmo dia): a app não sabe se duas fotos são da mesma folha.
 - Os modelos de mensagem são fixos no painel; não há edição de modelos pelo administrador.
+
+
+## Entrega 3d — Áudio em línguas locais (08/11/2026)
+
+A funcionalidade 14 dependia de uma API de áudio em línguas locais que não existe. Fez-se sem
+serviço externo: **a voz é de alguém da equipa**, que lê a recomendação ou o alerta na língua dos
+agricultores. Não há tradução automática nem voz sintética.
+
+### O que foi implementado
+
+- **14 línguas** (códigos ISO 639-3): português, emakhuwa, xichangana, elomwe, cisena, echuwabo,
+  cindau, cinyanja, cinyungwe, citshwa, xirhonga, gitonga, shimakonde e ciyao. Cada uma indica as
+  províncias onde é mais falada, só para sugerir o que gravar primeiro.
+- **Gravar no painel:**
+  - na gaveta de cada praga do catálogo, o técnico, o coordenador ou o administrador escolhe a
+    língua e grava pelo microfone do browser (WebM/Opus) ou carrega um ficheiro (MP3, M4A, Ogg,
+    WAV), até 2 minutos e 4 MB;
+  - ouve antes de guardar; gravar de novo na mesma língua substitui a gravação anterior.
+- **Validação por outra pessoa:** uma gravação do catálogo só chega à app depois de alguém que não
+  a gravou confirmar que diz o mesmo que o texto (403 para quem gravou). As alterações ficam na
+  auditoria (`audio.gravar`, `audio.validar`, `audio.apagar`).
+- **Voz nos alertas:** ao criar um alerta, a mensagem de voz é opcional e segue logo com o alerta
+  (quem o envia responde por ele). O SMS não leva áudio.
+- **Página «Línguas e áudio»:** quantos agricultores da zona escolheram cada língua e um quadro
+  pragas × línguas (na app, por validar, em falta).
+- **Na app:**
+  - o agricultor escolhe a língua no registo ou nas Definições;
+  - na sincronização, a app descarrega só as gravações da sua língua e as em português;
+  - o botão **«Ouvir em …»** aparece no resultado, no historial e no alerta aberto, e toca sem rede;
+  - se não houver gravação na língua dele, toca a versão em português; se também não houver,
+    mostra só o texto;
+  - as vezes que cada gravação é ouvida contam-se no telemóvel e vão para a API na sincronização.
+- Cada gravação tem um nome de ficheiro único. A app guarda-as por esse nome, por isso uma
+  gravação substituída é sempre descarregada de novo.
+- Migração 0008: tabela `audios` e a coluna `lingua` em `utilizadores`. A API passa a 79 endpoints
+  (mais `/saude`) e 21 tabelas.
+
+### Como foi testado
+
+- `pytest`: **78 testes aprovados**, os 74 anteriores e 4 novos em `test_plataforma_audio.py`:
+  - línguas e a língua do agricultor (registo, mudança, código inválido);
+  - gravar, validar só por outra pessoa, ouvir, substituir, formatos e tamanhos recusados, perfis
+    sem permissão;
+  - voz num alerta (só o autor, o coordenador ou o administrador; o agricultor da zona recebe-a);
+  - cobertura por zona e contagem das reproduções.
+- O teste da substituição encontrou um erro: a base reaproveitava o id da gravação apagada e a app
+  não voltaria a descarregar a nova. O ficheiro passou a ser servido pelo nome único.
+- `flutter test`: **29 testes** (26 aprovados e 3 saltados, que precisam das fotos de calibração),
+  8 novos sobre a escolha da língua, os ficheiros a descarregar e as gravações no catálogo e nos
+  alertas. `flutter analyze` sem problemas.
+- **Painel no Chrome** (Puppeteer, com o microfone simulado do Chrome), contra a API de teste:
+  - o técnico de Boane gravou 3 s em Xichangana pelo microfone e carregou um WAV em Xirhonga;
+  - não lhe aparece o botão «Validar» nas suas próprias gravações;
+  - criou um alerta com mensagem de voz em Xichangana;
+  - a coordenadora de Maputo validou a gravação em Xirhonga, e só essa passou a aparecer no
+    catálogo que a app recebe (ficheiro servido como `audio/wav`, 48 KB);
+  - o quadro mostra 3 agricultores em Xichangana e 1 em Xirhonga;
+  - sem erros na consola.
+
+| Figura | Ficheiro |
+|---|---|
+| Gravar a recomendação de uma praga (técnico) | `dados_web/3d_01_gravar_catalogo.png` |
+| Alerta com mensagem de voz | `dados_web/3d_02_alerta_voz.png` |
+| Validação por outra pessoa (coordenadora) | `dados_web/3d_03_validar.png` |
+| Línguas escolhidas e o que já está gravado | `dados_web/3d_04_linguas_audio.png` |
+
+### Limitações da entrega 3d
+
+- **Não foi visto no telemóvel:** o botão «Ouvir», o descarregamento e a escolha da língua.
+- Há áudio só onde alguém gravou; a qualidade depende de quem grava e do sítio onde grava.
+- Mudar a língua nas Definições precisa de rede.
+- As províncias de cada língua são indicativas (onde é mais falada), não um dado oficial.

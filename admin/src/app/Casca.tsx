@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   BellRing, Boxes, CalendarCheck, CalendarDays, ClipboardList, FileText, LayoutDashboard, ListChecks, LogOut, MapPin, Moon, Radar, ScanSearch, ScrollText, Sprout, Sun,
-  SunMoon, Users,
+  SunMoon, Users, Volume2,
 } from 'lucide-react'
 import { visitasRepo } from '@/model/repositorios'
 import { useSessao } from '@/nucleo/sessao'
@@ -52,6 +52,7 @@ const NAVEGACAO: { grupo: string; itens: ItemNav[] }[] = [
     grupo: 'Conhecimento', itens: [
       { para: '/catalogo', nome: 'Culturas e pragas', icone: Sprout },
       { para: '/calendario', nome: 'Calendário agrícola', icone: CalendarDays },
+      { para: '/audio', nome: 'Línguas e áudio', icone: Volume2 },
       { para: '/modelos', nome: 'Modelos', icone: Boxes },
     ],
   },

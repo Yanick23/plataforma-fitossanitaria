@@ -7,7 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import obter_sessao
-from ..esquemas import Login, Registo, Token, UtilizadorCriar, UtilizadorLer
+from ..esquemas import LinguaEscrever, Login, Registo, Token, UtilizadorCriar, UtilizadorLer
+from ..servicos.audios import validar_lingua
 from ..regioes import resolver_zona
 from ..servicos.auditoria import auditar, instantaneo
 from ..servicos.utilizadores import verificar_perfil_pedido, verificar_zona_final
@@ -32,7 +33,7 @@ async def _criar(sessao: AsyncSession, dados: Registo, perfil: Perfil,
         nome=dados.nome, telefone=dados.telefone, perfil=perfil,
         area=distrito.nome if distrito else dados.area,
         distrito_id=distrito.id if distrito else None, provincia_codigo=provincia,
-        hash_palavra_passe=gerar_hash(dados.palavra_passe),
+        hash_palavra_passe=gerar_hash(dados.palavra_passe), lingua=validar_lingua(dados.lingua),
     )
     sessao.add(utilizador)
     await sessao.commit()
@@ -65,6 +66,14 @@ async def renovar(utilizador: UtilizadorActual) -> Token:
 
 @router.get("/auth/eu", response_model=UtilizadorLer)
 async def eu(utilizador: UtilizadorActual) -> Utilizador:
+    return utilizador
+
+
+@router.put("/auth/eu/lingua", response_model=UtilizadorLer)
+async def mudar_lingua(dados: LinguaEscrever, utilizador: UtilizadorActual, sessao: Sessao) -> Utilizador:
+    """A língua em que o próprio quer ouvir as mensagens (None = só texto em português)."""
+    utilizador.lingua = validar_lingua(dados.lingua)
+    await sessao.commit()
     return utilizador
 
 

@@ -2,7 +2,7 @@
 
 import { http } from './http'
 import type {
-  Alcance, Alerta, Boletim, Calendario, Campanha, DecisaoSurto, SemanaContagem, ListaNotificacoes, NovaCampanha, RiscoMeteorologico, Cultura, Declaracao, EficaciaPatologia, Diagnostico, Distrito, EstadoModelo, EstadoValidacao, EstadoVisita, ExactidaoCampo, Modelo,
+  Alcance, Alerta, Audio, Boletim, Calendario, CoberturaAudio, Lingua, Campanha, DecisaoSurto, SemanaContagem, ListaNotificacoes, NovaCampanha, RiscoMeteorologico, Cultura, Declaracao, EficaciaPatologia, Diagnostico, Distrito, EstadoModelo, EstadoValidacao, EstadoVisita, ExactidaoCampo, Modelo,
   Monitorizacao, PortaQualidade,
   NovoAlerta, Ocorrencia, Pagina, Patologia, PatologiaEscrita, Perfil, Provincia, RegistoAuditoria, Resumo, Surto, TipoPatologia,
   Utilizador, UtilizadorAdmin, Visita,
@@ -197,4 +197,35 @@ export const boletimRepo = {
   obter: (p: PeriodoBoletim, z: ZonaBoletim = {}) => dados(http.get<Boletim>('/gestao/boletim', { params: limpar({ ...p, ...z }) })),
   caminhoCsv: (p: PeriodoBoletim, z: ZonaBoletim = {}) =>
     `/gestao/boletim.csv?${new URLSearchParams(Object.entries(limpar({ ...p, ...z })).map(([k, v]) => [k, String(v)])).toString()}`,
+}
+
+/** Gravações de voz em línguas locais: catálogo (validadas por outra pessoa) e alertas. */
+export const audiosRepo = {
+  linguas: () => dados(http.get<Lingua[]>('/linguas')),
+  daPatologia: (patologia_id: number) => dados(http.get<Audio[]>('/audios', { params: { patologia_id } })),
+  cobertura: () => dados(http.get<CoberturaAudio>('/audios/cobertura')),
+  gravar: (destino: { patologia_id: number } | { alerta_id: number }, g: Gravacao) => {
+    const form = new FormData()
+    form.append('ficheiro', g.blob, `gravacao.${extensaoAudio(g.blob.type)}`)
+    form.append('lingua', g.lingua)
+    if (g.duracao_s) form.append('duracao_s', String(Math.round(g.duracao_s * 10) / 10))
+    const caminho = 'patologia_id' in destino ? `/patologias/${destino.patologia_id}/audios` : `/alertas/${destino.alerta_id}/audios`
+    return dados(http.post<Audio>(caminho, form, { timeout: 60_000 }))
+  },
+  validar: (id: number) => dados(http.post<Audio>(`/audios/${id}/validar`)),
+  apagar: (id: number) => http.delete(`/audios/${id}`),
+}
+
+export interface Gravacao {
+  blob: Blob
+  lingua: string
+  duracao_s: number | null
+}
+
+function extensaoAudio(tipo: string): string {
+  if (tipo.includes('ogg')) return 'ogg'
+  if (tipo.includes('mp4') || tipo.includes('m4a') || tipo.includes('aac')) return 'm4a'
+  if (tipo.includes('mpeg') || tipo.includes('mp3')) return 'mp3'
+  if (tipo.includes('wav')) return 'wav'
+  return 'webm'
 }
