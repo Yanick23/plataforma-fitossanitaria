@@ -4,6 +4,8 @@ import '../models/cultura.dart';
 import '../models/modelo_ml.dart';
 import '../services/acompanhamento.dart';
 import '../services/alertas_locais.dart';
+import '../services/dados_zona.dart';
+import '../services/notificacoes_fundo.dart';
 import '../services/visitas_locais.dart';
 import '../services/gestor_modelos.dart';
 import '../services/sessao.dart';
@@ -123,6 +125,9 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
               // Alertas e visitas pertencem à conta (e à zona) que saiu.
               await AlertasLocais.instancia.limpar();
               await VisitasLocais.instancia.limpar();
+              await CampanhasLocais.instancia.limpar();
+              await CalendarioLocal.instancia.limpar();
+              await NotificacoesFundo.parar();
               Acompanhamento.instancia.limpar();
             },
           ),

@@ -1,13 +1,19 @@
 enum Perfil {
   agricultor('AGRICULTOR', 'Agricultor'),
   tecnico('TECNICO', 'Técnico'),
-  administrador('ADMINISTRADOR', 'Administrador');
+  coordenador('COORDENADOR', 'Coordenador provincial'),
+  investigador('INVESTIGADOR', 'Investigador'),
+  administrador('ADMINISTRADOR', 'Administrador'),
+  // Perfil que esta versão da app ainda não conhece (a API pode ganhar perfis novos):
+  // a conta entra na mesma, em vez de a leitura falhar.
+  outro('OUTRO', 'Outro perfil');
 
   const Perfil(this.valor, this.nome);
   final String valor;
   final String nome;
 
-  static Perfil deTexto(String texto) => values.firstWhere((p) => p.valor == texto);
+  static Perfil deTexto(String texto) =>
+      values.firstWhere((p) => p.valor == texto, orElse: () => Perfil.outro);
 }
 
 /// Utilizador autenticado (RF10).
