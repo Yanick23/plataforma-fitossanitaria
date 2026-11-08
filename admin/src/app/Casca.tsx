@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  BellRing, Boxes, CalendarCheck, FileText, LayoutDashboard, ListChecks, LogOut, MapPin, Moon, Radar, ScanSearch, ScrollText, Sprout, Sun,
+  BellRing, Boxes, CalendarCheck, CalendarDays, ClipboardList, FileText, LayoutDashboard, ListChecks, LogOut, MapPin, Moon, Radar, ScanSearch, ScrollText, Sprout, Sun,
   SunMoon, Users,
 } from 'lucide-react'
 import { visitasRepo } from '@/model/repositorios'
@@ -44,12 +44,14 @@ const NAVEGACAO: { grupo: string; itens: ItemNav[] }[] = [
       { para: '/diagnosticos', nome: 'Diagnósticos', icone: ScanSearch },
       { para: '/validacao', nome: 'Validação', icone: ListChecks },
       { para: '/alertas', nome: 'Alertas', icone: BellRing, quem: 'operar' },
+      { para: '/campanhas', nome: 'Campanhas', icone: ClipboardList },
       { para: '/visitas', nome: 'Visitas', icone: CalendarCheck, contador: 'visitas', quem: 'operar' },
     ],
   },
   {
     grupo: 'Conhecimento', itens: [
       { para: '/catalogo', nome: 'Culturas e pragas', icone: Sprout },
+      { para: '/calendario', nome: 'Calendário agrícola', icone: CalendarDays },
       { para: '/modelos', nome: 'Modelos', icone: Boxes },
     ],
   },

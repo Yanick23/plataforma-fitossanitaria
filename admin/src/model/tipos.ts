@@ -152,6 +152,17 @@ export interface Alerta {
   arquivado: boolean
   destinatarios: number
   lidos: number
+  sms: ResumoSMS | null
+}
+
+/** SMS de um alerta ou campanha; simulacao = sem fornecedor configurado (nada sai). */
+export interface ResumoSMS {
+  total: number
+  pendente: number
+  enviado: number
+  falhou: number
+  simulado: number
+  simulacao: boolean
 }
 
 export interface NovoAlerta {
@@ -162,11 +173,13 @@ export interface NovoAlerta {
   provincia_codigo: string | null
   distrito_id: number | null
   expira_em: string | null
+  enviar_sms: boolean
 }
 
 export interface Alcance {
   zona: string
   destinatarios: number
+  sms_simulacao: boolean
 }
 
 export type EstadoModelo = 'PILOTO' | 'PUBLICADO' | 'RETIRADO'
@@ -416,4 +429,63 @@ export interface RiscoMeteorologico {
   previsao_mais_antiga: string | null
   itens: RiscoDistrito[]
   regras: RegraRisco[]
+}
+
+// --- Campanhas de vigilância activa -------------------------------------------------------
+export type EstadoCampanha = 'AGENDADA' | 'ACTIVA' | 'TERMINADA' | 'CANCELADA'
+
+export interface Campanha {
+  id: number
+  titulo: string
+  mensagem: string
+  cultura_id: string
+  patologia_id: number | null
+  patologia_nome: string | null
+  provincia_codigo: string | null
+  distrito_id: number | null
+  zona: string
+  inicio: string
+  fim: string
+  estado: EstadoCampanha
+  autor_nome: string
+  criado_em: string
+  agricultores: number
+  responderam: number
+  taxa_resposta: number | null
+  diagnosticos: number
+  casos_praga_doenca: number
+  casos_patologia: number | null
+  sms: ResumoSMS | null
+}
+
+export interface NovaCampanha {
+  titulo: string
+  mensagem: string
+  cultura_id: string
+  patologia_id: number | null
+  provincia_codigo: string | null
+  distrito_id: number | null
+  inicio: string
+  fim: string
+  enviar_sms: boolean
+}
+
+// --- Calendário agrícola -----------------------------------------------------------------
+export interface AvisoCalendario {
+  cultura_id: string
+  classe: string | null
+  patologia_nome: string | null
+  texto: string
+  confianca: 'alta' | 'media'
+  fontes: string[]
+}
+
+export interface Calendario {
+  provincia_codigo: string
+  provincia: string
+  regiao: string
+  sementeira: string | null
+  meses: { mes: number; actividades: string[]; avisos: AvisoCalendario[] }[]
+  fontes: { id: string; referencia: string; url: string | null }[]
+  aviso: string
 }

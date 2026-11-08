@@ -17,6 +17,17 @@ export const compacto = (n: number) => (Math.abs(n) < 1000 ? fmtNumero.format(n)
 export const percentagem = (x: number | null | undefined, casas = 0) =>
   x === null || x === undefined ? '—' : `${(x * 100).toFixed(casas).replace('.', ',')}%`
 
+/** «12 enviados · 1 falhou» (ou «2 simulados» sem fornecedor de SMS). */
+export function resumoSMS(r: { enviado: number; falhou: number; simulado: number; pendente: number }): string {
+  const partes = [
+    r.enviado && `${fmtNumero.format(r.enviado)} enviado(s)`,
+    r.pendente && `${fmtNumero.format(r.pendente)} a enviar`,
+    r.falhou && `${fmtNumero.format(r.falhou)} falhou(aram)`,
+    r.simulado && `${fmtNumero.format(r.simulado)} simulado(s)`,
+  ].filter(Boolean)
+  return partes.join(' · ')
+}
+
 export function relativo(iso: string): string {
   const segundos = (new Date(iso).getTime() - Date.now()) / 1000
   const passos: [number, Intl.RelativeTimeFormatUnit][] = [
