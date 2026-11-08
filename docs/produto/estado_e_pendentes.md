@@ -77,24 +77,26 @@ fitossanitária**. O ciclo a fechar é diagnóstico → validação pelo técnic
 | 2c — App da fase 2 | 25/10 | `a5871f4`, `de9aa06` | Qualidade da foto, várias fotos, seguimento aos 7 dias, «Como reconhecer», piloto do modelo; 11 testes da app |
 | 2d — Perfis finos e aviso da declaração obrigatória | 04/11 | ver `git log` | Coordenador provincial e investigador (anonimizado); notificações no painel; migração 0004; 52 testes na API |
 | 3a — Risco meteorológico | 04/11 | ver `git log` | Open-Meteo por distrito, regras com fontes, cartão na Vigilância; migração 0005; 59 testes na API |
+| 3b — SMS, campanhas, notificações e calendário | 08/11 | ver `git log` | API Ola (SMS), campanhas de vigilância activa, notificações na app sem Firebase, calendário agrícola; migração 0006; 68 testes na API, 21 na app |
+| 3c — As seis funcionalidades que estavam incompletas | 08/11 | ver `git log` | Mapa com filtro por confiança e tendência; confirmar ou descartar sinais de surto; exactidão por distrito; retreino com grupo por folha e divisão 70/15/15; modelos de mensagem nos alertas; boletim de uma província ou distrito; migração 0007; 74 testes na API |
 
-**Testes automáticos:** 59 na API (`pytest`) e 11 na app (`flutter test`), todos aprovados.
-O painel compila sem erros (`npm run build`) e foi testado no Edge com Puppeteer.
+**Testes automáticos:** 74 na API (`pytest`, todos aprovados) e 21 na app (`flutter test`: 18 aprovados, 3 saltados sem as fotos de calibração).
+O painel compila sem erros (`npm run build`) e foi testado no Chrome com Puppeteer, contra a API de teste.
 
 ### Estado das 24 funcionalidades
 
 | N.º | Funcionalidade | Estado |
 |---|---|---|
-| 1 | Mapa de ocorrências | Feito (1c) |
-| 1b | Detecção de surtos | Feito (1a, 1c) |
+| 1 | Mapa de ocorrências | Feito (1c, 3c): filtro por confiança e tendência semana a semana |
+| 1b | Detecção de surtos | Feito (1a, 1c, 3c): o técnico confirma (abre o alerta preenchido) ou descarta com nota |
 | 2 | Validação pelo técnico | Feito (1a, 1c, 1d) |
-| 2b | Exactidão em campo | Feito (1a, 1c) |
-| 2c | Conjunto de retreino local | Feito (1a, 1c) |
-| 3 | Alertas por zona | Feito (1a, 1c, 1d) |
+| 2b | Exactidão em campo | Feito (1a, 1c, 3c): por classe, versão e distrito |
+| 2c | Conjunto de retreino local | Feito (1a, 1c, 3c): grupo por folha (pseudónimo) e divisão fixa 70/15/15 |
+| 3 | Alertas por zona | Feito (1a, 1c, 1d, 3c): com modelos de mensagem |
 | 3b | Pragas de declaração obrigatória | Feito (2a, 2b, 2d): marcadas no catálogo, listadas na Vigilância e no boletim; um caso confirmado avisa logo o coordenador da província e o administrador (sino no painel) |
 | 4 | Pedido de visita técnica | Feito (1a, 1c, 1d) |
 | 4b | Seguimento do tratamento | Feito (2a, 2b, 2c); **falta ver no telemóvel** |
-| 5 | Boletim fitossanitário | Feito (2a, 2b) |
+| 5 | Boletim fitossanitário | Feito (2a, 2b, 3c): de uma província ou distrito à escolha; mostra as decisões sobre os surtos |
 | 6 | Registo de auditoria | Feito (1a, 1c) |
 | 6b | Perfis finos (coordenador, investigador) | Feito (2d) |
 | 6c | Organizações | Fase 4 (trabalho futuro) |

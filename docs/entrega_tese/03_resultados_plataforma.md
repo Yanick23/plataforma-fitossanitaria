@@ -582,3 +582,65 @@ tempo dos próximos 7 dias favorece uma praga ou doença num distrito, antes de 
   fontes.
 - Uma campanha conta respostas pelos diagnósticos sincronizados; um diagnóstico feito sem rede só
   conta depois de sincronizar.
+
+
+## Entrega 3c — Funcionalidades completadas (08/11/2026)
+
+Seis funcionalidades estavam feitas com menos do que o planeado (1, 1b, 2b, 2c, 3 e 5). Esta
+entrega completa-as.
+
+### O que foi implementado
+
+- **Mapa de ocorrências (1):**
+  - filtro «Confiança do modelo»: todas, ≥ 60 % ou < 60 % (`GET /vigilancia/ocorrencias?confianca=alta|baixa`);
+  - tendência por distrito: casos dos últimos 7 dias contra os 7 anteriores, com ▲/▼ no ranking;
+  - gráfico «Tendência semana a semana» das últimas 8 semanas, de segunda a domingo (`GET /vigilancia/tendencia`), com os mesmos filtros.
+- **Sinais de surto (1b):**
+  - o técnico ou o coordenador **confirma** um sinal, e o painel abre o alerta já preenchido, ou **descarta-o** com uma nota;
+  - a decisão fica na tabela `decisoes_surto` (migração 0007) e na auditoria (`surto.decidir`), e vale a mais recente;
+  - só se decide dentro da própria zona (403 fora dela); o investigador não decide;
+  - os sinais descartados ficam no fim da lista, escondidos por omissão («Mostrar descartados»).
+- **Exactidão em campo (2b):** além de por classe e por versão, agora também **por distrito** (cartão «Por distrito» na Validação).
+- **Conjunto de retreino (2c):**
+  - cada linha do CSV tem um **grupo**: as fotos do mesmo agricultor no mesmo dia, que tendem a ser da mesma planta ou folha;
+  - o grupo é um pseudónimo HMAC de 12 caracteres e não identifica o agricultor;
+  - o grupo inteiro vai para o mesmo **subconjunto**: treino, validação ou teste (70/15/15), por SHA-256 do grupo. A divisão é fixa entre exportações e evita fotos quase iguais no treino e no teste;
+  - o ZIP traz um `LEIA-ME.txt` que explica as colunas.
+- **Alertas (3):** quatro **modelos de mensagem**: praga confirmada, alerta urgente, prevenção e vigiar. Cada modelo preenche o título, o texto e o nível com a praga, a cultura, a zona e a recomendação do catálogo; o técnico pode editar tudo antes de enviar.
+- **Boletim (5):**
+  - o boletim pode ser de uma **província ou distrito à escolha** (`/gestao/boletim?provincia=` ou `?distrito_id=`, e o mesmo no CSV), mas só dentro da zona de quem pede (403 fora dela, 422 se a zona não existe);
+  - os perfis nacionais escolhem a província e os provinciais escolhem o distrito;
+  - o boletim mostra também a decisão do técnico sobre cada sinal de surto.
+
+A API passa a 69 endpoints (mais `/saude`) e 20 tabelas.
+
+### Como foi testado
+
+- `pytest`: **74 testes aprovados**, os 68 anteriores e 6 novos em `test_plataforma_vigilancia2.py`:
+  - filtro de confiança e tendência;
+  - decidir, mudar de ideias, 403 e 422;
+  - exactidão por distrito;
+  - proporções da divisão;
+  - exportação com grupo e subconjunto sem o telefone;
+  - boletim de uma zona escolhida e os seus limites.
+- **Painel no Chrome** (Puppeteer), contra a API de teste (porta 8001, base temporária):
+  - o técnico de Boane descartou «Queima da folha» com uma nota, e o sinal saiu da lista e voltou com «Mostrar descartados»;
+  - o filtro < 60 % reduziu Boane de 13 para 3 casos;
+  - «Confirmar» abriu o alerta preenchido; o modelo «Praga confirmada» preencheu o título e o texto;
+  - a exactidão por distrito aparece para o técnico (Boane) e para o administrador (Boane e Manhiça);
+  - a coordenadora de Maputo gerou o boletim só de Boane;
+  - sem erros na consola.
+- O teste no browser encontrou um erro: o gráfico da tendência recebia as datas já formatadas e falhava («Invalid time value»). Foi corrigido antes da entrega.
+
+| Figura | Ficheiro |
+|---|---|
+| Vigilância: decisão sobre os surtos, filtro de confiança e tendência | `dados_web/3c_01_vigilancia.png` |
+| Alerta preenchido por um modelo de mensagem | `dados_web/3c_02_alerta_modelo.png` |
+| Exactidão em campo por distrito | `dados_web/3c_03_exactidao_distrito.png` |
+| Boletim de um distrito escolhido pela coordenadora | `dados_web/3c_04_boletim_distrito.png` |
+
+### Limitações da entrega 3c
+
+- O limiar de 60 % é o mesmo do aviso da app (RF05); não foi calibrado com dados de campo.
+- O «grupo por folha» é uma aproximação (mesmo agricultor e mesmo dia): a app não sabe se duas fotos são da mesma folha.
+- Os modelos de mensagem são fixos no painel; não há edição de modelos pelo administrador.
