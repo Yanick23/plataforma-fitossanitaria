@@ -217,6 +217,11 @@ Nova ordem sugerida:
    - **App:** juntar as capturas em grelhas de 3 por figura, para poupar páginas. Acrescentar
      alertas, visitas, «Corrigido pelo técnico», qualidade da foto, «Juntar outra foto» e
      seguimento.
+     - **A app mudou de desenho a 08/11 (entrega 3e):** as capturas antigas já não correspondem.
+       Há duas grelhas prontas em `dados_app/3e_grelha_*.png`; o historial e a câmara devem ser
+       capturados no telemóvel.
+     - No texto, uma frase chega: a app e o painel partilham a mesma linguagem visual (cores,
+       letra, componentes), para a equipa e os agricultores reconhecerem o mesmo sistema.
    - **Painel web** (novo): painel, vigilância (mapa, surtos, risco meteorológico, declarações),
      validação com Grad-CAM, alertas, visitas, boletim, catálogo, modelos em piloto, utilizadores
      e perfis, auditoria. Usar as melhores 8 a 10 capturas da lista da secção 6.

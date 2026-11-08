@@ -11,7 +11,7 @@ confirma o texto contra o código.
 
 | Componente | Tecnologia | Tamanho (linhas de código) | Papel |
 |---|---|---|---|
-| App Android «Diagnóstico de culturas» | Flutter 3.38 / Dart 3.10; tflite_flutter 0.12.1; sqflite | ~5 200 (Dart, `app/lib`) | Diagnóstico sem internet, historial, sincronização, alertas, visitas, seguimento |
+| App Android «Diagnóstico de culturas» | Flutter 3.47 / Dart 3.10; tflite_flutter 0.12.1; sqflite; just_audio; letra IBM Plex Sans (a mesma do painel) | ~6 800 (Dart, `app/lib`) | Diagnóstico sem internet, historial, sincronização, alertas, visitas, seguimento |
 | API REST | FastAPI 0.115.6, Uvicorn, SQLAlchemy 2 (assíncrono), PostgreSQL (SQLite nos testes), Alembic 1.14, PyJWT, bcrypt, TensorFlow 2.17.1 / Keras (Grad-CAM), httpx (Open-Meteo) | ~4 000 (Python, `api/app`) | Dados, regras, permissões, Grad-CAM, previsão do tempo |
 | Painel web | React 18.3, Vite 5.4, TypeScript 5.6, TanStack Query 5.62, padrão MVVM | ~4 900 (TS/TSX, `admin/src`) | Trabalho da equipa: validação, vigilância, alertas, visitas, boletim, gestão |
 | Modelo | EfficientNetB0 por cultura, TFLite INT8 dinâmica (4 561 kB = 4,35 MiB cada; o PFC escreve «4,35 MB») | — | Classificação no telemóvel |

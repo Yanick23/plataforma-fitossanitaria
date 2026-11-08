@@ -716,3 +716,64 @@ agricultores. Não há tradução automática nem voz sintética.
 - Há áudio só onde alguém gravou; a qualidade depende de quem grava e do sítio onde grava.
 - Mudar a língua nas Definições precisa de rede.
 - As províncias de cada língua são indicativas (onde é mais falada), não um dado oficial.
+
+
+## Entrega 3e — Novo desenho da app (08/11/2026)
+
+A app tinha o aspecto do protótipo inicial: gradientes verdes com brilho, sombras difusas, um
+ícone grande ao centro e um verde muito vivo. Passou a seguir a **mesma linguagem do painel
+web**, para a app e o painel parecerem um só produto. Não há funcionalidades novas.
+
+### O que mudou
+
+- **Cores e letra iguais às do painel:**
+  - verde-escuro da marca (#13693B) e fundo cor de papel;
+  - âmbar e vermelho só para avisos;
+  - texto com contraste de pelo menos 4,5:1;
+  - letra IBM Plex Sans incluída na app (licença OFL 1.1), por isso funciona sem rede.
+- **Sem efeitos:** os gradientes, os brilhos e as sombras saíram. Os cartões são brancos, com
+  contorno fino e cantos de 12; os botões são planos; os títulos são menos pesados e o texto
+  ficou maior.
+- **Componentes comuns** (`lib/tema.dart`, `lib/widgets/cartao.dart`): tema Material 3 completo
+  (botões, campos, barra inferior, avisos, folhas inferiores), cartão, cabeçalho de cartão, caixa
+  de aviso e mensagem de erro.
+- **Ecrãs:**
+  - **Início:** saudação com o nome, o distrito e o estado da rede. A acção principal, «Diagnosticar
+    uma planta», tem já os botões **Milho** e **Mandioca** (um toque a menos). Por baixo vêm «Para
+    si» (alerta, campanha, seguimento, mês do calendário) e «Mais» (historial, alertas, calendário).
+  - **Resultado:**
+    - a certeza aparece numa **barra com a marca dos 60 %** (RF05), em vez do anel, o que mostra
+      onde está o limite;
+    - a recomendação está no cartão «O que fazer», com o botão «Ouvir»;
+    - a dúvida é dita numa caixa âmbar no topo.
+  - **Historial:** os diagnósticos estão numa só lista, com o resumo («4 diagnósticos · 1 por
+    enviar»), o estado do envio, a validação do técnico e a certeza.
+  - **Entrar e Criar conta:** disposição alinhada à esquerda, marca discreta e erros numa caixa.
+  - **Escolher a cultura:** nome científico e quantas pragas a app reconhece.
+  - **Definições:** organizadas em secções. O «Diagnóstico técnico» passou do início para «Avançado».
+  - **Restantes ecrãs:** a câmara (obturador simples), os alertas e o calendário seguem o mesmo estilo.
+
+### Como foi testado
+
+- `flutter analyze` sem problemas; `flutter test`: 29 testes (26 aprovados e 3 saltados, os
+  mesmos de antes).
+- **Capturas sem telemóvel:** `flutter test test_capturas --update-goldens` desenha 8 ecrãs
+  num telemóvel virtual de 412×915, com as letras reais e dados de exemplo, e guarda-os em
+  `app/test_capturas/capturas/`.
+  - Serviu para comparar o antes e o depois e serve para refazer as figuras da tese.
+  - A fotografia é uma folha desenhada, não uma foto real.
+  - As miniaturas do historial e o cartão dos modelos ficam vazios só nas capturas; na app
+    aparecem.
+
+| Figura | Ficheiro |
+|---|---|
+| Início, escolha da cultura e resultado (grelha de 3) | `dados_app/3e_grelha_A_diagnosticar.png` |
+| Resultado com dúvida, historial e alertas (grelha de 3) | `dados_app/3e_grelha_B_duvida_historial_alertas.png` |
+| Cada ecrã em separado | `dados_app/3e_01_entrar.png` … `3e_08_definicoes.png` |
+
+### Limitações da entrega 3e
+
+- **Ainda não visto no telemóvel**, em especial a câmara, o processamento e o detalhe de um
+  diagnóstico, que não estão nas capturas.
+- As figuras do protótipo na tese (5.1.7) mostram o desenho antigo e têm de ser trocadas. Para a
+  versão final, as capturas do historial devem ser tiradas no telemóvel (com as fotografias reais).

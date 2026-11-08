@@ -80,6 +80,7 @@ fitossanitária**. O ciclo a fechar é diagnóstico → validação pelo técnic
 | 3b — SMS, campanhas, notificações e calendário | 08/11 | ver `git log` | API Ola (SMS), campanhas de vigilância activa, notificações na app sem Firebase, calendário agrícola; migração 0006; 68 testes na API, 21 na app |
 | 3c — As seis funcionalidades que estavam incompletas | 08/11 | ver `git log` | Mapa com filtro por confiança e tendência; confirmar ou descartar sinais de surto; exactidão por distrito; retreino com grupo por folha e divisão 70/15/15; modelos de mensagem nos alertas; boletim de uma província ou distrito; migração 0007; 74 testes na API |
 | 3d — Áudio em línguas locais | 08/11 | ver `git log` | Gravação no painel (microfone ou ficheiro), validação por outra pessoa, voz nos alertas, quadro «Línguas e áudio»; na app, escolha da língua e botão «Ouvir» sem rede; migração 0008; 78 testes na API, 29 na app |
+| 3e — Novo desenho da app | 08/11 | — | A mesma linguagem do painel (cores, IBM Plex Sans, cartões com contorno, sem gradientes nem sombras); novo início com atalho para cada cultura; barra de certeza com a marca dos 60 %; historial numa lista; gerador de capturas (`app/test_capturas`) |
 
 **Testes automáticos:** 78 na API (`pytest`, todos aprovados) e 29 na app (`flutter test`: 26 aprovados, 3 saltados sem as fotos de calibração).
 O painel compila sem erros (`npm run build`) e foi testado no Chrome com Puppeteer, contra a API de teste.
