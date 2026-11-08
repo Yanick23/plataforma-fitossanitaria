@@ -504,3 +504,81 @@ tempo dos próximos 7 dias favorece uma praga ou doença num distrito, antes de 
 - A previsão não dá horas de folha molhada; a humidade ≥ 90% é só uma aproximação.
 - Não se sabe que culturas tem cada distrito: o risco do milho e o da mandioca mostram-se em todos.
 - As fontes científicas indicadas devem ser confirmadas na bibliografia do PFC antes da entrega.
+
+## Entrega 3b — Campanhas, SMS, notificações e calendário agrícola (08/11/2026)
+
+### O que foi implementado
+
+- **Campanhas de vigilância activa (12).** O técnico (ou o coordenador ou o administrador) pede
+  aos agricultores de uma zona que fotografem uma cultura durante um período de até 60 dias, com
+  uma praga a procurar (opcional). A campanha conta como respondida quando o agricultor sincroniza
+  pelo menos um diagnóstico dessa cultura, na zona e no período. Conta também a «folha saudável»,
+  por isso a campanha mostra onde a praga não está.
+  - **No painel:** agricultores, quantos responderam (taxa de resposta), diagnósticos, casos de
+    praga ou doença e casos da praga procurada.
+  - **Na app:** um cartão no ecrã inicial com o botão «Fotografar».
+- **SMS (13), pela API Ola da Pavulla.** Alertas e campanhas podem seguir também por SMS para os
+  agricultores da zona.
+  - Os SMS ficam registados (tabela `envios_sms`) no mesmo commit do alerta e são enviados depois
+    da resposta, em lotes.
+  - A integração segue a da AquaSystem: `POST /v1/messages/bulk`, HTTP Basic e números só com
+    dígitos.
+  - Sem chave configurada, os SMS ficam «simulados» e nada sai.
+- **Notificações sem Firebase (13b).** A app regista uma tarefa periódica do Android
+  (`workmanager`) que consulta `GET /novidades` e mostra notificações locais
+  (`flutter_local_notifications`) de alertas, validações do técnico, visitas e campanhas.
+  - Com a app aberta, a sincronização avança o ponto de partida, para não repetir notificações.
+- **Calendário agrícola por província (10).** Actividades do ano típico por região (FEWS NET),
+  época habitual de sementeira por província (MASA) e 5 avisos de vigilância por mês, só de
+  confiança alta ou média e com a fonte de cada um.
+  - **No painel:** o ecrã com o ano todo e as fontes.
+  - **Na app:** «Nesta altura…» com o mês actual, sem Internet, e o ecrã do ano.
+- **Correcções:**
+  - a app passou a aceitar os perfis de coordenador e de investigador; antes, a leitura do perfil
+    falhava;
+  - o alerta preventivo do risco meteorológico vale até ao fim da previsão (7 dias), e não 14.
+- Migração 0006: tabelas `campanhas` e `envios_sms`. A API passa a 67 endpoints e 19 tabelas.
+
+### Como foi testado
+
+- `pytest`: **68 testes aprovados** (59 anteriores e 9 novos em `test_plataforma_sms_campanhas.py`):
+  - SMS simulado e SMS pelo fornecedor, com um transporte HTTP falso: endereço, autenticação Basic,
+    números, uma mensagem aceite e outra com erro;
+  - fornecedor em baixo;
+  - campanhas: limites de zona, datas, praga de outra cultura, respostas e taxa, cancelamento,
+    campanha agendada;
+  - novidades: ponto de partida, alerta, validação, visita e campanha, sem repetir nem chegar a
+    outra zona;
+  - calendário: região, mês, avisos e fontes.
+- `flutter test`: **18 aprovados e 3 saltados** (os 3 de qualidade da foto que dependem das
+  fotografias de calibração). Os testes novos cobrem a leitura de todos os perfis, os textos das
+  notificações, o calendário guardado e as campanhas. `flutter analyze` sem problemas.
+- **APK de release** (arm64, 36,4 MB) compilado com os plugins novos e o *desugaring*.
+  - Com o Flutter 3.47.8 desta máquina, o plugin `tflite_flutter` falhava por diferença de versão
+    da JVM entre Java (11) e Kotlin (17).
+  - A verificação do Kotlin passou de erro a aviso (`gradle.properties`).
+- **Painel no Chrome** (Puppeteer), contra a API de teste (porta 8001, base temporária):
+  - campanha com 3 de 3 agricultores e SMS simulados;
+  - opção de SMS no alerta;
+  - calendário de Maputo com o mês actual;
+  - o investigador vê as campanhas sem o botão de criar;
+  - sem erros na consola.
+
+| Figura | Ficheiro |
+|---|---|
+| Campanhas, com a taxa de resposta e os SMS | `dados_web/3b_01_campanhas.png` |
+| Nova campanha (zona, período, praga e SMS) | `dados_web/3b_02_nova_campanha.png` |
+| Alerta com a opção de SMS | `dados_web/3b_03_alerta_sms.png` |
+| Calendário agrícola da província | `dados_web/3b_04_calendario.png` |
+
+### Limitações da entrega 3b
+
+- **Nada foi visto no telemóvel:** as notificações em segundo plano, os cartões da campanha e do
+  calendário. As notificações dependem do Android: no mínimo de 15 em 15 minutos, podem atrasar
+  para poupar bateria e o agricultor tem de as autorizar (Android 13+).
+- **Nenhum SMS real foi enviado:** falta a chave, o `provider_id` e o remetente no `api/.env`. Os
+  valores vêm da integração da AquaSystem, porque a documentação pública da API Ola não os diz.
+- O calendário é geral por região e não foi validado com o IIAM; ficaram de fora as pragas sem
+  fontes.
+- Uma campanha conta respostas pelos diagnósticos sincronizados; um diagnóstico feito sem rede só
+  conta depois de sincronizar.
