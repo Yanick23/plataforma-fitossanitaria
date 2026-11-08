@@ -102,11 +102,11 @@ O painel compila sem erros (`npm run build`) e foi testado no Edge com Puppeteer
 | 8 | Modelos com piloto e deriva | Feito (2a, 2b, 2c) |
 | 8b | Porta de qualidade | Feito (2a, 2b) |
 | 9 | Risco meteorológico | Feito (3a): previsão Open-Meteo por distrito, 4 regras com fontes, cartão na Vigilância e alerta preventivo |
-| 10 | Calendário agrícola | Por fazer (fase 3) |
+| 10 | Calendário agrícola | Feito (3b): por província, com fontes; na app, «Nesta altura…» sem Internet |
 | 11 | Machambas georreferenciadas | Por fazer (fase 3) |
-| 12 | Campanhas de vigilância activa | Por fazer (fase 3) |
-| 13 | Alertas por SMS | Fase 4 (trabalho futuro: exige contrato com operadora) |
-| 13b | Notificações push | Por fazer (fase 4) |
+| 12 | Campanhas de vigilância activa | Feito (3b): painel, app e taxa de resposta |
+| 13 | Alertas por SMS | Feito (3b): API Ola da Pavulla; simulado sem chave configurada |
+| 13b | Notificações push | Feito (3b) **sem Firebase**: consulta em segundo plano de 15 em 15 min; **falta ver no telemóvel** |
 | 14 | Línguas locais e áudio | **A fazer** com a API de áudio em línguas locais do Yanick (falta a documentação da API) |
 | 15 | Verificação da fotografia | Feito (2c); **falta ver no telemóvel** |
 | 16 | Várias fotos por caso | Feito (2c); **falta ver no telemóvel** |
@@ -136,8 +136,8 @@ O painel compila sem erros (`npm run build`) e foi testado no Edge com Puppeteer
 - **Risco meteorológico (9): feito** (entrega 3a, 04/11).
 - **Línguas locais em áudio (14): a fazer**, com a API de áudio do Yanick. Falta a documentação
   da API.
-- **Trabalho futuro no PFC:** calendário agrícola (10), campanhas de vigilância activa (12) e
-  machambas com GPS (11).
+- **Calendário agrícola (10) e campanhas de vigilância activa (12): feitos** (entrega 3b).
+- **Trabalho futuro no PFC:** machambas com GPS (11).
 - **Não se fazem** (decisão de 04/11): inspecção de campo FAMEWS (19) e armadilhas de
   feromona (20).
 
@@ -145,8 +145,8 @@ O painel compila sem erros (`npm run build`) e foi testado no Edge com Puppeteer
 
 - **«Não reconhecido» (17):** só se a tarefa D4 do Colab tiver resultados a tempo; senão, fica
   como trabalho futuro.
-- **Trabalho futuro no PFC:** notificações *push* (13b), SMS (13), organizações (6c) e
-  directório de apoio (21).
+- **SMS (13) e notificações sem Firebase (13b): feitos** (entrega 3b).
+- **Trabalho futuro no PFC:** organizações (6c) e directório de apoio (21).
 - **Não se fazem** (decisão de 04/11): severidade (18), dados abertos (22), segurança de
   produção (23) e privacidade (24).
   - A segurança (HTTPS, cópias de segurança, trocar a palavra-passe do administrador e o

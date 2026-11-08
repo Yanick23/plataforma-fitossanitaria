@@ -29,7 +29,7 @@ negócio) → `repositorios/` (consultas).
 - ViewModel = `viewmodels/use*ViewModel.ts` (*hooks*);
 - View = `views/*View.tsx`.
 
-**Base de dados:** 17 tabelas, migrações Alembic aplicadas no arranque:
+**Base de dados:** 19 tabelas, migrações Alembic aplicadas no arranque:
 
 | Migração | Conteúdo |
 |---|---|
@@ -38,6 +38,7 @@ negócio) → `repositorios/` (consultas).
 | 0003 | Fase 2 |
 | 0004 | Perfis e notificações |
 | 0005 | Previsões do tempo |
+| 0006 | Campanhas de vigilância e registo dos SMS |
 
 ---
 
@@ -64,11 +65,20 @@ negócio) → `repositorios/` (consultas).
 | 2a–2c | Boletim fitossanitário (PDF e CSV); catálogo enriquecido (sintomas, prevenção, fotos de referência, validação do texto, versão); modelos em **piloto** por distrito, **porta de qualidade** e sinal de deriva; seguimento do tratamento aos 7 dias; pragas de declaração obrigatória; na app, verificação da qualidade da foto (nitidez e luz), várias fotos por caso (média das probabilidades) e «Como reconhecer» |
 | 2d | Perfis de coordenador e investigador; **aviso imediato** ao coordenador da província e ao administrador quando se confirma um caso de declaração obrigatória (sino no painel) |
 | 3a | **Risco meteorológico**: previsão Open-Meteo de 7 dias por distrito, 4 regras com fontes, cartão na Vigilância e alerta preventivo |
+| 3b | **Campanhas de vigilância activa**; **SMS** dos alertas e campanhas (API Ola da Pavulla); **notificações na app sem Firebase** (consulta em segundo plano); **calendário agrícola** por província; correcção dos perfis novos na app |
 
 **Não implementadas (decisão do Yanick):** severidade, inspecção FAMEWS, armadilhas, dados
 abertos, segurança de produção (HTTPS, limite de tentativas, cópias de segurança), privacidade
-(consentimento, apagar a conta). **Ficam para trabalho futuro:** calendário agrícola, campanhas de
-vigilância, machambas com GPS, notificações *push*, SMS, organizações, «não reconhecido».
+(consentimento, apagar a conta). **Ficam para trabalho futuro:** machambas com GPS, organizações,
+directório de apoio, «não reconhecido» e línguas locais em áudio (falta a API).
+
+**Feitas com menos do que o planeado** (o texto do PFC deve descrever só o que existe):
+- mapa de ocorrências: sem filtro por confiança nem tendência semana a semana;
+- sinais de surto: sem «confirmar ou descartar» (só «Criar alerta»);
+- exactidão em campo: por classe e por versão, não por distrito;
+- conjunto de retreino: sem a divisão por folha;
+- alertas: sem modelos de mensagem;
+- boletim: só da zona de quem pede (não se escolhe a província ou o distrito).
 
 ---
 
@@ -99,10 +109,15 @@ Os RF01 a RF12 e os RNF01 a RNF07 são os da v1.
 | RNF09 | O investigador nunca vê nomes nem telefones de agricultores | — |
 | RNF10 | Todas as alterações relevantes ficam na auditoria, no mesmo commit da alteração | — |
 | RNF11 | Sem internet no servidor, o risco meteorológico usa a última previsão guardada e diz que não é recente | — |
+| RF28 | Criar campanhas de vigilância activa numa zona (cultura, praga opcional, período até 60 dias) e acompanhar quem respondeu | Técnico, coordenador, administrador; investigador lê |
+| RF29 | Enviar também por SMS os alertas e as campanhas, aos agricultores da zona | Técnico, coordenador, administrador; API Ola |
+| RF30 | Notificar o agricultor no telemóvel (alertas, validações, visitas, campanhas) sem Firebase, por consulta em segundo plano | Sistema (app) |
+| RF31 | Mostrar o calendário agrícola da província e, na app, «Nesta altura…» do mês actual, sem Internet | Agricultor, equipa |
+| RNF12 | Sem fornecedor de SMS configurado, os SMS ficam registados como simulados e nada é enviado | — |
 
 ---
 
-## 5. Base de dados (17 tabelas, para o diagrama de classes)
+## 5. Base de dados (19 tabelas, para o diagrama de classes)
 
 | Tabela | Campos principais |
 |---|---|
@@ -123,13 +138,15 @@ Os RF01 a RF12 e os RNF01 a RNF07 são os da v1.
 | Notificacao | id, utilizador_id, tipo, titulo, mensagem, diagnostico_id, lida_em |
 | RegistoAuditoria | id, utilizador_id, accao, entidade, entidade_id, detalhes (antes e depois, em JSON) |
 | PrevisaoMeteo | distrito_id, obtida_em, dados (previsão horária em JSON) |
+| Campanha | id, titulo, mensagem, cultura_id, patologia_id, provincia_codigo, distrito_id, inicio, fim, autor_id, cancelada |
+| EnvioSMS | id, alerta_id ou campanha_id, utilizador_id, telefone, conteudo, estado (PENDENTE, ENVIADO, FALHOU, SIMULADO), id_externo, erro |
 
 **Diferença face à v1:** o modelo **passou a ser uma entidade persistida** (ModeloML). A frase da
 v1 «o modelo de classificação não é uma entidade persistida» tem de sair.
 
 ---
 
-## 6. API: 61 endpoints (mais `/saude`)
+## 6. API: 67 endpoints (mais `/saude`)
 
 | Grupo | N.º | Exemplos |
 |---|---|---|
@@ -143,6 +160,7 @@ v1 «o modelo de classificação não é uma entidade persistida» tem de sair.
 | Visitas | 5 | `POST /visitas`, `GET /visitas/minhas`, `PATCH /visitas/{id}` |
 | Gestão | 12 | `/gestao/resumo`, `/gestao/diagnosticos`, `/gestao/utilizadores`, `/gestao/auditoria`, `/gestao/boletim` (+ `.csv`), `/gestao/eficacia`, `/gestao/notificacoes` |
 | Vigilância | 4 | `/vigilancia/ocorrencias`, `/surtos`, `/declaracoes`, `/risco-meteorologico` |
+| Campanhas, novidades e calendário | 6 | `POST/GET /campanhas`, `GET /campanhas/minhas`, `POST /campanhas/{id}/cancelar`, `GET /novidades?desde=`, `GET /calendario?provincia=` |
 
 Documentação automática em `/docs` (Swagger UI) e `/redoc`.
 
@@ -152,8 +170,8 @@ Documentação automática em `/docs` (Swagger UI) e `/redoc`.
 
 | O quê | Resultado |
 |---|---|
-| API (pytest + httpx, SQLite temporária) | **59 testes aprovados** (v1: 23). Cobrem autenticação, sincronização sem duplicados, permissões por perfil e zona, catálogo, modelos (piloto, porta de qualidade, deriva), Grad-CAM, alertas, visitas, vigilância e surtos, boletim, perfis finos, notificações, risco meteorológico (com a Open-Meteo simulada) e migração de uma base antiga |
-| App (`flutter test`) | 11 testes: qualidade da foto (com fotos reais), combinação de fotos, seguimento, catálogo, sincronização com UUID |
+| API (pytest + httpx, SQLite temporária) | **68 testes aprovados** (v1: 23; 59 até à entrega 3a). Também cobrem SMS (fornecedor simulado), campanhas, novidades e calendário. Cobrem autenticação, sincronização sem duplicados, permissões por perfil e zona, catálogo, modelos (piloto, porta de qualidade, deriva), Grad-CAM, alertas, visitas, vigilância e surtos, boletim, perfis finos, notificações, risco meteorológico (com a Open-Meteo simulada) e migração de uma base antiga |
+| App (`flutter test`) | 21 testes (18 aprovados e 3 saltados nesta máquina, que precisam das fotos de calibração): qualidade da foto, combinação de fotos, seguimento, catálogo, sincronização com UUID, perfis, notificações, calendário e campanhas. APK de release arm64 compilado (36,4 MB) |
 | Painel | `npm run build` sem erros; testado no Chrome com Puppeteer, contra uma API de teste (porta 8001, base temporária, **nunca a base real**), sem erros na consola |
 | Migrações | 0003 → 0004 → 0003 → 0004 num PostgreSQL 16 temporário (Docker), sem erros |
 | Telemóvel (SOTEN R80, Android 13) | T01 a T12 aprovados (v1). **T13 (Grad-CAM) aprovado em 25/10:** 2,4 s no 1.º pedido do milho, 2,1 s na mandioca, 0,8 s com o modelo já carregado. **Por fazer:** a confirmação no ecrã das iterações 1d e 2c (alertas, validação, visitas, qualidade da foto, várias fotos, seguimento) |
@@ -206,3 +224,27 @@ Os limiares de dias e de chuva são **limiares de projecto, a calibrar**.
 - nenhum risco em Boane (33,7 mm de chuva prevista).
 
 As fontes, que é preciso confirmar, estão na secção 7 do `roteiro_pfc_v2.md`.
+
+---
+
+## 10. SMS, notificações, campanhas e calendário (entrega 3b)
+
+- **SMS (API Ola, da Pavulla):** `POST https://api.ola.pavulla.com/v1/messages/bulk`, autenticação
+  HTTP Basic (token como utilizador, palavra-passe vazia) e números só com dígitos, com o indicativo
+  258. São os mesmos parâmetros da integração que a Pavulla já usa no sistema AquaSystem. A
+  documentação pública não os diz.
+  - Os SMS ficam registados (tabela `envios_sms`) e são enviados depois de a API responder, em
+    lotes de 100.
+  - Sem `SMS_CHAVE` no `api/.env`, ficam como **SIMULADO**: nada sai, mas o resto funciona.
+  - Configuração no `.env`: `SMS_CHAVE`, `SMS_PROVIDER_ID`, `SMS_REMETENTE` (nunca no Git).
+- **Notificações sem Firebase:** a app regista uma tarefa periódica do Android (`workmanager`) que
+  consulta `GET /novidades` e mostra notificações locais (`flutter_local_notifications`).
+  - O Android só a corre **de 15 em 15 minutos, no mínimo**, e pode atrasá-la para poupar bateria.
+  - Desde o Android 13, o agricultor tem de autorizar as notificações.
+  - Com a app aberta, a sincronização avança o ponto de partida, para não repetir notificações.
+- **Campanhas:** responder = sincronizar pelo menos um diagnóstico da cultura, na zona, no período
+  (conta também «folha saudável»).
+- **Calendário:** dados em `api/app/calendario_agricola.json`, com a fonte de cada linha.
+  - Regiões FEWS NET (Norte; Centro e Sul); sementeira por província do MASA.
+  - 5 avisos de confiança alta ou média. Ficaram de fora, por falta de fontes, o mosaico, a mancha
+    castanha, a mancha bacteriana, o gafanhoto e o besouro.
