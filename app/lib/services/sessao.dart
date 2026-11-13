@@ -5,9 +5,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../models/utilizador.dart';
 
-/// Endereço por omissão da API: o PC na mesma rede Wi-Fi (porta 8000).
+/// Endereço por omissão da API: servidor VPS ou local (porta 8000).
 /// Muda-se no ecrã de login ou nas definições.
-const urlApiPorOmissao = 'http://192.168.1.100:8000';
+const urlApiPorOmissao = 'http://162.35.172.70:8000';
 
 /// Sessão do utilizador (RF10). O token JWT e os dados do utilizador ficam no
 /// armazenamento seguro do Android (Keystore), por isso a app continua a
