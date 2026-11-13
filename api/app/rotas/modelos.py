@@ -125,6 +125,49 @@ async def publicar_modelo(
     return _para_ler(modelo, pedido)
 
 
+@router.get("/modelos/{cultura}/keras")
+async def estado_modelo_keras(cultura: str, _: Leitor, sessao: Sessao) -> dict:
+    """Verifica se o modelo Keras (.keras) do Grad-CAM está presente no servidor."""
+    caminho = definicoes.pasta_modelos / f"modelo_{cultura}.keras"
+    if not caminho.exists():
+        return {"existe": False, "ficheiro": caminho.name, "tamanho_bytes": 0}
+    st = caminho.stat()
+    return {
+        "existe": True,
+        "ficheiro": caminho.name,
+        "tamanho_bytes": st.st_size,
+    }
+
+
+@router.post("/modelos/{cultura}/keras", status_code=status.HTTP_200_OK)
+async def carregar_modelo_keras(
+    cultura: str, admin: Administrador, sessao: Sessao,
+    ficheiro: Annotated[UploadFile, File(description="Modelo Keras (.keras) para Grad-CAM")],
+) -> dict:
+    """Actualiza o ficheiro .keras usado pelo Grad-CAM no servidor para esta cultura."""
+    if await sessao.get(Cultura, cultura) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Cultura inexistente")
+    conteudo = await ficheiro.read()
+    if not conteudo:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Ficheiro vazio")
+
+    destino = definicoes.pasta_modelos / f"modelo_{cultura}.keras"
+    definicoes.pasta_modelos.mkdir(parents=True, exist_ok=True)
+    destino.write_bytes(conteudo)
+
+    from .. import gradcam
+    gradcam._carregar.cache_clear()
+
+    auditar(sessao, admin, "modelo.upload_keras", "modelo", f"{cultura}.keras",
+            depois={"tamanho_bytes": len(conteudo), "ficheiro": destino.name})
+    await sessao.commit()
+    return {
+        "mensagem": f"Modelo Keras de {cultura} carregado com sucesso",
+        "tamanho_bytes": len(conteudo),
+        "ficheiro": destino.name,
+    }
+
+
 @router.patch("/modelos/{cultura}/{versao}", response_model=ModeloLer)
 async def actualizar_modelo(cultura: str, versao: int, dados: ModeloActualizar, pedido: Request,
                             admin: Administrador, sessao: Sessao) -> ModeloLer:

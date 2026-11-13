@@ -201,6 +201,12 @@ export interface Modelo {
   notas: string | null
 }
 
+export interface ModeloKerasInfo {
+  existe: boolean
+  ficheiro: string
+  tamanho_bytes: number
+}
+
 /** Pode a versão piloto passar a publicada? (validações em campo vs. a versão publicada) */
 export interface PortaQualidade {
   versao: number

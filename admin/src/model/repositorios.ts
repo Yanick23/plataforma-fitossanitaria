@@ -2,7 +2,7 @@
 
 import { http } from './http'
 import type {
-  Alcance, Alerta, Audio, Boletim, Calendario, CoberturaAudio, Lingua, Campanha, DecisaoSurto, SemanaContagem, ListaNotificacoes, NovaCampanha, RiscoMeteorologico, Cultura, Declaracao, EficaciaPatologia, Diagnostico, Distrito, EstadoModelo, EstadoValidacao, EstadoVisita, ExactidaoCampo, Modelo,
+  Alcance, Alerta, Audio, Boletim, Calendario, CoberturaAudio, Lingua, Campanha, DecisaoSurto, SemanaContagem, ListaNotificacoes, NovaCampanha, RiscoMeteorologico, Cultura, Declaracao, EficaciaPatologia, Diagnostico, Distrito, EstadoModelo, EstadoValidacao, EstadoVisita, ExactidaoCampo, Modelo, ModeloKerasInfo,
   Monitorizacao, PortaQualidade,
   NovoAlerta, Ocorrencia, Pagina, Patologia, PatologiaEscrita, Perfil, Provincia, RegistoAuditoria, Resumo, Surto, TipoPatologia,
   Utilizador, UtilizadorAdmin, Visita,
@@ -95,6 +95,12 @@ export const modelosRepo = {
   portaQualidade: (cultura: string, versao: number) =>
     dados(http.get<PortaQualidade>(`/modelos/${cultura}/${versao}/porta-qualidade`)),
   monitorizacao: (cultura: string) => dados(http.get<Monitorizacao>(`/modelos/${cultura}/monitorizacao`)),
+  obterKeras: (cultura: string) => dados(http.get<ModeloKerasInfo>(`/modelos/${cultura}/keras`)),
+  uploadKeras: (cultura: string, ficheiro: File) => {
+    const form = new FormData()
+    form.append('ficheiro', ficheiro)
+    return dados(http.post<{ mensagem: string; tamanho_bytes: number; ficheiro: string }>(`/modelos/${cultura}/keras`, form, { timeout: 120_000 }))
+  },
 }
 
 export interface FiltrosUtilizadores {

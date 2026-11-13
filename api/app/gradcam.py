@@ -31,9 +31,41 @@ def caminho_modelo(cultura_id: str) -> Path:
     return definicoes.pasta_modelos / f"modelo_{cultura_id}.keras"
 
 
+def _aplicar_compatibilidade_keras() -> None:
+    """Compatibilidade para carregar modelos treinados em versões mais recentes do Keras/Colab."""
+    try:
+        from keras.src.saving import serialization_lib
+
+        orig_deserialize = serialization_lib.deserialize_keras_object
+        if getattr(orig_deserialize, "_ja_sanitizado", False):
+            return
+
+        chaves_ignorar = {
+            "input_axes", "output_axes", "renorm", "renorm_clipping",
+            "renorm_momentum", "quantization_config"
+        }
+
+        def sanitizar(obj):
+            if isinstance(obj, dict):
+                return {k: sanitizar(v) for k, v in obj.items() if k not in chaves_ignorar}
+            if isinstance(obj, list):
+                return [sanitizar(v) for v in obj]
+            return obj
+
+        def deserializar_sanitizado(config, *args, **kwargs):
+            return orig_deserialize(sanitizar(config), *args, **kwargs)
+
+        deserializar_sanitizado._ja_sanitizado = True
+        serialization_lib.deserialize_keras_object = deserializar_sanitizado
+    except Exception:
+        pass
+
+
 @lru_cache(maxsize=2)
 def _carregar(cultura_id: str):
     import keras  # importação tardia (pesada)
+
+    _aplicar_compatibilidade_keras()
 
     caminho = caminho_modelo(cultura_id)
     if not caminho.exists():

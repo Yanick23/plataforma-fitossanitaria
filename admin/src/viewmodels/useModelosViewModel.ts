@@ -38,9 +38,28 @@ export function useModelosViewModel() {
   const pilotos = versoes.filter((m) => m.estado === 'PILOTO')
   const ultima = versoes[0]
 
+  const recarregar = () => cliente.invalidateQueries({ queryKey: ['modelos', cultura] })
+  const aoErro = (e: Error) => notificar(e.message, 'erro')
+  const nomesDistritos = (ids: number[]) => ids.map((id) => regioes.distrito(id)?.nome ?? `#${id}`)
+
   const monitorizacao = useQuery({
     queryKey: ['modelos', cultura, 'monitorizacao'], queryFn: () => modelosRepo.monitorizacao(cultura), enabled: Boolean(cultura),
   })
+  const kerasQuery = useQuery({
+    queryKey: ['modelos', cultura, 'keras'],
+    queryFn: () => modelosRepo.obterKeras(cultura),
+    enabled: Boolean(cultura),
+  })
+
+  const uploadKeras = useMutation({
+    mutationFn: (f: File) => modelosRepo.uploadKeras(cultura, f),
+    onSuccess: (res) => {
+      notificar(res.mensagem, 'sucesso')
+      cliente.invalidateQueries({ queryKey: ['modelos', cultura, 'keras'] })
+    },
+    onError: aoErro,
+  })
+
   const grafico = useMemo(() => {
     const m = monitorizacao.data
     if (!m) return null
@@ -55,10 +74,6 @@ export function useModelosViewModel() {
     return { semanas, series, total: m.semanas.reduce((t, s) => t + s.diagnosticos, 0) }
   }, [monitorizacao.data])
   const sinais = monitorizacao.data?.sinais ?? []
-
-  const recarregar = () => cliente.invalidateQueries({ queryKey: ['modelos', cultura] })
-  const aoErro = (e: Error) => notificar(e.message, 'erro')
-  const nomesDistritos = (ids: number[]) => ids.map((id) => regioes.distrito(id)?.nome ?? `#${id}`)
 
   // --- Publicação ------------------------------------------------------------------------------
   const [aPublicar, setAPublicar] = useState(false)
@@ -166,5 +181,9 @@ export function useModelosViewModel() {
     retirar: () => actualizar.mutate({ estado: 'RETIRADO' }),
     reporPiloto: () => actualizar.mutate({ estado: 'PILOTO' }),
     aActualizar: actualizar.isPending,
+    kerasInfo: kerasQuery.data,
+    aCarregarKeras: kerasQuery.isLoading,
+    enviarKeras: (f: File) => uploadKeras.mutate(f),
+    aEnviarKeras: uploadKeras.isPending,
   }
 }

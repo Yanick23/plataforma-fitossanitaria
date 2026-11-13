@@ -18,6 +18,8 @@ ml/models/*
 app/build/
 app/.dart_tool/
 
+*.zip
+
 # Pacote para carregar no Google Drive (gerado)
 ml/para_drive/
 

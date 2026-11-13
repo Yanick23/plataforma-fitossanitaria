@@ -1,0 +1,70 @@
+services:
+  # 1. Base de dados PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: agrodiagnostico-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: agrodiagnostico
+      POSTGRES_USER: agrodiagnostico
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agrodiagnostico_senha_segura}
+    volumes:
+      - dados_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agrodiagnostico -d agrodiagnostico"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - rede_agro
+
+  # 2. API Backend (FastAPI + Keras/Grad-CAM)
+  api:
+    build:
+      context: ./api
+    container_name: agrodiagnostico-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://agrodiagnostico:${POSTGRES_PASSWORD:-agrodiagnostico_senha_segura}@postgres:5432/agrodiagnostico
+      JWT_SEGREDO: ${JWT_SEGREDO:-jsvTN35_q2-idWu21BHbvlR9nnqJ1r1ES9G5JjaUjamfgKIz4g_VaEM8cov-HUrG}
+      JWT_VALIDADE_DIAS: 30
+      ADMIN_TELEFONE: ${ADMIN_TELEFONE:-840000000}
+      ADMIN_PALAVRA_PASSE: ${ADMIN_PALAVRA_PASSE:-jK54z0kDQMTI}
+      ADMIN_NOME: Administrador
+      CORS_ORIGENS: ${CORS_ORIGENS:-["*"]}
+      SMS_CHAVE: ${SMS_CHAVE:-}
+      SMS_REMETENTE: ${SMS_REMETENTE:-99988}
+      SMS_PROVIDER_ID: ${SMS_PROVIDER_ID:-pro-2ziqAEvdDobNcPnsN6tFwPHOa2g}
+    volumes:
+      - dados_api:/app/dados
+      - ./api/modelos:/app/modelos
+    ports:
+      - "${PORTA_API:-8000}:8000"
+    networks:
+      - rede_agro
+
+  # 3. Painel Web Frontend (React + Vite + Nginx)
+  admin:
+    build:
+      context: ./admin
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    container_name: agrodiagnostico-admin
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${PORTA_ADMIN:-80}:80"
+    networks:
+      - rede_agro
+
+volumes:
+  dados_postgres:
+  dados_api:
+
+networks:
+  rede_agro:
+    driver: bridge

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -76,13 +77,17 @@ class NotificacoesFundo {
   NotificacoesFundo._();
 
   static final _plugin = FlutterLocalNotificationsPlugin();
+  static Timer? _temporizadorPolling;
+
   static const _detalhes = NotificationDetails(
     android: AndroidNotificationDetails(
       'novidades',
       'Novidades da zona',
       channelDescription: 'Alertas, validações do técnico, visitas e campanhas',
-      importance: Importance.high,
+      importance: Importance.max,
       priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
     ),
   );
 
@@ -90,11 +95,39 @@ class NotificacoesFundo {
     settings: const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')),
   );
 
-  /// No arranque da app: pede a autorização (Android 13+) e regista a tarefa periódica.
+  /// Inicia polling periódico activo (15 segundos) enquanto a app estiver a correr.
+  static void iniciarPolling({Duration intervalo = const Duration(seconds: 15)}) {
+    _temporizadorPolling?.cancel();
+    // Consulta inicial após 2 segundos
+    Future.delayed(const Duration(seconds: 2), () async {
+      try {
+        await consultar(notificar: true);
+      } catch (e) {
+        debugPrint('Consulta inicial de novidades: $e');
+      }
+    });
+
+    _temporizadorPolling = Timer.periodic(intervalo, (_) async {
+      try {
+        await consultar(notificar: true);
+      } catch (e) {
+        debugPrint('Polling de novidades: $e');
+      }
+    });
+  }
+
+  static void pararPolling() {
+    _temporizadorPolling?.cancel();
+    _temporizadorPolling = null;
+  }
+
+  /// No arranque da app: pede autorização (Android 13+), activa polling rápido e regista Workmanager.
   static Future<void> iniciar() async {
+    await _iniciarPlugin();
+    iniciarPolling();
+
     if (!Platform.isAndroid) return;
     try {
-      await _iniciarPlugin();
       await _plugin
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
           ?.requestNotificationsPermission();
@@ -142,8 +175,9 @@ class NotificacoesFundo {
     return mostradas;
   }
 
-  /// Ao terminar a sessão: pára a tarefa e esquece o ponto de partida (as novidades são da conta).
+  /// Ao terminar a sessão: pára o polling, a tarefa e esquece o ponto de partida (as novidades são da conta).
   static Future<void> parar() async {
+    pararPolling();
     if (!Platform.isAndroid) return;
     try {
       await Workmanager().cancelByUniqueName(tarefaNovidades);

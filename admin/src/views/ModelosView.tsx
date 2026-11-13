@@ -103,6 +103,51 @@ export function ModelosView() {
                   )}
             </Cartao>
           </div>
+
+          <Cartao
+            titulo="Modelo Keras (Grad-CAM no Servidor)"
+            subtitulo="Ficheiro .keras completo usado pelo servidor para calcular o mapa de calor da folha (explicabilidade dos diagnósticos)."
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontWeight: 600 }}>{vm.kerasInfo?.ficheiro ?? `modelo_${vm.cultura}.keras`}</span>
+                  <Etiqueta tom={vm.kerasInfo?.existe ? 'bom' : 'aviso'}>
+                    {vm.kerasInfo?.existe ? 'Activo no servidor' : 'Ficheiro em falta'}
+                  </Etiqueta>
+                </div>
+                <p className="suave pequeno">
+                  {vm.kerasInfo?.existe
+                    ? `Tamanho: ${bytes(vm.kerasInfo.tamanho_bytes)} · Pronto para gerar mapas Grad-CAM nos diagnósticos.`
+                    : 'Sem este ficheiro, os pedidos de explicabilidade visual (Grad-CAM) no ecrã de Diagnósticos falham com 503.'}
+                </p>
+              </div>
+
+              {vm.eAdministrador && (
+                <div>
+                  <input
+                    type="file"
+                    accept=".keras"
+                    id="input-upload-keras"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      if (f) vm.enviarKeras(f)
+                      e.target.value = ''
+                    }}
+                  />
+                  <Botao
+                    variante="secundario"
+                    disabled={vm.aEnviarKeras}
+                    onClick={() => document.getElementById('input-upload-keras')?.click()}
+                  >
+                    <Upload size={15} />
+                    {vm.aEnviarKeras ? 'A carregar Keras…' : 'Subir novo .keras'}
+                  </Botao>
+                </div>
+              )}
+            </div>
+          </Cartao>
         </>
       )}
       {!vm.eAdministrador && <div className="aviso-caixa info"><Lock size={16} style={{ flex: 'none', marginTop: 2 }} />Só o administrador publica, promove ou retira versões do modelo.</div>}
