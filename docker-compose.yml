@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: agrodiagnostico
       POSTGRES_USER: agrodiagnostico
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agrodiagnostico_senha_segura}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - dados_postgres:/var/lib/postgresql/data
     healthcheck:
@@ -28,11 +28,11 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+asyncpg://agrodiagnostico:${POSTGRES_PASSWORD:-agrodiagnostico_senha_segura}@postgres:5432/agrodiagnostico
-      JWT_SEGREDO: ${JWT_SEGREDO:-jsvTN35_q2-idWu21BHbvlR9nnqJ1r1ES9G5JjaUjamfgKIz4g_VaEM8cov-HUrG}
-      JWT_VALIDADE_DIAS: 30
+      DATABASE_URL: postgresql+asyncpg://agrodiagnostico:${POSTGRES_PASSWORD}@postgres:5432/agrodiagnostico
+      JWT_SEGREDO: ${JWT_SEGREDO}
+      JWT_VALIDADE_DIAS: ${JWT_VALIDADE_DIAS:-30}
       ADMIN_TELEFONE: ${ADMIN_TELEFONE:-840000000}
-      ADMIN_PALAVRA_PASSE: ${ADMIN_PALAVRA_PASSE:-jK54z0kDQMTI}
+      ADMIN_PALAVRA_PASSE: ${ADMIN_PALAVRA_PASSE}
       ADMIN_NOME: Administrador
       CORS_ORIGENS: ${CORS_ORIGENS:-["*"]}
       SMS_CHAVE: ${SMS_CHAVE:-}
