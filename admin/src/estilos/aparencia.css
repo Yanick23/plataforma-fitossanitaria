@@ -1,0 +1,275 @@
+/* Aparência do painel, a mesma da app móvel: barra lateral verde-escura com um brilho suave,
+   o conteúdo numa folha branca de canto grande, botões em pílula verde-lima, campos em pílula
+   e cartões de cantos grandes. Este ficheiro entra por último e só redefine cores e formas. */
+
+:root {
+  --escuro: #042f2b;
+  --escuro-brilho: #22503f;
+  --escuro-suave: #15433b;
+  --lima: #a3e86c;
+  --lima-forte: #7dd44a;
+  --lima-suave: #eef9e4;
+  --sobre-lima: #0e1f14;
+  --sobre-escuro-2: #b9c7c2;
+
+  --plano: #ffffff;
+  --superficie: #ffffff;
+  --superficie-2: #f3f4f3;
+  --superficie-elevada: #ffffff;
+  --linha: #e7e9e8;
+  --linha-forte: #d4d8d6;
+  --tinta: #0f1a18;
+  --tinta-2: #5f6764;
+  --tinta-3: #7d8582;
+
+  --marca: #0b4a3f;
+  --marca-forte: #042f2b;
+  --marca-suave: #eef9e4;
+  --marca-texto: #0b4a3f;
+  --foco: #0b4a3f;
+
+  --raio: 12px;
+  --raio-g: 24px;
+  --sombra: 0 0 0 1px var(--linha);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) {
+    --plano: #0c1513;
+    --superficie: #121d1a;
+    --superficie-elevada: #16231f;
+    --superficie-2: #1b2925;
+    --linha: #24332f;
+    --linha-forte: #31423d;
+    --marca: #7dd44a;
+    --marca-forte: #a3e86c;
+    --marca-suave: #1a2e1f;
+    --marca-texto: #a3e86c;
+    --foco: #a3e86c;
+  }
+}
+
+:root[data-tema="escuro"] {
+  --plano: #0c1513;
+  --superficie: #121d1a;
+  --superficie-elevada: #16231f;
+  --superficie-2: #1b2925;
+  --linha: #24332f;
+  --linha-forte: #31423d;
+  --marca: #7dd44a;
+  --marca-forte: #a3e86c;
+  --marca-suave: #1a2e1f;
+  --marca-texto: #a3e86c;
+  --foco: #a3e86c;
+}
+
+/* ----- Casca: fundo escuro com brilho; a barra lateral e a barra de topo ficam por cima dele ----- */
+
+.casca {
+  background: radial-gradient(circle at 0% 0%, var(--escuro-brilho) 0%, var(--escuro) 38%) fixed var(--escuro);
+}
+
+/* Dentro do escuro, as cores de texto passam a claras (os componentes usam as mesmas variáveis). */
+.lateral,
+.barra-topo {
+  --tinta: #ffffff;
+  --tinta-2: var(--sobre-escuro-2);
+  --tinta-3: #8fa39c;
+  --superficie-2: rgba(255, 255, 255, 0.07);
+  --linha: rgba(255, 255, 255, 0.1);
+  color: var(--tinta);
+}
+
+.lateral {
+  background: transparent;
+  border-right: 0;
+  padding: var(--e-6) var(--e-4);
+}
+
+.lateral .marca strong {
+  font-size: var(--t-16);
+  font-weight: 600;
+}
+
+.lateral .marca span {
+  color: var(--sobre-escuro-2);
+}
+
+.marca img {
+  width: 40px;
+  height: 40px;
+}
+
+.nav-grupo > p {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.nav-ligacao {
+  padding: 9px var(--e-3);
+  border-radius: 999px;
+}
+
+.nav-ligacao:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-ligacao.activa {
+  background: var(--lima);
+  color: var(--sobre-lima);
+  font-weight: 600;
+}
+
+.barra-topo {
+  position: static;
+  height: 72px;
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom: 0;
+  padding: 0 var(--e-8);
+}
+
+/* A folha branca: o conteúdo de cada página, com o canto superior esquerdo grande. */
+.principal {
+  min-height: 100vh;
+}
+
+.conteudo {
+  flex: 1;
+  max-width: none;
+  margin: 0;
+  background: var(--plano);
+  border-top-left-radius: 32px;
+  padding: var(--e-8) clamp(24px, 3vw, 48px) var(--e-8);
+}
+
+.cabecalho-pagina h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ----- Botões em pílula ----- */
+
+.botao {
+  height: 40px;
+  padding: 0 var(--e-5);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.botao.primario {
+  background: var(--lima);
+  color: var(--sobre-lima);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.botao.primario:hover:not(:disabled) {
+  background: var(--lima-forte);
+}
+
+.botao.secundario {
+  background: var(--superficie-elevada);
+  border: 1.5px solid var(--lima);
+  color: var(--tinta);
+}
+
+.botao.pequeno {
+  height: 32px;
+  padding: 0 var(--e-3);
+}
+
+.botao.icone {
+  width: 40px;
+  padding: 0;
+}
+
+.botao.pequeno.icone {
+  width: 32px;
+}
+
+/* ----- Campos em pílula (as caixas de texto longas ficam só arredondadas) ----- */
+
+.entrada {
+  height: 42px;
+  padding: 0 var(--e-4);
+  border-radius: 999px;
+  font-size: var(--t-14);
+}
+
+textarea.entrada {
+  border-radius: 18px;
+  padding: var(--e-3) var(--e-4);
+}
+
+select.entrada {
+  padding-right: var(--e-8);
+}
+
+.entrada:focus {
+  border-color: var(--marca);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lima) 45%, transparent);
+}
+
+/* ----- Cartões, segmentos, separadores, gaveta ----- */
+
+.cartao {
+  border-radius: var(--raio-g);
+  box-shadow: 0 0 0 1px var(--linha);
+}
+
+.segmentos {
+  padding: 3px;
+  border-radius: 999px;
+}
+
+.segmentos button {
+  height: 32px;
+  padding: 0 var(--e-4);
+  border-radius: 999px;
+}
+
+.segmentos button[aria-pressed="true"] {
+  background: var(--escuro);
+  color: #fff;
+  box-shadow: none;
+}
+
+.separadores button[aria-selected="true"] {
+  border-bottom-color: var(--lima-forte);
+  font-weight: 600;
+}
+
+.gaveta {
+  border-radius: 32px 0 0 32px;
+  overflow: hidden;
+}
+
+.gaveta-cabecalho {
+  background: radial-gradient(circle at 0% 0%, var(--escuro-brilho) 0%, var(--escuro) 60%);
+  color: #fff;
+  --tinta: #fff;
+  --tinta-2: var(--sobre-escuro-2);
+  --tinta-3: var(--sobre-escuro-2);
+  --superficie-2: rgba(255, 255, 255, 0.08);
+}
+
+/* ----- Entrada (login): ilustração no escuro com brilho ----- */
+
+.entrada-ilustracao {
+  background: radial-gradient(circle at 0% 0%, var(--escuro-brilho) 0%, var(--escuro) 55%);
+}
+
+.entrada-painel h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 860px) {
+  .conteudo {
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+  }
+}

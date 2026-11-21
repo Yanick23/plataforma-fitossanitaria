@@ -81,6 +81,8 @@ fitossanitária**. O ciclo a fechar é diagnóstico → validação pelo técnic
 | 3c — As seis funcionalidades que estavam incompletas | 08/11 | ver `git log` | Mapa com filtro por confiança e tendência; confirmar ou descartar sinais de surto; exactidão por distrito; retreino com grupo por folha e divisão 70/15/15; modelos de mensagem nos alertas; boletim de uma província ou distrito; migração 0007; 74 testes na API |
 | 3d — Áudio em línguas locais | 08/11 | ver `git log` | Gravação no painel (microfone ou ficheiro), validação por outra pessoa, voz nos alertas, quadro «Línguas e áudio»; na app, escolha da língua e botão «Ouvir» sem rede; migração 0008; 78 testes na API, 29 na app |
 | 3e — Novo desenho da app | 08/11 | — | A mesma linguagem do painel (cores, IBM Plex Sans, cartões com contorno, sem gradientes nem sombras); novo início com atalho para cada cultura; barra de certeza com a marca dos 60 %; historial numa lista; gerador de capturas (`app/test_capturas`) |
+| 3f — Desenho nativo da app | 21/11 | — | Sem o «estilo de IA»: listas de margem a margem em vez de cartões, sem ícones decorativos, datas como se dizem, botão de fotografar fixo em baixo, últimos diagnósticos no início, resultado como ficha |
+| 3g — Novo estilo visual da app | 21/11 | — | Estilo das referências do Yanick: cabeçalho verde-escuro com brilho, folha branca de cantos grandes, botões em pílula verde-lima, barra inferior com o botão da câmara ao centro, cartão de resumo, calendário em linha do tempo |
 
 **Testes automáticos:** 78 na API (`pytest`, todos aprovados) e 29 na app (`flutter test`: 26 aprovados, 3 saltados sem as fotos de calibração).
 O painel compila sem erros (`npm run build`) e foi testado no Chrome com Puppeteer, contra a API de teste.

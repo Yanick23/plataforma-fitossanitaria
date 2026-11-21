@@ -777,3 +777,149 @@ web**, para a app e o painel parecerem um só produto. Não há funcionalidades 
   diagnóstico, que não estão nas capturas.
 - As figuras do protótipo na tese (5.1.7) mostram o desenho antigo e têm de ser trocadas. Para a
   versão final, as capturas do historial devem ser tiradas no telemóvel (com as fotografias reais).
+
+
+## Entrega 3f — Desenho nativo da app (21/11/2026)
+
+O desenho da 3e ainda seguia a «receita» habitual das interfaces geradas por IA:
+- uma saudação grande («Boa tarde, Ana»);
+- um bloco colorido com o ícone num quadrado;
+- títulos cinzentos pequenos («Para si», «Mais»);
+- tudo em cartões arredondados, cada um com o seu ícone colorido;
+- etiquetas em pílula e frases de marketing.
+
+A app passou a seguir o padrão das apps nativas do Android, que é também o que os agricultores
+conhecem de outras apps.
+
+### O que mudou
+
+- **Listas de margem a margem em vez de cartões:** cada secção tem um título simples (e uma acção
+  à direita, como «Ver todos») e um bloco branco com linhas separadas por traços finos (widget
+  `Seccao`).
+- **Sem ícones decorativos:** a hierarquia faz-se pela letra (tamanho e peso). O nível de um
+  alerta é dito por escrito, a cor («Urgente», a vermelho), sem pílula nem ícone. Os ícones ficam
+  só onde têm função (voltar, alertas, definições, câmara, barra inferior).
+- **Datas como se dizem:** «hoje, 09:10», «ontem», «há 2 dias», «1 Dez» (`quando` e `dataCurta`).
+- **Cantos mais discretos** (8 px nos botões e campos) e texto um pouco maior.
+- **Início:**
+  - barra de topo com o nome da app, o distrito e o estado da rede;
+  - «Na sua zona» (alerta por ler e pedido do técnico);
+  - «Os seus diagnósticos», com os três mais recentes e o estado de cada um, em vez de um menu
+    genérico;
+  - o mês do calendário;
+  - o botão **«Fotografar uma planta»** fica fixo em baixo, onde o polegar chega, e a escolha da
+    cultura abre num painel que sobe de baixo (menos um ecrã).
+- **Resultado e detalhe do diagnóstico** lêem-se como uma ficha:
+  - a fotografia ocupa a largura toda;
+  - depois o nome, a certeza (barra com o traço dos 60 %) e os blocos «O que fazer», «Como
+    reconhecer» e «Para não voltar a acontecer», separados por traços;
+  - os botões ficam fixos em baixo;
+  - a dúvida e a validação do técnico aparecem numa faixa de cor no topo.
+- **Historial, alertas, calendário e definições** usam as mesmas listas.
+- **Entrar:** o nome da app em texto, sem símbolo.
+- **Correcção encontrada pelo gerador de capturas:** a secção pintava o fundo branco por baixo
+  das linhas, por isso o efeito de toque não se via em nenhuma linha tocável. Passou a usar um
+  `Material`.
+- **Correcção num teste:** o teste da qualidade da foto saltava só se a pasta das fotos não
+  existisse. Como a pasta passou a existir com outras fotos, falhava. Agora salta se faltar
+  alguma das fotos de calibração.
+
+### Como foi testado
+
+- `flutter analyze` sem problemas; `flutter test`: 29 testes (26 aprovados e 3 saltados).
+- Gerador de capturas: 9 ecrãs (mais o calendário). Desta vez as miniaturas do historial já
+  aparecem, porque se usam as chaves reais da cache de imagens.
+- APK de release compilado.
+
+| Figura | Ficheiro |
+|---|---|
+| Início, resultado e resultado com dúvida (grelha de 3) | `dados_app/3f_grelha_A_inicio_resultado.png` |
+| Historial, alertas e calendário (grelha de 3) | `dados_app/3f_grelha_B_historial_alertas_calendario.png` |
+| Cada ecrã em separado | `dados_app/3f_01_entrar.png` … `3f_09_calendario.png` |
+
+### Limitações da entrega 3f
+
+- Ainda não visto no telemóvel.
+- Nas capturas, a fotografia é uma folha desenhada.
+- As grelhas da 3e (`3e_grelha_*`) ficam só como registo: na tese usam-se as da 3f.
+
+
+## Entrega 3g — Novo estilo visual da app (21/11/2026)
+
+A pedido do Yanick, a app adoptou o estilo visual de um conjunto de ecrãs de referência (uma app
+moçambicana de pagamentos). Só se adoptou a linguagem visual; o nome, o logótipo e as
+ilustrações 3D dessa app não foram copiados.
+
+### O que mudou
+
+- **Cabeçalho verde-escuro** (#042F2B) com um brilho suave no canto superior esquerdo. Leva o
+  título grande a branco, a zona com o ícone de localização e, à direita, o avatar com as
+  iniciais ou um botão redondo.
+- **Folha branca de cantos grandes** (32 px) por cima do cabeçalho, onde fica o conteúdo
+  (componente `EcraEscuro`, usado em todos os ecrãs principais).
+- **Verde-lima** (#A3E86C) só para a acção principal:
+  - botões em pílula com texto escuro em maiúsculas;
+  - o secundário é uma pílula branca com contorno lima.
+- **Campos de texto em pílula**, com o rótulo por cima e o ícone à esquerda.
+- **Barra inferior** branca, de cantos redondos, com quatro separadores (Início, Historial,
+  Alertas, Definições) e, ao centro, o **botão redondo verde-lima da câmara**: fotografar está
+  sempre a um toque.
+- **Início:**
+  - «Olá Ana, como estão as suas plantas?»;
+  - um cartão lima de resumo (diagnósticos, por enviar, confirmados, desta semana);
+  - atalhos em círculos escuros (Milho, Mandioca, Calendário, Alertas);
+  - «Na sua zona»;
+  - os últimos diagnósticos com a fotografia redonda.
+- **Resultado e detalhe:**
+  - o nome da praga no cabeçalho escuro;
+  - na folha branca, a fotografia de cantos redondos, o cartão da certeza (barra lima com o
+    traço dos 60 %) e os cartões «O que fazer», «Como reconhecer» e «Para não voltar a
+    acontecer», com um ícone num círculo escuro;
+  - os botões fixos em baixo.
+- **Calendário** como linha do tempo (pontos verdes, o mês actual em destaque, os trabalhos e o
+  que vigiar em pílulas).
+- **Câmara** no estilo de um leitor: fundo escuro, cantos da moldura, «Carregar da galeria» numa
+  pílula branca e o obturador verde-lima.
+- **«A analisar…»** num ecrã escuro, com o círculo lima.
+- A escolha da cultura num painel com cartões redondos.
+- Mantêm-se as datas como se dizem («hoje», «há 2 dias») e a letra IBM Plex Sans.
+
+### Como foi testado
+
+- `flutter analyze` sem problemas; `flutter test`: 29 testes (26 aprovados, 3 saltados).
+- Gerador de capturas: 10 ecrãs (mais a câmara).
+- APK de release compilado.
+
+| Figura | Ficheiro |
+|---|---|
+| Entrar, início e câmara | `dados_app/3g_grelha_A_entrar_inicio_camara.png` |
+| Resultado, resultado com dúvida e historial | `dados_app/3g_grelha_B_resultado_historial.png` |
+| Alertas, calendário e definições | `dados_app/3g_grelha_C_alertas_calendario_definicoes.png` |
+| Cada ecrã em separado | `dados_app/3g_01_entrar.png` … `3g_10_camara.png` |
+
+### Limitações da entrega 3g
+
+- Ainda não visto no telemóvel.
+- As grelhas `3e_` e `3f_` ficam só como registo: na tese usam-se as `3g_`.
+- A app e o painel web deixaram de partilhar as cores: o painel mantém o verde da 3e.
+
+
+### Painel web no mesmo estilo (21/11/2026)
+
+O painel passou a usar o mesmo estilo da app. As mudanças estão todas num ficheiro novo,
+`admin/src/estilos/aparencia.css`, que se carrega por último e só altera cores e formas; nenhum
+ecrã foi mexido.
+- A barra lateral e a barra de topo ficam sobre o fundo verde-escuro com brilho. O separador
+  activo é uma pílula verde-lima.
+- O conteúdo de cada página fica numa folha branca, com o canto superior esquerdo grande.
+- Botões em pílula: o principal verde-lima com texto em maiúsculas, o secundário branco com
+  contorno lima.
+- Campos em pílula; segmentos em pílula, com o escolhido a verde-escuro.
+- Cartões de cantos de 24 px; gavetas de canto redondo, com o cabeçalho escuro.
+- Novo símbolo: uma folha num círculo verde-lima.
+- O tema escuro continua a funcionar.
+
+Foi testado no Chrome (Puppeteer) contra a API de teste: entrada, painel, vigilância,
+diagnósticos, alertas e a gaveta «Novo alerta», sem erros na consola. As capturas estão em
+`dados_web/3g_web_*.png`. A limitação da 3g de a app e o painel não partilharem as cores deixa
+de existir.

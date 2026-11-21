@@ -218,7 +218,7 @@ Nova ordem sugerida:
      alertas, visitas, «Corrigido pelo técnico», qualidade da foto, «Juntar outra foto» e
      seguimento.
      - **A app mudou de desenho a 08/11 (entrega 3e):** as capturas antigas já não correspondem.
-       Há duas grelhas prontas em `dados_app/3e_grelha_*.png`; o historial e a câmara devem ser
+       Há três grelhas prontas em `dados_app/3g_grelha_*.png` (estilo final de 21/11; as `3e_` e `3f_` ficam só como registo); o historial e a câmara devem ser
        capturados no telemóvel.
      - No texto, uma frase chega: a app e o painel partilham a mesma linguagem visual (cores,
        letra, componentes), para a equipa e os agricultores reconhecerem o mesmo sistema.
