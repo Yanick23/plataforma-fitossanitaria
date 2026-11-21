@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../tema.dart';
 
-/// Acção principal do ecrã: verde da marca, plano, a toda a largura.
+/// Acção principal do ecrã: pílula verde-lima a toda a largura, texto em maiúsculas.
 class BotaoPrincipal extends StatelessWidget {
   const BotaoPrincipal({super.key, required this.texto, required this.aoPremir, this.icone});
 
@@ -15,13 +15,14 @@ class BotaoPrincipal extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: icone == null
-          ? FilledButton(onPressed: aoPremir, child: Text(texto))
-          : FilledButton.icon(onPressed: aoPremir, icon: Icon(icone, size: 20), label: Text(texto)),
+          ? FilledButton(onPressed: aoPremir, child: Text(texto.toUpperCase()))
+          : FilledButton.icon(
+              onPressed: aoPremir, icon: Icon(icone, size: 20), label: Text(texto.toUpperCase()), iconAlignment: IconAlignment.end),
     );
   }
 }
 
-/// Acção secundária: branca, com contorno.
+/// Acção secundária: pílula branca com contorno verde-lima.
 class BotaoSecundario extends StatelessWidget {
   const BotaoSecundario({super.key, required this.texto, required this.aoPremir, this.icone});
 
@@ -34,8 +35,9 @@ class BotaoSecundario extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: icone == null
-          ? OutlinedButton(onPressed: aoPremir, child: Text(texto))
-          : OutlinedButton.icon(onPressed: aoPremir, icon: Icon(icone, size: 20), label: Text(texto)),
+          ? OutlinedButton(onPressed: aoPremir, child: Text(texto.toUpperCase()))
+          : OutlinedButton.icon(
+              onPressed: aoPremir, icon: Icon(icone, size: 20), label: Text(texto.toUpperCase()), iconAlignment: IconAlignment.end),
     );
   }
 }
@@ -76,18 +78,4 @@ class CabecalhoEcra extends StatelessWidget {
       ]),
     );
   }
-}
-
-/// Título de uma secção dentro de um ecrã («Para si», «Mais»).
-class TituloSeccao extends StatelessWidget {
-  const TituloSeccao(this.texto, {super.key});
-
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 8, left: 2),
-        child: Text(texto,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Cores.textoSecundario, letterSpacing: 0.2)),
-      );
 }

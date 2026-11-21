@@ -13,7 +13,7 @@ class MedidorConfianca extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cor = baixa ? Cores.aviso : Cores.marca;
+    final cor = baixa ? Cores.aviso : Cores.limaForte;
     final pct = (confianca * 100).round();
     return Semantics(
       label: 'Certeza da app: $pct por cento${baixa ? ', abaixo do limite' : ''}',
@@ -23,7 +23,7 @@ class MedidorConfianca extends StatelessWidget {
           const Expanded(
             child: Text('Certeza da app', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Cores.textoSecundario)),
           ),
-          Text('$pct%', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: baixa ? Cores.avisoTexto : Cores.texto)),
+          Text('$pct%', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: baixa ? Cores.avisoTexto : Cores.texto)),
         ]),
         const SizedBox(height: 8),
         LayoutBuilder(builder: (context, l) {
@@ -56,11 +56,11 @@ class MedidorConfianca extends StatelessWidget {
             ]),
           );
         }),
-        const SizedBox(height: 6),
-        Text(
-          baixa ? 'Abaixo de ${(limiarConfianca * 100).round()}%: a app não tem certeza.' : 'A marca indica o mínimo de ${(limiarConfianca * 100).round()}%.',
-          style: const TextStyle(fontSize: 12.5, color: Cores.textoSecundario),
-        ),
+        if (baixa) ...[
+          const SizedBox(height: 6),
+          Text('Abaixo de ${(limiarConfianca * 100).round()}% (o traço), a app não tem certeza.',
+              style: const TextStyle(fontSize: 13, color: Cores.avisoTexto)),
+        ],
       ]),
     );
   }

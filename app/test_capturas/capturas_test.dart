@@ -20,6 +20,8 @@ import 'package:agrodiagnostico/models/medicao_inferencia.dart';
 import 'package:agrodiagnostico/models/resultado_classificacao.dart';
 import 'package:agrodiagnostico/models/utilizador.dart';
 import 'package:agrodiagnostico/screens/alertas_screen.dart';
+import 'package:agrodiagnostico/screens/calendario_screen.dart';
+import 'package:agrodiagnostico/screens/captura_screen.dart';
 import 'package:agrodiagnostico/screens/cultura_screen.dart';
 import 'package:agrodiagnostico/screens/definicoes_screen.dart';
 import 'package:agrodiagnostico/screens/historial_screen.dart';
@@ -84,6 +86,32 @@ String _fotoExemplo(String nome, {bool manchas = true}) {
   return f.path;
 }
 
+/// Quatro diagnósticos de exemplo (datas relativas a hoje).
+List<Diagnostico> _diagnosticos(String foto) {
+  final agora = DateTime.now();
+  Diagnostico d(String id, String classe, double conf, int dias, {Validacao v = Validacao.pendente, bool sinc = true}) =>
+      Diagnostico(
+        id: id,
+        utilizadorId: 3,
+        data: DateTime(agora.year, agora.month, agora.day, 9, 10).subtract(Duration(days: dias)),
+        cultura: classe == 'mosaico' ? Cultura.mandioca : Cultura.milho,
+        classePrevista: classe,
+        confianca: conf,
+        imagem: Imagem(caminhoFicheiro: foto, dataCaptura: agora),
+        versaoModelo: 2,
+        tempoInferenciaMs: 170,
+        tempoTotalMs: 410,
+        estadoSinc: sinc ? EstadoSinc.sincronizado : EstadoSinc.pendente,
+        validacao: v,
+      );
+  return [
+    d('a', 'lagarta_do_cartucho', 0.87, 0, sinc: false),
+    d('b', 'mosaico', 0.93, 2, v: Validacao.confirmado),
+    d('c', 'queima_da_folha', 0.58, 5, v: Validacao.corrigido),
+    d('d', 'saudavel', 0.97, 9),
+  ];
+}
+
 ResultadoClassificacao _resultado(String classe, double confianca, String foto) {
   const classes = ['lagarta_do_cartucho', 'queima_da_folha', 'saudavel'];
   final p = [for (final c in classes) c == classe ? confianca : (1 - confianca) / 2];
@@ -132,7 +160,7 @@ void main() {
         'mensagem': 'Foram confirmados casos esta semana. Veja o funil das plantas novas e esmague as lagartas.',
         'nivel': 'URGENTE',
         'zona': 'Distrito de Boane',
-        'criado_em': '2026-11-08T07:30:00Z',
+        'criado_em': DateTime.now().toUtc().subtract(const Duration(hours: 2)).toIso8601String(),
         'cultura_id': 'milho',
         'patologia_codigo': 'lagarta_do_cartucho',
       }),
@@ -153,8 +181,8 @@ void main() {
         'mensagem': 'Fotografe 3 plantas de milho da sua machamba esta semana.',
         'cultura_id': 'milho',
         'zona': 'Distrito de Boane',
-        'inicio': '2026-11-05',
-        'fim': '2026-11-20',
+        'inicio': DateTime.now().subtract(const Duration(days: 3)).toIso8601String().substring(0, 10),
+        'fim': DateTime.now().add(const Duration(days: 10)).toIso8601String().substring(0, 10),
         'patologia_codigo': 'lagarta_do_cartucho',
         'respondeu': false,
       }),
@@ -201,7 +229,9 @@ void main() {
         final codec = await instantiateImageCodec(await File(f).readAsBytes());
         final quadro = await codec.getNextFrame();
         final original = FileImage(File(f));
-        for (final chave in <Object>[original, for (final w in [112, 156, 256]) ResizeImage(original, width: w)]) {
+        final provedores = <ImageProvider<Object>>[original, for (final w in [112, 156, 168, 256]) ResizeImage(original, width: w)];
+        for (final p in provedores) {
+          final chave = await p.obtainKey(ImageConfiguration.empty);
           PaintingBinding.instance.imageCache
               .putIfAbsent(chave, () => OneFrameImageStreamCompleter(Future.value(ImageInfo(image: quadro.image.clone()))));
         }
@@ -216,13 +246,17 @@ void main() {
 
   testWidgets('01 entrar', (t) => capturar(t, '01_entrar', const LoginScreen()));
 
-  testWidgets('02 início', (t) => capturar(
-      t,
-      '02_inicio',
-      Scaffold(
-        body: const InicioScreen(),
-        bottomNavigationBar: BarraNavegacao(aba: 0, aoEscolher: (_) {}),
-      )));
+  testWidgets('02 início', (t) async {
+    final foto = _fotoExemplo('folha_inicio');
+    await capturar(
+        t,
+        '02_inicio',
+        Scaffold(
+          body: InicioScreen(diagnosticos: _diagnosticos(foto)),
+          bottomNavigationBar: BarraNavegacao(aba: 0, aoEscolher: (_) {}),
+        ),
+        fotos: [foto]);
+  });
 
   testWidgets('03 cultura', (t) => capturar(t, '03_cultura', const CulturaScreen()));
 
@@ -240,33 +274,13 @@ void main() {
 
   testWidgets('06 historial', (t) async {
     final foto = _fotoExemplo('folha3');
-    Diagnostico d(String id, String classe, double conf, int dias, {Validacao v = Validacao.pendente, bool sinc = true}) =>
-        Diagnostico(
-          id: id,
-          utilizadorId: 3,
-          data: DateTime(2026, 11, 8, 9).subtract(Duration(days: dias)),
-          cultura: classe == 'mosaico' ? Cultura.mandioca : Cultura.milho,
-          classePrevista: classe,
-          confianca: conf,
-          imagem: Imagem(caminhoFicheiro: foto, dataCaptura: DateTime(2026, 11, 8)),
-          versaoModelo: 2,
-          tempoInferenciaMs: 170,
-          tempoTotalMs: 410,
-          estadoSinc: sinc ? EstadoSinc.sincronizado : EstadoSinc.pendente,
-          validacao: v,
-        );
     await capturar(
         t,
         '06_historial',
         Scaffold(
           body: SafeArea(
             child: ListaHistorial(
-              itens: [
-                d('a', 'lagarta_do_cartucho', 0.87, 0, sinc: false),
-                d('b', 'mosaico', 0.93, 2, v: Validacao.confirmado),
-                d('c', 'queima_da_folha', 0.58, 5, v: Validacao.corrigido),
-                d('d', 'saudavel', 0.97, 9),
-              ],
+              itens: _diagnosticos(foto),
             ),
           ),
           bottomNavigationBar: BarraNavegacao(aba: 1, aoEscolher: (_) {}),
@@ -277,4 +291,8 @@ void main() {
   testWidgets('07 alertas', (t) => capturar(t, '07_alertas', const AlertasScreen()));
 
   testWidgets('08 definições', (t) => capturar(t, '08_definicoes', const DefinicoesScreen()));
+
+  testWidgets('09 calendário', (t) => capturar(t, '09_calendario', const CalendarioScreen()));
+
+  testWidgets('10 câmara', (t) => capturar(t, '10_camara', const CapturaScreen(cultura: Cultura.milho)));
 }

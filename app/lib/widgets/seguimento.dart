@@ -29,29 +29,32 @@ class CartaoSeguimento extends StatelessWidget {
   Widget build(BuildContext context) {
     final pat = Catalogo.instancia.patologia(diagnostico.cultura, diagnostico.classeFinal);
     final dias = DateTime.now().difference(diagnostico.data).inDays;
-    return Cartao(
-      aoTocar: () => perguntarSeguimento(context, diagnostico),
-      padding: const EdgeInsets.fromLTRB(16, 12, 4, 14),
+    return CartaoArredondado(
+      padding: const EdgeInsets.fromLTRB(20, 18, 12, 8),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        CabecalhoCartao(
-          icone: Icons.eco_outlined,
-          texto: 'Seguimento do tratamento',
-          direita: IconButton(
-            tooltip: 'Agora não',
-            visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.close, size: 18, color: Cores.textoSecundario),
-            onPressed: () => Acompanhamento.instancia.adiar(diagnostico),
-          ),
-        ),
-        const Text('Como está a sua planta?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        const Text('Como está a planta?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         Padding(
-          padding: const EdgeInsets.only(right: 12),
+          padding: const EdgeInsets.only(right: 8),
           child: Text(
-              'Há $dias dias a app encontrou ${pat.nomeLocal} no ${diagnostico.cultura.nome.toLowerCase()}. '
-              'Conte-nos se o tratamento resultou.',
+              'Há $dias dias a app encontrou ${pat.nomeLocal.toLowerCase()} no ${diagnostico.cultura.nome.toLowerCase()}. '
+              'O tratamento resultou?',
               style: const TextStyle(fontSize: 14.5, height: 1.45, color: Cores.textoSecundario)),
         ),
+        Row(children: [
+          TextButton(
+            onPressed: () => perguntarSeguimento(context, diagnostico),
+            style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 44)),
+            child: const Text('Responder'),
+          ),
+          const SizedBox(width: 20),
+          TextButton(
+            onPressed: () => Acompanhamento.instancia.adiar(diagnostico),
+            style: TextButton.styleFrom(
+                foregroundColor: Cores.textoSecundario, padding: EdgeInsets.zero, minimumSize: const Size(0, 44)),
+            child: const Text('Agora não'),
+          ),
+        ]),
       ]),
     );
   }

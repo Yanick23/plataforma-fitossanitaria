@@ -85,73 +85,79 @@ class _CapturaScreenState extends State<CapturaScreen> {
   @override
   Widget build(BuildContext context) {
     final anterior = widget.anterior;
+    Widget botaoRedondo(IconData icone, String dica, VoidCallback aoTocar) => Material(
+          color: Cores.escuroSuave,
+          shape: const CircleBorder(),
+          child: IconButton(
+            tooltip: dica,
+            padding: const EdgeInsets.all(14),
+            icon: Icon(icone, color: Colors.white),
+            onPressed: aoTocar,
+          ),
+        );
     return Scaffold(
       backgroundColor: Cores.captura,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-          child: Column(children: [
-            Row(children: [
-              const BotaoVoltar(escuro: true),
+      body: DecoratedBox(
+        decoration: fundoEscuro,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+            child: Column(children: [
+              Row(children: [
+                botaoRedondo(Icons.close, 'Fechar', () => Navigator.of(context).maybePop()),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(color: Cores.escuroSuave, borderRadius: BorderRadius.circular(24)),
+                  child: Text(
+                    anterior != null ? '${widget.cultura.nome} · foto ${anterior.fotos.length + 1} de $maximoFotos' : widget.cultura.nome,
+                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ]),
               const Spacer(),
-              Text(widget.cultura.nome,
-                  style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
-            ]),
-            const Spacer(),
-            const SizedBox(width: 190, height: 190, child: CustomPaint(painter: _MolduraEnquadramento())),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(10)),
-              child: Text(
+              const SizedBox(width: 280, height: 280, child: CustomPaint(painter: _MolduraEnquadramento())),
+              const SizedBox(height: 28),
+              Text(
                 anterior != null
-                    ? 'Fotografe outra folha da mesma planta, ou a mesma folha de outro ângulo.\n'
-                        'Foto ${anterior.fotos.length + 1} de $maximoFotos.'
-                    : 'Aponte a câmara para a folha afectada.\nUse luz natural e encha o enquadramento com a folha.',
+                    ? 'Fotografe outra folha da mesma planta, ou a mesma folha de outro ângulo.'
+                    : 'Aponte a câmara para a folha afectada. Use luz natural e encha a moldura com a folha.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w500, height: 1.4),
+                style: const TextStyle(color: Cores.sobreEscuroSecundario, fontSize: 15.5, height: 1.45),
               ),
-            ),
-            const SizedBox(height: 24),
-            Row(children: [
-              const Expanded(child: SizedBox()),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: _ocupado ? null : () => _obterImagem(ImageSource.gallery),
+                style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Cores.texto),
+                icon: const Icon(Icons.photo_library_outlined, size: 20),
+                label: const Text('Carregar da galeria', style: TextStyle(letterSpacing: 0)),
+              ),
+              const Spacer(),
               Semantics(
                 button: true,
                 label: 'Tirar fotografia',
+                excludeSemantics: true,
                 child: GestureDetector(
-                  onTap: () => _obterImagem(ImageSource.camera),
+                  onTap: _ocupado ? null : () => _obterImagem(ImageSource.camera),
                   child: Container(
-                    width: 76,
-                    height: 76,
-                    // Obturador clássico: anel branco e centro claro (sem gradientes).
+                    width: 80,
+                    height: 80,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white,
-                      border: Border.all(color: Colors.white38, width: 6, strokeAlign: BorderSide.strokeAlignOutside),
+                      color: Cores.lima,
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.18), width: 8, strokeAlign: BorderSide.strokeAlignOutside),
                     ),
                     child: _ocupado
                         ? const Padding(
-                            padding: EdgeInsets.all(22),
-                            child: CircularProgressIndicator(color: Cores.marca, strokeWidth: 3))
-                        : const Icon(Icons.photo_camera_outlined, color: Cores.texto, size: 30),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: TextButton(
-                    onPressed: () => _obterImagem(ImageSource.gallery),
-                    style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Column(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.photo_library_outlined),
-                      SizedBox(height: 4),
-                      Text('Galeria', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                    ]),
+                            padding: EdgeInsets.all(24),
+                            child: CircularProgressIndicator(color: Cores.escuro, strokeWidth: 3))
+                        : const Icon(Icons.photo_camera_outlined, color: Cores.sobreLima, size: 32),
                   ),
                 ),
               ),
             ]),
-          ]),
+          ),
         ),
       ),
     );
@@ -212,24 +218,19 @@ class _MolduraEnquadramento extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final tinta = Paint()
-      ..color = Cores.verde
-      ..strokeWidth = 4
+      ..color = Colors.white.withValues(alpha: 0.35)
+      ..strokeWidth = 5
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
-    const l = 34.0;
+    // Quatro cantos curvos, como num leitor: o centro fica livre para a folha.
+    const r = 44.0, l = 72.0;
     final w = size.width, h = size.height;
-    final cantos = [
-      [Offset(0, l), Offset.zero, const Offset(l, 0)],
-      [Offset(w - l, 0), Offset(w, 0), Offset(w, l)],
-      [Offset(0, h - l), Offset(0, h), Offset(l, h)],
-      [Offset(w - l, h), Offset(w, h), Offset(w, h - l)],
-    ];
-    for (final c in cantos) {
-      canvas.drawPath(Path()
-        ..moveTo(c[0].dx, c[0].dy)
-        ..lineTo(c[1].dx, c[1].dy)
-        ..lineTo(c[2].dx, c[2].dy), tinta);
-    }
+    const raio = Radius.circular(r);
+    canvas
+      ..drawPath(Path()..moveTo(0, l)..lineTo(0, r)..arcToPoint(const Offset(r, 0), radius: raio)..lineTo(l, 0), tinta)
+      ..drawPath(Path()..moveTo(w - l, 0)..lineTo(w - r, 0)..arcToPoint(Offset(w, r), radius: raio)..lineTo(w, l), tinta)
+      ..drawPath(Path()..moveTo(w, h - l)..lineTo(w, h - r)..arcToPoint(Offset(w - r, h), radius: raio)..lineTo(w - l, h), tinta)
+      ..drawPath(Path()..moveTo(l, h)..lineTo(r, h)..arcToPoint(Offset(0, h - r), radius: raio)..lineTo(0, h - l), tinta);
   }
 
   @override

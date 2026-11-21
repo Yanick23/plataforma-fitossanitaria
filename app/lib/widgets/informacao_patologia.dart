@@ -27,11 +27,11 @@ class ComoReconhecer extends StatelessWidget {
       titulo: 'Como reconhecer',
       icone: Icons.search,
       filhos: [
-        if (sintomas.isNotEmpty) Text(sintomas, style: const TextStyle(fontSize: 15, height: 1.5)),
+        if (sintomas.isNotEmpty) Text(sintomas, style: const TextStyle(fontSize: 16, height: 1.5)),
         if (fotos.isNotEmpty) ...[
           if (sintomas.isNotEmpty) const SizedBox(height: 12),
-          const Text('Compare com a sua planta:', style: TextStyle(fontSize: 12, color: Cores.textoSecundario)),
-          const SizedBox(height: 6),
+          const Text('Compare com a sua planta:', style: TextStyle(fontSize: 13.5, color: Cores.textoSecundario)),
+          const SizedBox(height: 8),
           SizedBox(
             height: 96,
             child: ListView.separated(
@@ -46,7 +46,7 @@ class ComoReconhecer extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () => _ampliar(context, fotos.map((e) => e.$2).toList(), fotos.map((e) => e.$1.legenda).toList(), i),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(4),
                       child: Image.file(ficheiro, width: 128, height: 96, fit: BoxFit.cover, cacheWidth: 256),
                     ),
                   ),
@@ -83,13 +83,11 @@ class CartaoRecomendacao extends StatelessWidget {
       icone: Icons.task_alt,
       corIcone: Cores.marca,
       filhos: [
-        Text(patologia.recomendacao, style: const TextStyle(fontSize: 15.5, height: 1.5)),
+        Text(patologia.recomendacao, style: const TextStyle(fontSize: 16, height: 1.5)),
         if (patologia.audios.isNotEmpty) ...[const SizedBox(height: 12), BotaoOuvir(audios: patologia.audios)],
         if (aviso != null && aviso!.isNotEmpty) ...[
           const SizedBox(height: 12),
-          const Divider(),
-          const SizedBox(height: 10),
-          Text(aviso!, style: const TextStyle(fontSize: 12.5, color: Cores.textoSecundario, height: 1.4)),
+          Text(aviso!, style: const TextStyle(fontSize: 13, color: Cores.textoTerciario, height: 1.4)),
         ],
       ],
     );
@@ -109,33 +107,43 @@ class Prevencao extends StatelessWidget {
     return _Cartao(
       titulo: 'Para não voltar a acontecer',
       icone: Icons.shield_outlined,
-      filhos: [Text(texto, style: const TextStyle(fontSize: 15, height: 1.5))],
+      filhos: [Text(texto, style: const TextStyle(fontSize: 16, height: 1.5))],
     );
   }
 }
 
+/// Cartão de uma ficha (resultado, detalhe): círculo escuro com ícone, título e conteúdo.
 class _Cartao extends StatelessWidget {
-  const _Cartao({required this.titulo, required this.icone, required this.filhos, this.corIcone = Cores.textoSecundario});
+  const _Cartao({required this.titulo, required this.filhos, this.icone, this.corIcone});
 
   final String titulo;
-  final IconData icone;
-  final Color corIcone;
   final List<Widget> filhos;
+  final IconData? icone;
+  final Color? corIcone;
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: decoracaoCartao(),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(icone, size: 18, color: corIcone),
-            const SizedBox(width: 8),
-            Text(titulo, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 14),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+          decoration: decoracaoCartao(),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              if (icone != null) ...[
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: const BoxDecoration(color: Cores.escuro, shape: BoxShape.circle),
+                  child: Icon(icone, size: 18, color: Colors.white),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Expanded(child: Text(titulo, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
+            ]),
+            const SizedBox(height: 12),
+            ...filhos,
           ]),
-          const SizedBox(height: 10),
-          ...filhos,
-        ]),
+        ),
       );
 }
 

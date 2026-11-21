@@ -14,8 +14,8 @@ import '../services/sessao.dart';
 import '../services/sincronizacao.dart';
 import '../tema.dart';
 import '../widgets/anel_confianca.dart';
-import '../widgets/cartao.dart';
 import '../widgets/botoes.dart';
+import '../widgets/ecra_escuro.dart';
 import '../widgets/informacao_patologia.dart';
 import 'captura_screen.dart';
 
@@ -87,73 +87,72 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
     final entrada = Catalogo.instancia.patologia(_r.cultura, _r.classe);
     final baixa = _r.confiancaBaixa;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(children: [
-          const CabecalhoEcra(titulo: 'Resultado'),
-          Expanded(
-            child: ListView(padding: const EdgeInsets.fromLTRB(20, 4, 20, 28), children: [
-              if (baixa) ...[
-                const CaixaAviso(
-                  titulo: 'A app não tem certeza',
-                  texto: 'Tire outra fotografia com boa luz, com a folha a encher o enquadramento.',
+    final botoes = baixa
+        ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            if (_r.podeJuntarFoto) ...[
+              BotaoPrincipal(
+                texto: 'Tirar outra fotografia',
+                icone: Icons.add_a_photo_outlined,
+                aoPremir: _aGuardar ? null : _juntarFoto,
+              ),
+              const SizedBox(height: 10),
+            ],
+            Row(children: [
+              Expanded(child: BotaoSecundario(texto: 'Guardar', aoPremir: _aGuardar ? null : _guardar)),
+              const SizedBox(width: 12),
+              Expanded(child: BotaoSecundario(texto: 'Recomeçar', aoPremir: _aGuardar ? null : _recomecar)),
+            ]),
+          ])
+        : BotaoPrincipal(texto: 'Guardar no historial', aoPremir: _aGuardar ? null : _guardar);
+
+    return EcraEscuro(
+      sobretitulo: '${_r.cultura.nome} · ${entrada.rotuloTipo.toLowerCase()}',
+      titulo: baixa ? 'Talvez ${entrada.nomeLocal.toLowerCase()}' : entrada.nomeLocal,
+      subtitulo: entrada.nomeCientifico,
+      rodape: botoes,
+      filhos: [
+        if (baixa) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: Cores.avisoFundo, borderRadius: BorderRadius.circular(20)),
+            child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.info_outline, color: Cores.avisoTexto),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(children: [
+                    TextSpan(text: 'A app não tem certeza. ', style: TextStyle(fontWeight: FontWeight.w600)),
+                    TextSpan(text: 'Tire outra fotografia com boa luz, com a folha a encher o ecrã.'),
+                  ]),
+                  style: TextStyle(fontSize: 15, height: 1.45, color: Cores.avisoTexto),
                 ),
-                const SizedBox(height: 14),
-              ],
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: AspectRatio(aspectRatio: 16 / 10, child: Image.file(File(_r.caminhoImagem), fit: BoxFit.cover)),
-              ),
-              if (_r.fotos.length > 1) ...[const SizedBox(height: 10), _fotosCombinadas()],
-              const SizedBox(height: 18),
-              Row(children: [
-                _etiqueta(_r.cultura.nome),
-                const SizedBox(width: 8),
-                Text(entrada.rotuloTipo, style: const TextStyle(color: Cores.textoSecundario, fontSize: 13.5)),
-              ]),
-              const SizedBox(height: 8),
-              Text(
-                baixa ? 'Talvez ${entrada.nomeLocal}' : entrada.nomeLocal,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 24),
-              ),
-              const SizedBox(height: 2),
-              Text(entrada.nomeCientifico,
-                  style: const TextStyle(fontStyle: FontStyle.italic, color: Cores.textoSecundario, fontSize: 14.5)),
-              const SizedBox(height: 18),
-              Cartao(child: MedidorConfianca(confianca: _r.confianca, baixa: baixa)),
-              const SizedBox(height: 12),
-              if (!baixa) ...[CartaoRecomendacao(patologia: entrada, aviso: Catalogo.instancia.aviso), const SizedBox(height: 12)],
-              // Com dúvida, os sintomas e as fotos ajudam a comparar; a recomendação só com confiança.
-              if (entrada.tipo != TipoPatologia.saudavel) ...[ComoReconhecer(patologia: entrada), const SizedBox(height: 12)],
-              if (!baixa) ...[Prevencao(patologia: entrada), const SizedBox(height: 12)],
-              const SizedBox(height: 8),
-              if (baixa) ...[
-                if (_r.podeJuntarFoto) ...[
-                  BotaoPrincipal(
-                    texto: 'Juntar outra fotografia',
-                    icone: Icons.add_a_photo_outlined,
-                    aoPremir: _aGuardar ? null : _juntarFoto,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text('Outra fotografia da mesma planta ajuda a app a decidir.',
-                      textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Cores.textoSecundario)),
-                  const SizedBox(height: 12),
-                ],
-                BotaoSecundario(texto: 'Guardar mesmo assim', aoPremir: _aGuardar ? null : _guardar),
-                const SizedBox(height: 4),
-                TextButton(onPressed: _aGuardar ? null : _recomecar, child: const Text('Recomeçar com outra fotografia')),
-              ] else
-                BotaoPrincipal(texto: 'Guardar no historial', icone: Icons.check, aoPremir: _aGuardar ? null : _guardar),
-              const SizedBox(height: 16),
-              Text(
-                'Analisado no telemóvel em ${_r.medicao.tempoTotalMs} ms · modelo v${_r.versaoModelo}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, color: Cores.textoTerciario),
               ),
             ]),
           ),
-        ]),
-      ),
+          const SizedBox(height: 16),
+        ],
+        ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: AspectRatio(aspectRatio: 4 / 3, child: Image.file(File(_r.caminhoImagem), fit: BoxFit.cover)),
+        ),
+        if (_r.fotos.length > 1) ...[const SizedBox(height: 12), _fotosCombinadas()],
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+          decoration: decoracaoCartao(),
+          child: MedidorConfianca(confianca: _r.confianca, baixa: baixa),
+        ),
+        if (!baixa) CartaoRecomendacao(patologia: entrada, aviso: Catalogo.instancia.aviso),
+        // Com dúvida, os sintomas e as fotos ajudam a comparar; a recomendação só com confiança.
+        if (entrada.tipo != TipoPatologia.saudavel) ComoReconhecer(patologia: entrada),
+        if (!baixa) Prevencao(patologia: entrada),
+        const SizedBox(height: 16),
+        Text(
+          'Analisado no telemóvel em ${_r.medicao.tempoTotalMs} ms, modelo v${_r.versaoModelo}.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 12.5, color: Cores.textoTerciario),
+        ),
+      ],
     );
   }
 
@@ -184,10 +183,4 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
       ),
     ]);
   }
-
-  Widget _etiqueta(String texto) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(color: Cores.marcaSuave, borderRadius: BorderRadius.circular(6)),
-        child: Text(texto, style: const TextStyle(color: Cores.marcaForte, fontWeight: FontWeight.w600, fontSize: 12.5)),
-      );
 }

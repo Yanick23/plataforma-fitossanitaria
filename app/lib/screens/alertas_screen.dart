@@ -6,6 +6,7 @@ import '../services/catalogo.dart';
 import '../services/sincronizacao.dart';
 import '../tema.dart';
 import '../widgets/botoes.dart';
+import '../widgets/ecra_escuro.dart';
 import '../widgets/cartao_alerta.dart';
 import '../widgets/informacao_patologia.dart';
 import '../models/cultura.dart';
@@ -24,24 +25,20 @@ class AlertasScreen extends StatelessWidget {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Cores.fundo,
       builder: (context) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.7,
         maxChildSize: 0.95,
-        builder: (context, rolagem) => ListView(controller: rolagem, padding: const EdgeInsets.fromLTRB(20, 0, 20, 28), children: [
+        builder: (context, rolagem) => ListView(controller: rolagem, padding: const EdgeInsets.only(bottom: 20), children: [
           CartaoAlerta(alerta: a.comLido(true), completo: true),
           if (patologia != null) ...[
-            const SizedBox(height: 14),
-            Text('${patologia.nomeLocal} · ${Cultura.porId(a.culturaId!).nome}',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-            Text(patologia.nomeCientifico,
-                style: const TextStyle(fontStyle: FontStyle.italic, color: Cores.textoSecundario, fontSize: 13.5)),
-            const SizedBox(height: 10),
             CartaoRecomendacao(patologia: patologia),
           ],
-          const SizedBox(height: 18),
-          BotaoSecundario(texto: 'Fechar', aoPremir: () => Navigator.of(context).pop()),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: BotaoSecundario(texto: 'Fechar', aoPremir: () => Navigator.of(context).pop()),
+          ),
         ]),
       ),
     );
@@ -49,45 +46,40 @@ class AlertasScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: ListenableBuilder(
-          listenable: AlertasLocais.instancia,
-          builder: (context, _) {
-            final alertas = AlertasLocais.instancia.alertas;
-            return RefreshIndicator(
-              onRefresh: () => Sincronizacao.instancia.sincronizar(),
-              child: ListView(padding: const EdgeInsets.fromLTRB(20, 4, 20, 24), children: [
-                // O ícone fica alinhado com o texto (o botão tem margem própria).
-                Align(alignment: Alignment.centerLeft, child: Transform.translate(offset: const Offset(-12, 0), child: const BotaoVoltar())),
-                const SizedBox(height: 8),
-                Text('Alertas da zona', style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 6),
-                const Text('Avisos dos técnicos para a sua zona. Puxe para baixo para actualizar.',
-                    style: TextStyle(fontSize: 15, color: Cores.textoSecundario, height: 1.4)),
-                const SizedBox(height: 20),
-                if (alertas.isEmpty)
+    return ListenableBuilder(
+      listenable: AlertasLocais.instancia,
+      builder: (context, _) {
+        final alertas = AlertasLocais.instancia.alertas;
+        final n = AlertasLocais.instancia.naoLidos;
+        return EcraEscuro(
+          titulo: 'Alertas da zona',
+          subtitulo: n == 0
+              ? 'Avisos que os técnicos mandaram para a sua zona.'
+              : (n == 1 ? '1 alerta por ler.' : '$n alertas por ler.'),
+          aoActualizar: () => Sincronizacao.instancia.sincronizar(),
+          filhos: alertas.isEmpty
+              ? [
                   const Padding(
-                    padding: EdgeInsets.only(top: 60),
+                    padding: EdgeInsets.fromLTRB(16, 40, 16, 0),
                     child: Column(children: [
-                      Icon(Icons.notifications_none, size: 36, color: Cores.textoTerciario),
-                      SizedBox(height: 14),
-                      Text('Sem alertas para a sua zona', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                      CirculoIcone(Icons.notifications_none, tamanho: 72),
+                      SizedBox(height: 18),
+                      Text('Sem alertas', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
                       SizedBox(height: 6),
-                      Text('Quando um técnico enviar um aviso, aparece aqui.',
-                          textAlign: TextAlign.center, style: TextStyle(color: Cores.textoSecundario)),
+                      Text('Quando um técnico mandar um aviso para a sua zona, aparece aqui.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 15, color: Cores.textoSecundario, height: 1.45)),
                     ]),
-                  )
-                else
-                  for (final a in alertas) ...[
+                  ),
+                ]
+              : [
+                  for (final (i, a) in alertas.indexed) ...[
+                    if (i > 0) const SizedBox(height: 12),
                     CartaoAlerta(alerta: a, aoTocar: () => _abrir(context, a)),
-                    const SizedBox(height: 10),
                   ],
-              ]),
-            );
-          },
-        ),
-      ),
+                ],
+        );
+      },
     );
   }
 }

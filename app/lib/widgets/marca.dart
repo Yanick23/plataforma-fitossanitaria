@@ -2,30 +2,32 @@ import 'package:flutter/material.dart';
 
 import '../tema.dart';
 
-/// Marca da app: símbolo discreto e nome (sem gradientes nem brilhos).
+/// Marca da app sobre o fundo escuro: círculo verde-lima com uma folha e o nome.
 class MarcaApp extends StatelessWidget {
   const MarcaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
+    return Row(mainAxisSize: MainAxisSize.min, children: [
       Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(color: Cores.marca, borderRadius: BorderRadius.circular(10)),
-        child: const Icon(Icons.eco_outlined, color: Colors.white, size: 24),
+        width: 64,
+        height: 64,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(colors: [Color(0xFFC2F29A), Cores.limaForte], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        ),
+        child: const Icon(Icons.eco, color: Cores.escuro, size: 34),
       ),
-      const SizedBox(width: 12),
-      const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Diagnóstico de culturas', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, height: 1.2)),
-        SizedBox(height: 2),
-        Text('Milho e mandioca · Moçambique', style: TextStyle(fontSize: 13, color: Cores.textoSecundario)),
+      const SizedBox(width: 14),
+      const Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        Text('Diagnóstico', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.white, height: 1.05)),
+        Text('de culturas', style: TextStyle(fontSize: 18, color: Cores.sobreEscuroSecundario)),
       ]),
     ]);
   }
 }
 
-/// Mensagem de erro de um formulário (ícone e texto a vermelho).
+/// Mensagem de erro de um formulário.
 class MensagemErro extends StatelessWidget {
   const MensagemErro(this.texto, {super.key});
 
@@ -34,11 +36,11 @@ class MensagemErro extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: decoracaoCartao(cor: Cores.criticoFundo, borda: const Color(0xFFF2C4C2), raio: 10),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      decoration: BoxDecoration(color: Cores.criticoFundo, borderRadius: BorderRadius.circular(16)),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Icon(Icons.error_outline, size: 18, color: Cores.criticoTexto),
-        const SizedBox(width: 8),
+        const Icon(Icons.error_outline, size: 20, color: Cores.criticoTexto),
+        const SizedBox(width: 10),
         Expanded(child: Text(texto, style: const TextStyle(color: Cores.criticoTexto, height: 1.4))),
       ]),
     );

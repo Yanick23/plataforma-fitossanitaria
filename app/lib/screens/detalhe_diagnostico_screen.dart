@@ -13,8 +13,9 @@ import '../services/historial_db.dart';
 import '../services/visitas_locais.dart';
 import '../tema.dart';
 import '../widgets/anel_confianca.dart';
-import '../widgets/cartao.dart';
 import '../widgets/botoes.dart';
+import '../widgets/ecra_escuro.dart';
+import '../widgets/marca.dart';
 import '../widgets/formatacao.dart';
 import '../widgets/informacao_patologia.dart';
 import '../widgets/seguimento.dart';
@@ -115,108 +116,99 @@ class _DetalheDiagnosticoScreenState extends State<DetalheDiagnosticoScreen> {
     final sincronizado = _d.estadoSinc == EstadoSinc.sincronizado;
     final podeGradcam = sincronizado && _online;
 
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 24), children: [
-          Row(children: [
-            const BotaoVoltar(),
-            const SizedBox(width: 12),
-            Text(formatarDataHora(_d.data), style: const TextStyle(color: Cores.textoSecundario)),
-          ]),
+    return EcraEscuro(
+      sobretitulo: '${_d.cultura.nome} · ${quando(_d.data)}',
+      titulo: pat.nomeLocal,
+      subtitulo: pat.nomeCientifico,
+      filhos: [
+        if (_d.validacao != Validacao.pendente) ...[
+          _CaixaValidacao(diagnostico: _d, nomePrevisto: prevista.nomeLocal),
           const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: AspectRatio(
-              aspectRatio: 16 / 10,
-              child: _gradcam != null
-                  ? Image.memory(_gradcam!, fit: BoxFit.cover)
-                  : Image.file(File(_d.imagem.caminhoFicheiro), fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => Container(color: Cores.verdeClaro)),
-            ),
+        ],
+        ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: AspectRatio(
+            aspectRatio: 4 / 3,
+            child: _gradcam != null
+                ? Image.memory(_gradcam!, fit: BoxFit.cover)
+                : Image.file(File(_d.imagem.caminhoFicheiro), fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Container(color: Cores.superficie2)),
           ),
-          if (_gradcam != null)
-            const Padding(
-              padding: EdgeInsets.only(top: 6),
-              child: Text('Zonas a vermelho: as que mais pesaram na decisão do modelo (Grad-CAM).',
-                  style: TextStyle(fontSize: 12, color: Cores.textoSecundario)),
-            ),
-          const SizedBox(height: 16),
-          Text(pat.nomeLocal, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
-          Text(pat.nomeCientifico, style: const TextStyle(fontStyle: FontStyle.italic, color: Cores.textoSecundario)),
-          const SizedBox(height: 16),
-          Cartao(child: MedidorConfianca(confianca: _d.confianca, baixa: _d.confianca < limiarConfianca)),
-          const SizedBox(height: 16),
-          if (_d.validacao != Validacao.pendente) ...[
-            _CaixaValidacao(diagnostico: _d, nomePrevisto: prevista.nomeLocal),
-            const SizedBox(height: 12),
-          ],
-          CartaoRecomendacao(patologia: pat),
-          const SizedBox(height: 12),
-          ComoReconhecer(patologia: pat),
-          const SizedBox(height: 12),
-          Prevencao(patologia: pat),
-          if (Acompanhamento.elegivel(_d)) ...[
-            const SizedBox(height: 12),
-            _CaixaSeguimento(diagnostico: _d, aoResponder: _responderSeguimento),
-          ],
-          const SizedBox(height: 18),
-          if (_gradcam == null)
-            BotaoPrincipal(
-              texto: _aCarregar ? 'A gerar...' : 'Ver onde o modelo olhou',
-              icone: Icons.visibility_outlined,
-              aoPremir: podeGradcam && !_aCarregar ? _verGradcam : null,
-            ),
-          if (!podeGradcam && _gradcam == null)
+        ),
+        if (_gradcam != null)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text('A vermelho, as zonas que mais pesaram na decisão do modelo (Grad-CAM).',
+                style: TextStyle(fontSize: 13, color: Cores.textoSecundario)),
+          ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+          decoration: decoracaoCartao(),
+          child: MedidorConfianca(confianca: _d.confianca, baixa: _d.confianca < limiarConfianca),
+        ),
+        CartaoRecomendacao(patologia: pat),
+        ComoReconhecer(patologia: pat),
+        Prevencao(patologia: pat),
+        if (Acompanhamento.elegivel(_d))
+          Padding(
+            padding: const EdgeInsets.only(top: 14),
+            child: _CaixaSeguimento(diagnostico: _d, aoResponder: _responderSeguimento),
+          ),
+        const SizedBox(height: 28),
+        const Text('Ajuda do técnico', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 14),
+        // Pedido de visita técnica: estado do pedido ou botão para pedir.
+        ListenableBuilder(
+          listenable: VisitasLocais.instancia,
+          builder: (context, _) {
+            final visita = VisitasLocais.instancia.doDiagnostico(_d.id);
+            if (visita != null && visita.activa || visita?.estado == EstadoVisita.resolvida) {
+              return _CaixaVisita(visita!);
+            }
+            return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              BotaoPrincipal(
+                texto: _aPedir ? 'A enviar…' : 'Pedir visita do técnico',
+                aoPremir: sincronizado && _online && !_aPedir ? _pedirVisita : null,
+              ),
+              if (!(sincronizado && _online))
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    !sincronizado ? 'Primeiro o diagnóstico tem de ser enviado.' : 'Precisa de rede.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 13, color: Cores.textoSecundario),
+                  ),
+                ),
+            ]);
+          },
+        ),
+        if (_gradcam == null) ...[
+          const SizedBox(height: 10),
+          BotaoSecundario(
+            texto: _aCarregar ? 'A preparar…' : 'Ver onde o modelo olhou',
+            aoPremir: podeGradcam && !_aCarregar ? _verGradcam : null,
+          ),
+          if (!podeGradcam)
             Padding(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: 6),
               child: Text(
-                !sincronizado
-                    ? 'Disponível depois de o diagnóstico ser sincronizado com o servidor.'
-                    : 'Precisa de ligação à rede.',
+                !sincronizado ? 'Disponível depois de o diagnóstico ser enviado.' : 'Precisa de rede.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, color: Cores.textoSecundario),
+                style: const TextStyle(fontSize: 13, color: Cores.textoSecundario),
               ),
             ),
-          if (_erro != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(_erro!, textAlign: TextAlign.center, style: const TextStyle(color: Cores.laranjaEscuro)),
-            ),
-          const SizedBox(height: 12),
-          // Pedido de visita técnica: estado do pedido ou botão para pedir.
-          ListenableBuilder(
-            listenable: VisitasLocais.instancia,
-            builder: (context, _) {
-              final visita = VisitasLocais.instancia.doDiagnostico(_d.id);
-              if (visita != null && visita.activa || visita?.estado == EstadoVisita.resolvida) {
-                return _CaixaVisita(visita!);
-              }
-              return Column(children: [
-                BotaoSecundario(
-                  texto: _aPedir ? 'A enviar...' : 'Pedir visita do técnico',
-                  aoPremir: sincronizado && _online && !_aPedir ? _pedirVisita : null,
-                ),
-                if (!(sincronizado && _online))
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      !sincronizado ? 'Primeiro o diagnóstico tem de ser sincronizado.' : 'Precisa de ligação à rede.',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 12, color: Cores.textoSecundario),
-                    ),
-                  ),
-              ]);
-            },
-          ),
-          const SizedBox(height: 14),
-          Text(
-            '${_d.cultura.nome} · modelo v${_d.versaoModelo} · inferência ${_d.tempoInferenciaMs} ms · '
-            '${sincronizado ? 'sincronizado' : 'pendente'}',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, color: Cores.textoSecundario),
-          ),
-        ]),
-      ),
+        ],
+        if (_erro != null)
+          Padding(padding: const EdgeInsets.only(top: 12), child: MensagemErro(_erro!)),
+        const SizedBox(height: 18),
+        Text(
+          'Modelo v${_d.versaoModelo}, ${_d.tempoInferenciaMs} ms no telemóvel · '
+          '${sincronizado ? 'enviado ao técnico' : 'ainda não enviado'}',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 12.5, color: Cores.textoTerciario),
+        ),
+      ],
     );
   }
 }
@@ -237,8 +229,6 @@ class _CaixaSeguimento extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: decoracaoCartao(),
         child: Row(children: [
-          const Icon(Icons.task_alt, color: Cores.verdeEscuro),
-          const SizedBox(width: 10),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('A sua resposta ao seguimento', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -266,22 +256,16 @@ class _CaixaValidacao extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final confirmado = diagnostico.validacao == Validacao.confirmado;
-    final cor = confirmado ? Cores.verdeEscuro : Cores.avisoTexto;
+    final cor = confirmado ? Cores.verdeOk : Cores.avisoTexto;
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: decoracaoCartao(
-        cor: confirmado ? Cores.marcaSuave : Cores.avisoFundo,
-        borda: confirmado ? const Color(0xFFBFD9C8) : const Color(0xFFF1D9A0),
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+      decoration: BoxDecoration(
+        color: confirmado ? Cores.limaSuave : Cores.avisoFundo,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(confirmado ? Icons.verified_outlined : Icons.edit_note, color: cor, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(confirmado ? 'Confirmado pelo técnico' : 'Corrigido pelo técnico',
-                style: TextStyle(fontWeight: FontWeight.w600, color: cor)),
-          ),
-        ]),
+        Text(confirmado ? 'O técnico confirmou este diagnóstico.' : 'O técnico corrigiu este diagnóstico.',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: cor)),
         if (!confirmado) ...[
           const SizedBox(height: 4),
           Text('A app indicou «$nomePrevisto». A recomendação abaixo já é a da correcção.',
@@ -309,11 +293,7 @@ class _CaixaVisita extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: decoracaoCartao(),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(resolvida ? Icons.task_alt : Icons.support_agent, color: Cores.verdeEscuro, size: 20),
-          const SizedBox(width: 8),
-          Text(visita.estado.nome, style: const TextStyle(fontWeight: FontWeight.w600)),
-        ]),
+        Text('Visita: ${visita.estado.nome.toLowerCase()}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
         if (visita.dataAgendada != null && !resolvida) ...[
           const SizedBox(height: 6),
           Text('Dia ${formatarDataHora(visita.dataAgendada!)}${visita.tecnicoNome != null ? ' · ${visita.tecnicoNome}' : ''}',

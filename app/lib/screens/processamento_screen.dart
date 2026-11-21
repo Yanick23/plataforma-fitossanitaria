@@ -5,6 +5,7 @@ import '../models/resultado_classificacao.dart';
 import '../services/classificador.dart';
 import '../tema.dart';
 import '../widgets/botoes.dart';
+import '../widgets/ecra_escuro.dart';
 import 'resultado_screen.dart';
 
 /// Ecrã 4 — Processamento: executa a inferência e abre o resultado (RF02).
@@ -64,35 +65,46 @@ class _ProcessamentoScreenState extends State<ProcessamentoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Center(child: _erro == null ? _aProcessar() : _comErro()),
+      backgroundColor: Cores.escuro,
+      body: DecoratedBox(
+        decoration: fundoEscuro,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Center(child: _erro == null ? _aProcessar() : _comErro()),
+          ),
         ),
       ),
     );
   }
 
-  Widget _aProcessar() => const Column(mainAxisSize: MainAxisSize.min, children: [
-        SizedBox(
-          width: 64,
-          height: 64,
-          child: CircularProgressIndicator(strokeWidth: 6, strokeCap: StrokeCap.round, color: Cores.verde),
+  Widget _aProcessar() => Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          width: 96,
+          height: 96,
+          padding: const EdgeInsets.all(30),
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(colors: [Color(0xFFC2F29A), Cores.limaForte], begin: Alignment.topLeft, end: Alignment.bottomRight),
+          ),
+          child: const CircularProgressIndicator(strokeWidth: 3.5, strokeCap: StrokeCap.round, color: Cores.escuro),
         ),
-        SizedBox(height: 26),
-        Text('A analisar imagem...', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        SizedBox(height: 6),
-        Text('Isto pode demorar alguns segundos', style: TextStyle(color: Cores.textoSecundario)),
+        const SizedBox(height: 28),
+        const Text('A analisar…', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: Colors.white)),
+        const SizedBox(height: 8),
+        const Text('A procurar sinais de pragas e doenças na folha.',
+            textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Cores.sobreEscuroSecundario, height: 1.4)),
       ]);
 
   Widget _comErro() => Column(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.error_outline, size: 56, color: Cores.laranjaEscuro),
-        const SizedBox(height: 16),
+        const CirculoIcone(Icons.error_outline, tamanho: 88, cor: Cores.escuroSuave, corIcone: Cores.lima),
+        const SizedBox(height: 24),
         const Text('Não foi possível fazer o diagnóstico',
-            textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white)),
         const SizedBox(height: 10),
-        Text(_erro!, textAlign: TextAlign.center, style: const TextStyle(color: Cores.textoSecundario, height: 1.4)),
-        const SizedBox(height: 28),
-        BotaoSecundario(texto: 'Voltar', aoPremir: () => Navigator.of(context).pop()),
+        Text(_erro!,
+            textAlign: TextAlign.center, style: const TextStyle(fontSize: 15.5, color: Cores.sobreEscuroSecundario, height: 1.45)),
+        const SizedBox(height: 32),
+        BotaoPrincipal(texto: 'Voltar', aoPremir: () => Navigator.of(context).pop()),
       ]);
 }

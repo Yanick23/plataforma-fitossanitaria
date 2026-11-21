@@ -1,231 +1,236 @@
 import 'package:flutter/material.dart';
 
 import '../main.dart';
+import '../models/calendario.dart';
 import '../models/cultura.dart';
+import '../models/diagnostico.dart';
 import '../services/acompanhamento.dart';
 import '../services/alertas_locais.dart';
 import '../services/dados_zona.dart';
+import '../services/historial_db.dart';
 import '../services/sessao.dart';
 import '../tema.dart';
-import '../widgets/botoes.dart';
+import '../widgets/cartao.dart';
 import '../widgets/cartao_alerta.dart';
 import '../widgets/cartoes_zona.dart';
-import '../widgets/estado_ligacao.dart';
+import '../widgets/ecra_escuro.dart';
 import '../widgets/seguimento.dart';
-import 'alertas_screen.dart';
 import 'calendario_screen.dart';
-import 'captura_screen.dart';
 import 'cultura_screen.dart';
-import 'definicoes_screen.dart';
+import 'historial_screen.dart';
 
-/// Ecrã inicial: diagnosticar (a acção principal), o que a zona pede agora e o resto da app.
+/// Ecrã inicial: resumo dos diagnósticos, atalhos, o que a zona pede agora, os últimos
+/// diagnósticos e o mês do calendário. A câmara está no botão redondo da barra inferior.
 class InicioScreen extends StatelessWidget {
-  const InicioScreen({super.key});
+  const InicioScreen({super.key, this.diagnosticos});
 
-  static String saudacao(DateTime agora) =>
-      agora.hour < 12 ? 'Bom dia' : (agora.hour < 18 ? 'Boa tarde' : 'Boa noite');
+  /// Diagnósticos já lidos (para pré-visualizações); sem eles, lê-se a base de dados.
+  final List<Diagnostico>? diagnosticos;
 
-  void _abrir(BuildContext context, Widget ecra, {String? rota}) => Navigator.of(context)
-      .push(MaterialPageRoute(settings: RouteSettings(name: rota), builder: (_) => ecra));
-
-  void _fotografar(BuildContext context, Cultura c) =>
-      _abrir(context, CapturaScreen(cultura: c), rota: CapturaScreen.rota);
+  void _abrir(BuildContext context, Widget ecra) =>
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => ecra));
 
   @override
   Widget build(BuildContext context) {
     final u = Sessao.instancia.utilizador.value;
     final nome = u?.nome.trim().split(RegExp(r'\s+')).first ?? '';
-    return SafeArea(
-      child: ListView(padding: const EdgeInsets.fromLTRB(20, 12, 12, 28), children: [
-        // Topo: saudação, zona e ligação; alertas e definições.
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(nome.isEmpty ? saudacao(DateTime.now()) : '${saudacao(DateTime.now())}, $nome',
-                    style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 6),
-                Wrap(spacing: 10, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                  if (u?.area != null)
-                    Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.place_outlined, size: 15, color: Cores.textoSecundario),
-                      const SizedBox(width: 3),
-                      Text(u!.area!, style: const TextStyle(fontSize: 13.5, color: Cores.textoSecundario)),
-                    ]),
-                  const EstadoLigacao(),
-                ]),
+    return ValueListenableBuilder<int>(
+      valueListenable: NavegacaoPrincipal.versaoHistorial,
+      builder: (context, versao, _) => FutureBuilder<List<Diagnostico>>(
+        key: ValueKey(versao),
+        future: diagnosticos != null || u == null ? Future.value(diagnosticos ?? []) : HistorialDb.instancia.listar(u.id),
+        initialData: diagnosticos,
+        builder: (context, s) {
+          final itens = s.data ?? const <Diagnostico>[];
+          return EcraEscuro(
+            local: u?.area,
+            titulo: nome.isEmpty ? 'Como estão as suas plantas?' : 'Olá $nome, como estão as suas plantas?',
+            direita: u == null ? null : AvatarIniciais(u.nome),
+            filhos: [
+              const Text('Resumo', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 14),
+              _CartaoResumo(itens: itens),
+              const SizedBox(height: 22),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                for (final c in Cultura.values)
+                  _Atalho(
+                    icone: c == Cultura.milho ? Icons.grass : Icons.spa_outlined,
+                    nome: c.nome,
+                    aoTocar: () => abrirCaptura(context, c),
+                  ),
+                _Atalho(
+                  icone: Icons.calendar_month_outlined,
+                  nome: 'Calendário',
+                  aoTocar: () => _abrir(context, const CalendarioScreen()),
+                ),
+                _Atalho(
+                  icone: Icons.notifications_none,
+                  nome: 'Alertas',
+                  aoTocar: () => NavegacaoPrincipal.abaActual.value = 2,
+                ),
               ]),
-            ),
-          ),
-          ListenableBuilder(
-            listenable: AlertasLocais.instancia,
-            builder: (context, _) {
-              final n = AlertasLocais.instancia.naoLidos;
-              return IconButton(
-                tooltip: n == 0 ? 'Alertas' : 'Alertas: $n por ler',
-                icon: Badge(isLabelVisible: n > 0, label: Text('$n'), child: const Icon(Icons.notifications_none)),
-                onPressed: () => _abrir(context, const AlertasScreen()),
-              );
-            },
-          ),
-          IconButton(
-            tooltip: 'Definições',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => _abrir(context, const DefinicoesScreen()),
-          ),
-        ]),
-        const SizedBox(height: 20),
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: _CartaoDiagnosticar(aoEscolher: (c) => _fotografar(context, c)),
-        ),
-        // «Para si»: alerta por ler, campanha, seguimento e o mês do calendário.
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: ListenableBuilder(
-            listenable: Listenable.merge(
-                [AlertasLocais.instancia, CampanhasLocais.instancia, CalendarioLocal.instancia, Acompanhamento.instancia]),
-            builder: (context, _) {
-              final alerta = AlertasLocais.instancia.ultimoNaoLido;
-              final campanhas = CampanhasLocais.instancia.activas;
-              final seguimento = Acompanhamento.instancia.porResponder;
-              final calendario = CalendarioLocal.instancia.calendario;
-              final cartoes = <Widget>[
-                if (alerta != null) CartaoAlerta(alerta: alerta, aoTocar: () => _abrir(context, const AlertasScreen())),
-                if (campanhas.isNotEmpty)
-                  CartaoCampanha(
-                    campanha: campanhas.first,
-                    aoResponder: () {
-                      final c = Cultura.talvez(campanhas.first.culturaId);
-                      c == null ? _abrir(context, const CulturaScreen()) : _fotografar(context, c);
-                    },
-                  ),
-                if (seguimento.isNotEmpty) CartaoSeguimento(diagnostico: seguimento.first),
-                if (calendario != null)
-                  CartaoCalendario(
-                    calendario: calendario,
-                    mes: DateTime.now().month,
-                    aoTocar: () => _abrir(context, const CalendarioScreen()),
-                  ),
-              ];
-              if (cartoes.isEmpty) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.only(top: 28),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  const TituloSeccao('Para si'),
-                  for (final (i, c) in cartoes.indexed) ...[if (i > 0) const SizedBox(height: 10), c],
-                ]),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 28),
-        const Padding(padding: EdgeInsets.only(right: 8), child: TituloSeccao('Mais')),
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: Material(
-            color: Cores.cartao,
-            clipBehavior: Clip.antiAlias,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Cores.linha)),
-            child: Column(children: [
-              _Linha(
-                icone: Icons.history,
-                titulo: 'Historial',
-                subtitulo: 'Os seus diagnósticos e o envio ao técnico',
-                aoTocar: () => NavegacaoPrincipal.abaActual.value = 1,
-              ),
-              const Divider(indent: 56),
+              const SizedBox(height: 24),
+              const Divider(),
+              // O que a zona pede agora: alerta por ler, pedido do técnico, seguimento.
               ListenableBuilder(
-                listenable: AlertasLocais.instancia,
+                listenable: Listenable.merge([AlertasLocais.instancia, CampanhasLocais.instancia, Acompanhamento.instancia]),
                 builder: (context, _) {
-                  final n = AlertasLocais.instancia.naoLidos;
-                  return _Linha(
-                    icone: Icons.notifications_none,
-                    titulo: 'Alertas da zona',
-                    subtitulo: n == 0 ? 'Nenhum por ler' : (n == 1 ? '1 por ler' : '$n por ler'),
-                    aoTocar: () => _abrir(context, const AlertasScreen()),
+                  final alerta = AlertasLocais.instancia.ultimoNaoLido;
+                  final campanhas = CampanhasLocais.instancia.activas;
+                  final seguimento = Acompanhamento.instancia.porResponder;
+                  final cartoes = <Widget>[
+                    if (alerta != null)
+                      CartaoAlerta(alerta: alerta, aoTocar: () => NavegacaoPrincipal.abaActual.value = 2),
+                    if (campanhas.isNotEmpty)
+                      CartaoCampanha(
+                        campanha: campanhas.first,
+                        aoResponder: () {
+                          final c = Cultura.talvez(campanhas.first.culturaId);
+                          c == null ? _abrir(context, const CulturaScreen()) : abrirCaptura(context, c);
+                        },
+                      ),
+                    if (seguimento.isNotEmpty) CartaoSeguimento(diagnostico: seguimento.first),
+                  ];
+                  if (cartoes.isEmpty) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 24),
+                    child: Seccao(
+                      titulo: 'Na sua zona',
+                      accao: LigacaoTitulo('Ver alertas', aoTocar: () => NavegacaoPrincipal.abaActual.value = 2),
+                      filhos: cartoes,
+                    ),
                   );
                 },
               ),
-              const Divider(indent: 56),
-              _Linha(
-                icone: Icons.calendar_month_outlined,
-                titulo: 'Calendário agrícola',
-                subtitulo: 'O que fazer em cada mês na sua província',
-                aoTocar: () => _abrir(context, const CalendarioScreen()),
+              const SizedBox(height: 28),
+              Seccao(
+                titulo: 'Últimos diagnósticos',
+                accao: itens.length > 3
+                    ? LigacaoTitulo('Ver todos', aoTocar: () => NavegacaoPrincipal.abaActual.value = 1)
+                    : null,
+                espaco: 4,
+                filhos: itens.isEmpty
+                    ? [
+                        const Text(
+                            'Ainda não fotografou nenhuma planta. Quando encontrar uma folha com manchas, furos ou '
+                                'lagartas, toque no botão verde da câmara, em baixo.',
+                            style: TextStyle(fontSize: 15, height: 1.5, color: Cores.textoSecundario)),
+                      ]
+                    : [for (final d in itens.take(3)) LinhaDiagnostico(d)],
               ),
-            ]),
-          ),
-        ),
-      ]),
+              ListenableBuilder(
+                listenable: CalendarioLocal.instancia,
+                builder: (context, _) {
+                  final c = CalendarioLocal.instancia.calendario;
+                  if (c == null) return const SizedBox.shrink();
+                  final mes = DateTime.now().month;
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 28),
+                    child: Seccao(
+                      titulo: 'Em ${Calendario.nomesMeses[mes - 1].toLowerCase()}',
+                      accao: LigacaoTitulo('Calendário', aoTocar: () => _abrir(context, const CalendarioScreen())),
+                      filhos: [
+                        CartaoCalendario(calendario: c, mes: mes, aoTocar: () => _abrir(context, const CalendarioScreen())),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
 
-/// A acção principal: fotografar uma folha. Escolhe-se logo a cultura (um toque a menos).
-class _CartaoDiagnosticar extends StatelessWidget {
-  const _CartaoDiagnosticar({required this.aoEscolher});
+/// Cartão verde-lima com os números dos diagnósticos do agricultor.
+class _CartaoResumo extends StatelessWidget {
+  const _CartaoResumo({required this.itens});
 
-  final ValueChanged<Cultura> aoEscolher;
+  final List<Diagnostico> itens;
 
   @override
   Widget build(BuildContext context) {
+    final porEnviar = itens.where((d) => d.estadoSinc == EstadoSinc.pendente).length;
+    final confirmados = itens.where((d) => d.validacao == Validacao.confirmado).length;
+    final semana = itens.where((d) => DateTime.now().difference(d.data).inDays < 7).length;
+    Widget numero(IconData icone, String rotulo, int valor) => Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                child: Icon(icone, size: 18, color: Cores.sobreLima),
+              ),
+              const SizedBox(width: 8),
+              Flexible(child: Text(rotulo, style: const TextStyle(fontSize: 14.5, color: Cores.marca))),
+            ]),
+            const SizedBox(height: 8),
+            Text('$valor', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Cores.sobreLima)),
+          ]),
+        );
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-      decoration: BoxDecoration(color: Cores.marca, borderRadius: BorderRadius.circular(14)),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+            colors: [Color(0xFFB4EE85), Cores.limaForte], begin: Alignment.topLeft, end: Alignment.bottomRight),
+      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(10)),
-          child: const Icon(Icons.photo_camera_outlined, color: Colors.white, size: 22),
-        ),
-        const SizedBox(height: 14),
-        const Text('Diagnosticar uma planta',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white, height: 1.25)),
-        const SizedBox(height: 4),
-        Text('Fotografe uma folha com sintomas. O resultado aparece em segundos, mesmo sem internet.',
-            style: TextStyle(fontSize: 14.5, height: 1.45, color: Colors.white.withValues(alpha: 0.86))),
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Diagnósticos', style: TextStyle(fontSize: 15, color: Cores.marca)),
+              const SizedBox(height: 2),
+              Text('${itens.length}', style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: Cores.sobreLima)),
+            ]),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+            child: Text(semana == 1 ? '1 esta semana' : '$semana esta semana',
+                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Cores.sobreLima)),
+          ),
+        ]),
         const SizedBox(height: 16),
         Row(children: [
-          for (final (i, c) in Cultura.values.indexed) ...[
-            if (i > 0) const SizedBox(width: 10),
-            Expanded(
-              child: FilledButton(
-                onPressed: () => aoEscolher(c),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Cores.marcaForte,
-                  minimumSize: const Size(0, 48),
-                ),
-                child: Text(c.nome),
-              ),
-            ),
-          ],
+          numero(Icons.schedule, 'Por enviar', porEnviar),
+          const SizedBox(width: 12),
+          numero(Icons.verified_outlined, 'Confirmados', confirmados),
         ]),
       ]),
     );
   }
 }
 
-class _Linha extends StatelessWidget {
-  const _Linha({required this.icone, required this.titulo, required this.subtitulo, required this.aoTocar});
+/// Atalho: círculo verde-escuro com ícone e o nome por baixo.
+class _Atalho extends StatelessWidget {
+  const _Atalho({required this.icone, required this.nome, required this.aoTocar});
 
   final IconData icone;
-  final String titulo;
-  final String subtitulo;
+  final String nome;
   final VoidCallback aoTocar;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icone, color: Cores.textoSecundario),
-      title: Text(titulo),
-      subtitle: Text(subtitulo),
-      trailing: const Icon(Icons.chevron_right, color: Cores.textoTerciario),
-      onTap: aoTocar,
+    return Semantics(
+      button: true,
+      label: nome,
+      excludeSemantics: true,
+      child: InkResponse(
+        onTap: aoTocar,
+        radius: 44,
+        child: SizedBox(
+          width: 78,
+          child: Column(children: [
+            CirculoIcone(icone, tamanho: 60),
+            const SizedBox(height: 8),
+            Text(nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14.5)),
+          ]),
+        ),
+      ),
     );
   }
 }

@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../models/audio.dart';
 import '../services/api_cliente.dart';
 import '../services/sessao.dart';
-import '../tema.dart';
 import '../widgets/botoes.dart';
 import '../widgets/campos.dart';
+import '../widgets/ecra_escuro.dart';
 import '../widgets/marca.dart';
 
 /// Criação de conta de agricultor (RF10). As contas de técnico são criadas
@@ -101,34 +101,28 @@ class _RegistoScreenState extends State<RegistoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Form(
+    return EcraEscuro(
+      titulo: 'Criar conta',
+      subtitulo: 'Conta de agricultor. O distrito serve para receber os alertas da sua zona.',
+      filhos: [
+        Form(
           key: _form,
-          child: ListView(padding: const EdgeInsets.fromLTRB(24, 4, 24, 24), children: [
-            // O ícone fica alinhado com o texto (o botão tem margem própria).
-                Align(alignment: Alignment.centerLeft, child: Transform.translate(offset: const Offset(-12, 0), child: const BotaoVoltar())),
-            const SizedBox(height: 12),
-            Text('Criar conta', style: Theme.of(context).textTheme.headlineMedium),
-            const SizedBox(height: 6),
-            const Text('Conta de agricultor. O distrito serve para receber os alertas da sua zona.',
-                style: TextStyle(fontSize: 15, color: Cores.textoSecundario, height: 1.4)),
-            const SizedBox(height: 24),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             CampoTexto(
               controlador: _nome,
               rotulo: 'Nome',
               icone: Icons.person_outline,
               validar: (v) => (v ?? '').trim().length >= 2 ? null : 'Escreva o seu nome',
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             CampoTexto(
               controlador: _telefone,
-              rotulo: 'Telefone',
+              rotulo: 'Número de telefone',
               icone: Icons.phone_outlined,
               teclado: TextInputType.phone,
               validar: validarTelefone,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             _Lista<String>(
               rotulo: 'Província',
               icone: Icons.map_outlined,
@@ -137,7 +131,7 @@ class _RegistoScreenState extends State<RegistoScreen> {
               aoMudar: _escolherProvincia,
               aCarregar: _provincias == null && _erroRegioes == null,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             _Lista<String>(
               rotulo: 'Distrito',
               icone: Icons.place_outlined,
@@ -147,7 +141,7 @@ class _RegistoScreenState extends State<RegistoScreen> {
               dica: _erroRegioes ??
                   'Recebe os alertas do seu distrito e o técnico da zona pode ajudar com os seus diagnósticos',
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             _Lista<String>(
               rotulo: 'Língua para ouvir as mensagens (opcional)',
               icone: Icons.record_voice_over_outlined,
@@ -156,7 +150,7 @@ class _RegistoScreenState extends State<RegistoScreen> {
               aoMudar: (v) => setState(() => _lingua = v),
               dica: 'As recomendações e os alertas podem ter uma gravação na sua língua. Pode mudar depois nas Definições.',
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             CampoTexto(
               controlador: _palavraPasse,
               rotulo: 'Palavra-passe',
@@ -164,7 +158,7 @@ class _RegistoScreenState extends State<RegistoScreen> {
               oculto: true,
               validar: validarPalavraPasse,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             CampoTexto(
               controlador: _confirmacao,
               rotulo: 'Repita a palavra-passe',
@@ -174,11 +168,11 @@ class _RegistoScreenState extends State<RegistoScreen> {
               validar: (v) => v == _palavraPasse.text ? null : 'As palavras-passe não coincidem',
             ),
             if (_erro != null) ...[const SizedBox(height: 14), MensagemErro(_erro!)],
-            const SizedBox(height: 22),
+            const SizedBox(height: 24),
             BotaoPrincipal(texto: _aCriar ? 'A criar…' : 'Criar conta', aoPremir: _aCriar ? null : _criar),
           ]),
         ),
-      ),
+      ],
     );
   }
 }
@@ -205,18 +199,24 @@ class _Lista<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<T>(
-      initialValue: valor,
-      key: ValueKey('$rotulo-$valor-${opcoes.length}'),
-      isExpanded: true,
-      items: [for (final (v, nome) in opcoes) DropdownMenuItem(value: v, child: Text(nome))],
-      onChanged: opcoes.isEmpty ? null : aoMudar,
-      decoration: InputDecoration(
-        labelText: aCarregar ? '$rotulo (a carregar…)' : rotulo,
-        helperText: dica,
-        helperMaxLines: 2,
-        prefixIcon: Icon(icone),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(aCarregar ? '$rotulo (a carregar…)' : rotulo, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+      const SizedBox(height: 8),
+      DropdownButtonFormField<T>(
+        initialValue: valor,
+        key: ValueKey('$rotulo-$valor-${opcoes.length}'),
+        isExpanded: true,
+        borderRadius: BorderRadius.circular(20),
+        icon: const Icon(Icons.keyboard_arrow_down),
+        hint: const Text('Escolha'),
+        items: [for (final (v, nome) in opcoes) DropdownMenuItem(value: v, child: Text(nome))],
+        onChanged: opcoes.isEmpty ? null : aoMudar,
+        decoration: InputDecoration(
+          helperText: dica,
+          helperMaxLines: 2,
+          prefixIcon: Padding(padding: const EdgeInsets.only(left: 12), child: Icon(icone)),
+        ),
       ),
-    );
+    ]);
   }
 }

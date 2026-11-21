@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'models/utilizador.dart';
+import 'screens/alertas_screen.dart';
+import 'screens/cultura_screen.dart';
+import 'screens/definicoes_screen.dart';
 import 'screens/historial_screen.dart';
 import 'screens/inicio_screen.dart';
 import 'screens/login_screen.dart';
@@ -50,7 +53,7 @@ class AgroDiagnosticoApp extends StatelessWidget {
   }
 }
 
-/// Barra inferior Início / Historial (Ecrãs 1 e 7 do protótipo).
+/// Navegação principal: Início, Historial, Alertas e Definições, com a câmara ao centro.
 class NavegacaoPrincipal extends StatefulWidget {
   const NavegacaoPrincipal({super.key});
 
@@ -93,31 +96,109 @@ class _NavegacaoPrincipalState extends State<NavegacaoPrincipal> {
     return ValueListenableBuilder<int>(
       valueListenable: NavegacaoPrincipal.abaActual,
       builder: (context, aba, _) => Scaffold(
-        body: IndexedStack(index: aba, children: const [InicioScreen(), HistorialScreen()]),
-        bottomNavigationBar: BarraNavegacao(aba: aba, aoEscolher: (i) => NavegacaoPrincipal.abaActual.value = i),
+        body: IndexedStack(
+          index: aba,
+          children: const [InicioScreen(), HistorialScreen(), AlertasScreen(), DefinicoesScreen()],
+        ),
+        bottomNavigationBar: BarraNavegacao(
+          aba: aba,
+          aoEscolher: (i) => NavegacaoPrincipal.abaActual.value = i,
+          aoFotografar: () => escolherCulturaEFotografar(context),
+        ),
       ),
     );
   }
 }
 
-/// Barra inferior: Início e Historial.
+/// Barra inferior: quatro separadores e, ao centro, o botão redondo da câmara (a acção principal).
 class BarraNavegacao extends StatelessWidget {
-  const BarraNavegacao({super.key, required this.aba, required this.aoEscolher});
+  const BarraNavegacao({super.key, required this.aba, required this.aoEscolher, this.aoFotografar});
 
   final int aba;
   final ValueChanged<int> aoEscolher;
+  final VoidCallback? aoFotografar;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: Cores.linha))),
-      child: NavigationBar(
-        selectedIndex: aba,
-        onDestinationSelected: aoEscolher,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Início'),
-          NavigationDestination(icon: Icon(Icons.history), selectedIcon: Icon(Icons.history), label: 'Historial'),
-        ],
+    Widget item(int i, IconData icone, IconData iconeActivo, String nome, {int contador = 0}) {
+      final activo = aba == i;
+      final cor = activo ? Cores.escuro : Cores.textoTerciario;
+      return Expanded(
+        child: Semantics(
+          selected: activo,
+          button: true,
+          label: nome,
+          excludeSemantics: true,
+          child: InkResponse(
+            onTap: () => aoEscolher(i),
+            radius: 36,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              // Traço curto por cima do separador activo.
+              Container(
+                width: 28,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: activo ? Cores.escuro : Colors.transparent,
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(3)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Badge(
+                isLabelVisible: contador > 0,
+                label: Text('$contador'),
+                child: Icon(activo ? iconeActivo : icone, color: cor, size: 26),
+              ),
+              const SizedBox(height: 4),
+              Text(nome,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12.5, fontWeight: activo ? FontWeight.w600 : FontWeight.w500, color: cor)),
+              const SizedBox(height: 10),
+            ]),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Cores.cartao,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        boxShadow: [BoxShadow(color: Color(0x14000000), blurRadius: 24, offset: Offset(0, -4))],
+      ),
+      child: SafeArea(
+        top: false,
+        child: ListenableBuilder(
+          listenable: AlertasLocais.instancia,
+          builder: (context, _) => Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            item(0, Icons.grid_view_outlined, Icons.grid_view_rounded, 'Início'),
+            item(1, Icons.history, Icons.history, 'Historial'),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 8, 4, 12),
+              child: Semantics(
+                button: true,
+                label: 'Fotografar uma planta',
+                excludeSemantics: true,
+                child: Material(
+                  color: Cores.lima,
+                  shape: const CircleBorder(),
+                  elevation: 0,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: aoFotografar,
+                    child: const SizedBox(
+                      width: 64,
+                      height: 64,
+                      child: Icon(Icons.photo_camera_outlined, color: Cores.sobreLima, size: 28),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            item(2, Icons.notifications_none, Icons.notifications, 'Alertas', contador: AlertasLocais.instancia.naoLidos),
+            item(3, Icons.settings_outlined, Icons.settings, 'Definições'),
+          ]),
+        ),
       ),
     );
   }

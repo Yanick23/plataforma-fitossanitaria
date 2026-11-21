@@ -12,6 +12,7 @@ class CampoTexto extends StatelessWidget {
     this.validar,
     this.dica,
     this.accao = TextInputAction.next,
+    this.exemplo,
   });
 
   final TextEditingController controlador;
@@ -23,21 +24,30 @@ class CampoTexto extends StatelessWidget {
   final String? dica;
   final TextInputAction accao;
 
+  /// Texto de exemplo dentro do campo vazio.
+  final String? exemplo;
+
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controlador,
-      keyboardType: teclado,
-      obscureText: oculto,
-      validator: validar,
-      textInputAction: accao,
-      decoration: InputDecoration(
-        labelText: rotulo,
-        helperText: dica,
-        helperMaxLines: 2,
-        prefixIcon: icone == null ? null : Icon(icone),
+    // Rótulo por cima do campo (e não dentro): lê-se sempre, mesmo com o campo preenchido.
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(rotulo, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+      const SizedBox(height: 8),
+      TextFormField(
+        controller: controlador,
+        keyboardType: teclado,
+        obscureText: oculto,
+        validator: validar,
+        textInputAction: accao,
+        style: const TextStyle(fontSize: 16.5),
+        decoration: InputDecoration(
+          hintText: exemplo,
+          helperText: dica,
+          helperMaxLines: 2,
+          prefixIcon: icone == null ? null : Padding(padding: const EdgeInsets.only(left: 12), child: Icon(icone)),
+        ),
       ),
-    );
+    ]);
   }
 }
 

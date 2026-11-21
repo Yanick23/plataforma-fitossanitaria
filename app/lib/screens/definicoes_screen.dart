@@ -17,6 +17,7 @@ import '../services/sincronizacao.dart';
 import '../tema.dart';
 import '../widgets/botoes.dart';
 import '../widgets/campos.dart';
+import '../widgets/ecra_escuro.dart';
 import 'diagnostico_tecnico_screen.dart';
 
 /// Endereço da API, conta, versões dos modelos e sincronização manual.
@@ -40,8 +41,7 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
     _carregarModelos();
   }
 
-  void _carregarModelos() =>
-      _modelos = Future.wait(Cultura.values.map(GestorModelos.instancia.modeloActual));
+  void _carregarModelos() => _modelos = Future.wait(Cultura.values.map(GestorModelos.instancia.modeloActual));
 
   @override
   void dispose() {
@@ -52,8 +52,9 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
   Future<void> _guardarUrl() async {
     final url = _url.text.trim();
     if (!RegExp(r'^https?://[^\s/]+').hasMatch(url)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Endereço inválido. Ex.: http://192.168.1.100:8000')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Endereço inválido. Ex.: http://192.168.1.100:8000')));
       return;
     }
     await Sessao.instancia.definirUrl(url);
@@ -71,12 +72,19 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
     try {
       final u = await ApiCliente.instancia.mudarLingua(lingua);
       await Sessao.instancia.actualizarUtilizador(u);
-      final novas = await VozesLocais.instancia.sincronizar(
-          [...Catalogo.instancia.audios, for (final a in AlertasLocais.instancia.alertas) ...a.audios], lingua);
-      mensageiro.showSnackBar(SnackBar(
-          content: Text(lingua == null
-              ? 'Mensagens só em texto'
-              : 'Língua: ${Lingua.nomeDe(lingua)}. ${novas == 0 ? 'Ainda não há gravações novas nesta língua.' : '$novas gravação(ões) descarregada(s).'}')));
+      final novas = await VozesLocais.instancia.sincronizar([
+        ...Catalogo.instancia.audios,
+        for (final a in AlertasLocais.instancia.alertas) ...a.audios,
+      ], lingua);
+      mensageiro.showSnackBar(
+        SnackBar(
+          content: Text(
+            lingua == null
+                ? 'Mensagens só em texto'
+                : 'Língua: ${Lingua.nomeDe(lingua)}. ${novas == 0 ? 'Ainda não há gravações novas nesta língua.' : '$novas gravação(ões) descarregada(s).'}',
+          ),
+        ),
+      );
     } on ErroApi catch (e) {
       mensageiro.showSnackBar(SnackBar(content: Text('Não foi possível mudar a língua: ${e.mensagem}')));
     } finally {
@@ -94,9 +102,11 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
   @override
   Widget build(BuildContext context) {
     final utilizador = Sessao.instancia.utilizador.value;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Definições', style: TextStyle(fontWeight: FontWeight.w600))),
-      body: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
+    return EcraEscuro(
+      titulo: 'Definições',
+      subtitulo: utilizador == null || widget.apenasServidor ? null : '${utilizador.nome} · ${utilizador.telefone}',
+      direita: utilizador == null || widget.apenasServidor ? null : AvatarIniciais(utilizador.nome),
+      filhos: [
         _seccao('Servidor (API)', [
           CampoTexto(
             controlador: _url,
@@ -110,23 +120,26 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
           BotaoSecundario(texto: 'Guardar endereço', aoPremir: _guardarUrl),
         ]),
         if (!widget.apenasServidor && utilizador != null) ...[
-          const SizedBox(height: 20),
           _seccao('Conta', [
             _linha('Nome', utilizador.nome),
             _linha('Telefone', utilizador.telefone),
             _linha('Perfil', utilizador.perfil.nome),
             if (utilizador.area != null) _linha('Distrito', utilizador.area!),
           ]),
-          const SizedBox(height: 20),
           _seccao('Ouvir as mensagens', [
-            const Text('As recomendações e os alertas podem ter uma gravação na sua língua. '
-                'Toque em «Ouvir» para a escutar, mesmo sem rede.',
-                style: TextStyle(color: Cores.textoSecundario, height: 1.35)),
+            const Text(
+              'As recomendações e os alertas podem ter uma gravação na sua língua. '
+              'Toque em «Ouvir» para a escutar, mesmo sem rede.',
+              style: TextStyle(color: Cores.textoSecundario, height: 1.35),
+            ),
             const SizedBox(height: 10),
             DropdownButtonFormField<String?>(
               initialValue: utilizador.lingua,
               isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Língua', prefixIcon: Icon(Icons.record_voice_over_outlined)),
+              decoration: const InputDecoration(
+                labelText: 'Língua',
+                prefixIcon: Icon(Icons.record_voice_over_outlined),
+              ),
               items: [
                 const DropdownMenuItem<String?>(value: null, child: Text('Só texto (sem áudio)')),
                 for (final l in Lingua.todas) DropdownMenuItem<String?>(value: l.codigo, child: Text(l.nome)),
@@ -135,17 +148,24 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
             ),
             if (_aMudarLingua) const Padding(padding: EdgeInsets.only(top: 8), child: LinearProgressIndicator()),
           ]),
-          const SizedBox(height: 20),
           _seccao('Modelos de classificação', [
             FutureBuilder<List<ModeloML>>(
               future: _modelos,
-              builder: (context, s) => Column(children: [
-                for (final m in s.data ?? const <ModeloML>[])
-                  _linha(m.cultura.nome, 'versão ${m.versao}${m.embutido ? ' (embutida)' : m.piloto ? ' (piloto no seu distrito)' : ''}'),
-              ]),
+              builder: (context, s) => Column(
+                children: [
+                  for (final m in s.data ?? const <ModeloML>[])
+                    _linha(
+                      m.cultura.nome,
+                      'versão ${m.versao}${m.embutido
+                          ? ' (embutida)'
+                          : m.piloto
+                          ? ' (piloto no seu distrito)'
+                          : ''}',
+                    ),
+                ],
+              ),
             ),
           ]),
-          const SizedBox(height: 12),
           ListenableBuilder(
             listenable: Sincronizacao.instancia,
             builder: (context, _) {
@@ -161,57 +181,68 @@ class _DefinicoesScreenState extends State<DefinicoesScreen> {
               ]);
             },
           ),
-          const SizedBox(height: 20),
           _seccao('Avançado', [
             Material(
               color: Colors.transparent,
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.speed_outlined),
                 title: const Text('Desempenho no telemóvel'),
                 subtitle: const Text('Tempo e memória do modelo neste aparelho'),
                 trailing: const Icon(Icons.chevron_right, color: Cores.textoTerciario),
-                onTap: () => Navigator.of(context)
-                    .push(MaterialPageRoute(builder: (_) => const DiagnosticoTecnicoScreen())),
+                onTap: () =>
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DiagnosticoTecnicoScreen())),
               ),
             ),
           ]),
-          const SizedBox(height: 24),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.logout, size: 20),
-            label: const Text('Terminar sessão'),
-            style: OutlinedButton.styleFrom(foregroundColor: Cores.criticoTexto),
-            onPressed: () async {
-              Navigator.of(context).popUntil((r) => r.isFirst);
-              await Sessao.instancia.terminar();
-              // Alertas e visitas pertencem à conta (e à zona) que saiu.
-              await AlertasLocais.instancia.limpar();
-              await VisitasLocais.instancia.limpar();
-              await CampanhasLocais.instancia.limpar();
-              await CalendarioLocal.instancia.limpar();
-              await NotificacoesFundo.parar();
-              Acompanhamento.instancia.limpar();
-            },
+          const SizedBox(height: 28),
+          Padding(
+            padding: EdgeInsets.zero,
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(foregroundColor: Cores.criticoTexto),
+              child: const Text('TERMINAR SESSÃO'),
+              onPressed: () async {
+                Navigator.of(context).popUntil((r) => r.isFirst);
+                await Sessao.instancia.terminar();
+                // Alertas e visitas pertencem à conta (e à zona) que saiu.
+                await AlertasLocais.instancia.limpar();
+                await VisitasLocais.instancia.limpar();
+                await CampanhasLocais.instancia.limpar();
+                await CalendarioLocal.instancia.limpar();
+                await NotificacoesFundo.parar();
+                Acompanhamento.instancia.limpar();
+              },
+            ),
           ),
         ],
-      ]),
+      ],
     );
   }
 
-  Widget _seccao(String titulo, List<Widget> filhos) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        TituloSeccao(titulo),
+  Widget _seccao(String titulo, List<Widget> filhos) => Padding(
+    padding: const EdgeInsets.only(bottom: 24),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(titulo, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           decoration: decoracaoCartao(),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [...filhos]),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: filhos),
         ),
-      ]);
+      ],
+    ),
+  );
 
   Widget _linha(String rotulo, String valor) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5),
-        child: Row(children: [
-          Expanded(child: Text(rotulo, style: const TextStyle(color: Cores.textoSecundario))),
-          Text(valor, style: const TextStyle(fontWeight: FontWeight.w500)),
-        ]),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 5),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(rotulo, style: const TextStyle(color: Cores.textoSecundario)),
+        ),
+        Text(valor, style: const TextStyle(fontWeight: FontWeight.w500)),
+      ],
+    ),
+  );
 }

@@ -16,7 +16,9 @@ String? _foto(String prefixo) {
 }
 
 void main() {
-  final semFotos = !Directory(_pasta).existsSync();
+  // Salta se faltar alguma das fotografias de calibração (a pasta pode existir com outras fotos).
+  const usadas = ['fd1a991f', '8ee7e039', '1ec39bad', '6f630124', '35b33bc1', '59100980', '157da319'];
+  final semFotos = usadas.any((p) => _foto(p) == null);
 
   test('fotografias desfocadas são assinaladas', () {
     for (final p in ['fd1a991f', '8ee7e039']) {
